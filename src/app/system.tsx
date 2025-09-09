@@ -27,8 +27,8 @@ export const navigationItems = {
         path: "/article-management",
         icon: <HiBookOpen />,
         subs: [
-          { name: "Article List", path: "/article-management/article-list" },
-          { name: "Category", path: "/article-management/category" }
+          { name: "Article List", path: "/article-management" },
+          { name: "Category Article", path: "/article-management/category" }
         ]
       },
 
@@ -39,7 +39,7 @@ export const navigationItems = {
         icon: <HiCamera />,
         subs: [
           { name: "Activity List", path: "/activity-management/activity-list" },
-          { name: "Category", path: "/activity-management/category" }
+          { name: "Category Activity", path: "/activity-management/category" }
         ]
       },
 

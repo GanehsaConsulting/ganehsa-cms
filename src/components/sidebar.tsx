@@ -18,6 +18,34 @@ export const Sidebar = () => {
     const path = usePathname();
     const noNavigation = ["/login", "/forgot-password", "/reset-password"];
 
+    // Function to check if a menu item should be active
+    type NavigationSubItem = {
+        path: string;
+        name: string;
+    };
+
+    type NavigationItem = {
+        path: string;
+        label: string;
+        icon: React.ReactNode;
+        subs?: NavigationSubItem[];
+    };
+
+    const isMenuItemActive = (item: NavigationItem) => {
+        if (!item.subs || item.subs.length === 0) {
+            // For simple menu items without submenu, use exact match
+            return path === item.path;
+        } else {
+            // For menu items with submenu, check if current path matches any submenu item exactly
+            return item.subs.some((sub: NavigationSubItem) => path === sub.path);
+        }
+    };
+
+    // Function to check if a submenu item should be active
+    const isSubmenuItemActive = (subPath: string) => {
+        return path === subPath;
+    };
+
     // Get valid menu labels from navigationItems
     const getValidMenuLabels = () => {
         const validLabels: string[] = [];
@@ -117,7 +145,7 @@ export const Sidebar = () => {
                 {/* Scrollable Menu Area */}
                 <div
                     className={`${isExpanded && "overflow-y-auto no-scrollbar"} 
-                    ${isExpanded && Object.values(openSubmenus).filter(Boolean).length > 1 ? "bg-darkColor/10 dark:bg-lightColor/10 p-1" : ""}
+                    ${isExpanded && Object.values(openSubmenus).filter(Boolean).length > 1 ? "bg-darkColor/10 dark:bg-lightColor/5 p-1" : ""}
                     flex-1 mx-2 my-2 py-2 rounded-secondary duration-300`}
                     style={{ height: "calc(100vh - 180px)" }}
                 >
@@ -139,7 +167,7 @@ export const Sidebar = () => {
                                                 <Link
                                                     href={item.path}
                                                     className={`text-lightColor capitalize font-medium text-xs rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
-                                                                ${path === item.path ? "bg-mainColor/50 dark:bg-secondaryColor/50" : ""} 
+                                                                ${isMenuItemActive(item) ? "bg-mainColor/50 dark:bg-secondaryColor/50" : ""} 
                                                                 ${!isExpanded ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2" : "justify-start py-2 px-3"}`}
                                                 >
                                                     <span className={`${!isExpanded && "text-lg"}`}>
@@ -159,14 +187,17 @@ export const Sidebar = () => {
                                                                 toggleSubmenu(item.label);
                                                             }
                                                         }}
-                                                        className={`${path.startsWith(item.path) && "bg-mainColor/50 dark:bg-secondaryColor/50"} cursor-pointer font-medium text-xs capitalize group rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
+                                                        className={`${isMenuItemActive(item) && "bg-mainColor/50 dark:bg-secondaryColor/50"} cursor-pointer font-medium text-xs capitalize group rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
                                                           ${!isExpanded ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2" : "justify-between py-2 px-3"}`}
                                                     >
                                                         <div className={`flex items-center gap-2 relative text-lightColor`}>
                                                             {item.subs.length > 0 && !isExpanded && (
-                                                                <div className={`${path.startsWith(item.path) && "!h-[3px]"} absolute left-[-8px] w-[3px] h-[3px] group-hover:h-[14px] duration-200 ease-in-out transition-all bg-white rounded-full`}></div>
+                                                                <div className={`${isMenuItemActive(item) && "!h-[3px]"} absolute left-[-8px] w-[3px] h-[3px] group-hover:h-[14px] duration-200 ease-in-out transition-all bg-white rounded-full`}></div>
                                                             )}
-                                                            <span className={`${!isExpanded && "text-lg"}`}>
+                                                            <span className={`${!isExpanded && "text-lg"} relative`}>
+                                                                <div
+                                                                    className={`${item.subs && openSubmenus[item.label] && isExpanded ? "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/20 rounded-full w-5 h-5 pointer-events-none" : ""}`}
+                                                                ></div>
                                                                 {item.icon}
                                                             </span>
                                                             <span className={`${isExpanded ? "block !line-clamp-1" : "hidden"} capitalize text-left`}>{item.label}</span>
@@ -181,14 +212,14 @@ export const Sidebar = () => {
 
                                                     {/* Expanded Mode Submenu */}
                                                     {item.subs && openSubmenus[item.label] && isExpanded && (
-                                                        <ul className="ml-[19px] mt-1 space-y-1 border-l border-neutral-300/50 dark:border-neutral-600">
+                                                        <ul className="ml-[17px] mt-1 space-y-1 border-l border-neutral-300/50 dark:border-neutral-400">
                                                             {item.subs.map((sub, subIdx) => (
                                                                 <li key={subIdx}>
                                                                     <Link
                                                                         href={sub.path}
-                                                                        className="capitalize group ml-2 flex items-center text-[13px] text-neutral-200 dark:text-neutral-300 duration-150"
+                                                                        className="capitalize group ml-1 flex items-center text-[13px] text-neutral-200 dark:text-neutral-300 duration-150"
                                                                     >
-                                                                        <p className={`${path.startsWith(sub.path) && "bg-mainColor/50 dark:bg-mainColor/30 font-semibold text-neutral-300 dark:text-neutral-600"} group-hover:bg-mainColor/20 px-2 py-2 w-full rounded-full duration-150`}>
+                                                                        <p className={`${isSubmenuItemActive(sub.path) && "bg-mainColor/50 dark:bg-secondaryColor/50 font-semibold text-neutral-300 dark:text-neutral-200"} text-xs group-hover:bg-mainColor/20 px-2 py-1.5 w-full rounded-third duration-150`}>
                                                                             {sub.name}
                                                                         </p>
                                                                     </Link>
@@ -209,7 +240,7 @@ export const Sidebar = () => {
                                                                 <li key={subIdx}>
                                                                     <Link
                                                                         href={sub.path}
-                                                                        className={`${path.startsWith(sub.path) && "bg-mainColor/50 dark:bg-mainColor/30"} rounded-lg capitalize group text-neutral-700 dark:text-neutral-200 hover:bg-mainColor/30 transition-colors duration-150`}
+                                                                        className={`${isSubmenuItemActive(sub.path) && "bg-mainColor/50 dark:bg-mainColor/30"} rounded-lg capitalize group text-neutral-700 dark:text-neutral-200 hover:bg-mainColor/30 transition-colors duration-150`}
                                                                     >
                                                                         {sub.name}
                                                                     </Link>
@@ -255,5 +286,5 @@ export const Sidebar = () => {
                 </div>
             </div>
         </section>
-    )
+    );
 };

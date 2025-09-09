@@ -3,13 +3,27 @@
 import { Wrapper } from "@/components/wrapper";
 import Link from "next/link";
 import { BiMessageAltError } from "react-icons/bi";
+import { useSidebar } from "@/app/contexts/sidebar-context";
+import { useEffect, useState } from "react";
 
 export default function NotFound() {
+    const { isExpanded } = useSidebar();
+    const [isClient, setIsClient] = useState(false);
+    
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+    
+    // Fallback untuk SSR - gunakan default collapsed state
+    const sidebarMargin = isClient ? (isExpanded ? "ml-64" : "ml-[79px]") : "ml-[79px]";
+    
     return (
-        <div className="absolute inset-0 z-999">
-            <Wrapper className="ml-2 flex items-center justify-center" withHeader="h-[calc(100vh-1rem)]"
+        <div className="absolute inset-0 z-50">
+            <Wrapper 
+                className={`${sidebarMargin} transition-all duration-300 flex items-center justify-center`} 
+                withHeader="h-[calc(100vh-1rem)]"
             >
-                <div className="text-center text-white p-8 max-w-md mx-auto ">
+                <div className="text-center text-white p-8 max-w-md mx-auto">
                     <div className="mb-8">
                         <p className="flex items-center justify-center text-5xl opacity-30">
                             <BiMessageAltError />
