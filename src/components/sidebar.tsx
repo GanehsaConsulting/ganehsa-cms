@@ -79,7 +79,7 @@ export const Sidebar = () => {
 
     return (
         <section className={`${isExpanded ? "w-64" : "w-[79px]"} ${noNavigation.includes(path) && "hidden"} sticky top-0 h-screen flex transition-all duration-300 z-[100]`}>
-            <div className="relative w-full grow m-2 rounded-main bg-white/20 dark:bg-black/20 border border-lightColor/15 dark:border-darkColor/15 backdrop-blur-2xl flex flex-col">
+            <div className="relative w-full grow m-2 rounded-main bg-lightColor/15 dark:bg-darkColor/40 border border-lightColor/15 dark:border-darkColor/15 backdrop-blur-2xl flex flex-col">
 
                 {/* Header/Logo - Fixed */}
                 <div className="flex-shrink-0 bg-black/20 dark:bg-white/20 duration-300 rounded-secondary py-2 px-2 m-2 mb-0">
@@ -138,8 +138,8 @@ export const Sidebar = () => {
                                                 // Simple menu item without submenu
                                                 <Link
                                                     href={item.path}
-                                                    className={`text-lightColor capitalize font-medium text-xs rounded-full hover:bg-mainColor/50 duration-150 flex items-center gap-2 w-full 
-                                                                ${path === item.path ? "bg-mainColor/30 dark:bg-secondaryColor/50" : ""} 
+                                                    className={`text-lightColor capitalize font-medium text-xs rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
+                                                                ${path === item.path ? "bg-mainColor/50 dark:bg-secondaryColor/50" : ""} 
                                                                 ${!isExpanded ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2" : "justify-start py-2 px-3"}`}
                                                 >
                                                     <span className={`${!isExpanded && "text-lg"}`}>
@@ -159,7 +159,7 @@ export const Sidebar = () => {
                                                                 toggleSubmenu(item.label);
                                                             }
                                                         }}
-                                                        className={`${path.startsWith(item.path) && "bg-mainColor/30 dark:bg-secondaryColor/50"} cursor-pointer font-medium text-xs capitalize group rounded-full hover:bg-mainColor/50 duration-150 flex items-center gap-2 w-full 
+                                                        className={`${path.startsWith(item.path) && "bg-mainColor/50 dark:bg-secondaryColor/50"} cursor-pointer font-medium text-xs capitalize group rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
                                                           ${!isExpanded ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2" : "justify-between py-2 px-3"}`}
                                                     >
                                                         <div className={`flex items-center gap-2 relative text-lightColor`}>
@@ -199,7 +199,7 @@ export const Sidebar = () => {
 
                                                     {/* Minimized Mode Dropdown */}
                                                     {item.subs.length > 0 && !isExpanded && (
-                                                        <ul className=" dropdown-content menu bg-lightColor dark:bg-darkColor rounded-secondary !z-[999] w-56 p-2 shadow-lg border border-neutral-200 dark:border-neutral-700">
+                                                        <ul className=" dropdown-content menu bg-lightColor dark:bg-darkColor rounded-secondary !z-[999] w-56 p-1 shadow-lg border border-neutral-200 dark:border-neutral-700">
                                                             <li className="mb-2">
                                                                 <div className="px-3 py-2 bg-mainColor/20 border border-white/50 dark:border-neutral-500/50 rounded-lg capitalize font-bold text-sm text-darkColor dark:text-lightColor pointer-events-none">
                                                                     {item.label}
