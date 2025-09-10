@@ -2,13 +2,12 @@ import {
   HiHome,
   HiBookOpen,
   HiCamera,
-  HiChatAlt2,
   HiSpeakerphone,
   HiCurrencyDollar,
-  HiQuestionMarkCircle,
   HiCog,
   HiBell,
 } from "react-icons/hi";
+import { HiPhoto } from "react-icons/hi2";
 
 export const navigationItems = {
   menu: {
@@ -21,71 +20,46 @@ export const navigationItems = {
         subs: []
       },
 
-      // --- Mandatory: Articles
       {
-        label: "Article Management",
-        path: "/article-management",
+        label: "Article",
+        path: "/article",
         icon: <HiBookOpen />,
         subs: [
-          { name: "Article List", path: "/article-management" },
-          { name: "Category Article", path: "/article-management/category" }
+          { name: "Article List", path: "/article" },
+          { name: "Category Article", path: "/article/category" }
         ]
       },
 
-      // --- Mandatory: Activities
       {
-        label: "Activity Management",
-        path: "/activity-management",
+        label: "Activity",
+        path: "/activity",
         icon: <HiCamera />,
         subs: [
-          { name: "Activity List", path: "/activity-management/activity-list" },
-          { name: "Category Activity", path: "/activity-management/category" }
+          { name: "Activity List", path: "/activity" },
+          { name: "Category Activity", path: "/activity/category" }
         ]
       },
 
-      // --- Content (supporting)
-      {
-        label: "Content",
-        path: "/content",
-        icon: <HiChatAlt2 />,
-        subs: [
-          { name: "Testimonials & Rating", path: "/content/testimonials" },
-          { name: "Clients", path: "/content/clients" }
-        ]
-      },
-
-      // --- Marketing & Promotion
       {
         label: "Marketing & Promotion",
         path: "/marketing",
         icon: <HiSpeakerphone />,
         subs: [
-          { name: "Promotional Banners", path: "/marketing/banners" },
-          { name: "Popup Management", path: "/marketing/popups" },
-          { name: "Mega Menu Hooks", path: "/marketing/hooks-image" }
+          { name: "Promotional Banners", path: "/marketing" },
+          { name: "Popup Image", path: "/popup" },
         ]
       },
 
-      // --- Business Information
       {
         label: "Business Information",
         path: "/business",
         icon: <HiCurrencyDollar />,
         subs: [
-          { name: "Price List", path: "/business/price-list" },
-          { name: "Downloadables", path: "/business/downloads" }
+          { name: "Price List", path: "/price-list" },
+          { name: "Testimonials & Rating", path: "/testimonials" },
+          { name: "Clients", path: "/clients" },
         ]
       },
-
-      // --- Optional Support
-      {
-        label: "Support",
-        path: "/support",
-        icon: <HiQuestionMarkCircle />,
-        subs: [
-          { name: "FAQ", path: "/support/faq" }
-        ]
-      }
     ]
   },
 
@@ -103,7 +77,14 @@ export const navigationItems = {
         path: "/pemberitahuan",
         icon: <HiBell />,
         subs: []
+      },
+      {
+        label: "Media Library",
+        path: "/media-library",
+        icon: <HiPhoto />,
+        subs: []
       }
     ]
   }
 };
+
