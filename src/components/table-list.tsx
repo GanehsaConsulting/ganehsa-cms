@@ -10,139 +10,102 @@ import {
 import { Button } from "./ui/button";
 import { TiEdit } from "react-icons/ti";
 import { MdDelete } from "react-icons/md";
-import { GrStatusGoodSmall } from "react-icons/gr";
 import clsx from "clsx";
 
-export const TableList = () => {
-  const statusArr = ["draft", "archive", "publish"];
+// Definisi Status & Data Row
+type Status = "draft" | "archive" | "publish";
 
-  const statusStyles: Record<string, string> = {
-    draft: "text-yellow-900 border border-yellow-900 bg-yellow-400/20",
-    archive: "text-blue-900 border border-blue-900 bg-blue-400/20",
-    publish: "text-green-900 border border-green-900 bg-green-400/20",
-  };
+export interface TableRowData {
+  id: number;
+  title: string;
+  category: string;
+  content: string;
+  date: string;
+  status: Status;
+}
 
-  const dataTable = [
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[1],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[0],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-  ];
+// Styles untuk status
+const statusStyles: Record<Status, string> = {
+  draft:
+    "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
+  archive:
+    "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
+  publish:
+    "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
+};
 
+// Definisi Column
+export interface Column<T> {
+  key: keyof T;
+  label: string;
+  className?: string;
+  render?: (row: T) => React.ReactNode;
+}
+
+// Props untuk TableList
+interface TableListProps {
+  columns: Column<TableRowData>[];
+  data: TableRowData[];
+  onEdit: (row: TableRowData) => void;
+  onDelete: (row: TableRowData) => void;
+}
+
+export const TableList: React.FC<TableListProps> = ({
+  columns,
+  data,
+  onEdit,
+  onDelete,
+}) => {
   return (
     <div className="mb-2 rounded-third overflow-hidden h-full flex flex-col">
-      {/* Header tetap */}
+      {/* Header */}
       <Table className="table-fixed w-full">
-        <TableHeader className="bg-mainColor/70 dark:bg-darkColor">
+        <TableHeader className="bg-mainColor/70 dark:bg-secondaryColor/70">
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Content</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Tanggal Upload</TableHead>
+            {columns.map((col) => (
+              <TableHead key={col.key as string}>{col.label}</TableHead>
+            ))}
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
       </Table>
 
-      {/* Body scrollable, fleksibel */}
-      <div className="flex-1 min-h-0 overflow-y-auto ">
+      {/* Body scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <Table className="table-fixed w-full">
           <TableBody>
-            {dataTable.map((e: any, idx: number) => (
+            {data.map((row, idx) => (
               <TableRow
-                key={e.id + idx}
-                className={`w-1/4 ${
+                key={row.id + "-" + idx}
+                className={clsx(
+                  "w-1/4 text-center",
                   idx % 2 !== 0
-                    ? "bg-lightColor/30 dark:bg-darkColor/5"
-                    : "bg-lightColor/50"
-                } ${idx === dataTable.length - 1 ? "!border-b-third" : ""}`}
+                    ? "bg-lightColor/30 dark:bg-darkColor/50"
+                    : "bg-lightColor/50 dark:bg-darkColor/30",
+                  idx === data.length - 1 ? "!border-b-third" : ""
+                )}
               >
-                <TableCell className="font-medium whitespace-normal break-words clamp-1">
-                  {e.title}
-                </TableCell>
-                <TableCell className="whitespace-normal break-words font-bold">
-                  {e.category}
-                </TableCell>
-                <TableCell className="whitespace-normal break-words clamp-1">
-                  {e.content}
-                </TableCell>
-                <TableCell className="whitespace-normal">
-                  <div
-                    className={`flex justify-center items-center rounded-full w-17 gap-2 px-3 font-semibold py-1 ${
-                      statusStyles[e.status]
-                    } `}
+                {columns.map((col) => (
+                  <TableCell
+                    key={col.key as string}
+                    className={col.className ?? ""}
                   >
-                    <span>{e.status}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-normal italic font-semibold">
-                  {e.date}
-                </TableCell>
+                    {col.render
+                      ? col.render(row)
+                      : (row[col.key] as React.ReactNode)}
+                  </TableCell>
+                ))}
                 <TableCell className="text-right">
-                  <Button className="rounded-secondary">
+                  <Button
+                    className="rounded-secondary dark:text-white"
+                    onClick={() => onEdit(row)}
+                  >
                     <TiEdit />
                   </Button>
-                  <Button className="ms-1 bg-red-800 text-white rounded-third">
+                  <Button
+                    className="ms-1 bg-red-800 dark:bg-red-900 text-white rounded-third"
+                    onClick={() => onDelete(row)}
+                  >
                     <MdDelete />
                   </Button>
                 </TableCell>
