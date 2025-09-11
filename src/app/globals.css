@@ -4,6 +4,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* di globals.css */
+.clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+button {
+  @apply cursor-pointer
+}
+
+
 @theme {
   /* Color */
   --color-mainColor: #441752;
