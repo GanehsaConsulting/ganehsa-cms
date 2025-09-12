@@ -3,16 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wrapper } from "@/components/wrapper";
-import {
-  Select,
-  SelectComponent,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectComponent } from "@/components/ui/select";
 import {
   Pagination,
   PaginationContent,
@@ -23,145 +14,138 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
-import { Table } from "@/components/ui/table";
-import { TableList } from "@/components/table-list";
+import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
 
-type Status = "draft" | "archive" | "publish";
-
-// 2. Definisikan struktur data row
-interface TableRowData {
+// Tipe data untuk artikel
+interface Article {
   id: number;
   title: string;
   category: string;
   content: string;
   date: string;
-  status: Status;
+  status: "draft" | "archive" | "publish";
 }
 
-// 3. Styles untuk status
-const statusStyles: Record<Status, string> = {
-  draft:
-    "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
-  archive:
-    "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
-  publish:
-    "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
+// Styles untuk status
+const statusStyles = {
+  draft: "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
+  archive: "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
+  publish: "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
 };
 
-// 4. Definisikan tipe column
-interface Column<T> {
-  key: keyof T;
-  label: string;
-  className?: string;
-  render?: (row: T) => React.ReactNode;
-}
-
-// 5. Definisikan columns
-const columns: Column<TableRowData>[] = [
-  { key: "title", label: "Title", className: "font-medium clamp-1" },
-  { key: "category", label: "Category", className: "font-bold" },
-  { key: "content", label: "Content", className: "clamp-1" },
+// Definisikan columns untuk artikel
+const articleColumns: Column<Article>[] = [
+  { key: "title", label: "Title", className: "font-medium w-[210px]" },
+  { key: "category", label: "Category", className: "font-bold w-[100px]" },
+  { key: "content", label: "Content", className: "w-[220px]" },
   {
     key: "status",
     label: "Status",
+    className: "w-[130px]",
     render: (row) => (
-       <div
-    className={clsx(
-      "inline-flex items-center rounded-full w-fit gap-2 px-3 font-semibold py-1",
-      statusStyles[row.status]
-    )}
-  >
-    <span>{row.status}</span>
-  </div>
+      <div className={clsx(
+        "inline-flex items-center rounded-full gap-2 px-3 font-semibold py-1",
+        statusStyles[row.status]
+      )}>
+        <span>{row.status}</span>
+      </div>
     ),
   },
-  { key: "date", label: "Tanggal Upload", className: "italic font-semibold" },
+  { key: "date", label: "Tanggal Upload", className: "italic font-semibold w-[160px]" },
 ];
 
-export const dataTable: TableRowData[] = [
+// Data contoh
+const articleData: Article[] = [
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+    date: "09-09-2025",
+    status: "draft",
+  },
+  {
+    id: 1,
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    category: "Pajak",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
     status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    category: "Website",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    category: "Pendirian PT",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
     id: 1,
-    title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
     category: "Pajak",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
     date: "09-09-2025",
-    status: "draft",
+    status: "archive",
   },
   {
-    id: 2,
-    title: "Example Article 2",
-    category: "Hukum",
-    content: "Contoh isi artikel kedua.",
-    date: "10-09-2025",
-    status: "publish",
+    id: 1,
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    category: "Pajak",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+    date: "09-09-2025",
+    status: "archive",
+  },
+  {
+    id: 1,
+    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    category: "Pajak",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+    date: "09-09-2025",
+    status: "archive",
   },
 ];
-
 
 export default function ArticlePage() {
   const statusArr = ["All", "Draft", "Archive", "Publish"];
@@ -195,8 +179,8 @@ export default function ArticlePage() {
       {/* TableList */}
       <section className="flex-1 min-h-0">
         <TableList
-          columns={columns}
-          data={dataTable}
+          columns={articleColumns}
+          data={articleData}
           onEdit={(row) => console.log("Edit:", row)}
           onDelete={(row) => console.log("Delete:", row)}
         />
