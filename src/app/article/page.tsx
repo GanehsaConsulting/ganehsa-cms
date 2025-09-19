@@ -1,3 +1,4 @@
+// article page - updated with data passing
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { ActionsDialog } from "@/components/actions-dialog";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // Tipe data untuk artikel
 interface Article {
@@ -67,101 +69,78 @@ const articleColumns: Column<Article>[] = [
   },
 ];
 
-// Data contoh
+// Data contoh - updated dengan id yang berbeda
 const articleData: Article[] = [
   {
     id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    title: "Panduan Lengkap Pajak Penghasilan untuk UKM",
     category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+    content: "Artikel ini membahas secara lengkap tentang pajak penghasilan yang harus dibayar oleh usaha kecil dan menengah...",
     date: "09-09-2025",
     status: "draft",
   },
   {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    id: 2,
+    title: "Cara Optimasi Website untuk SEO",
     category: "Website",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
+    content: "Tips dan trik untuk mengoptimalkan website agar mudah ditemukan di mesin pencari...",
+    date: "08-09-2025",
     status: "archive",
   },
   {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    id: 3,
+    title: "Langkah-langkah Pendirian PT di Indonesia",
     category: "Pendirian PT",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
+    content: "Panduan step by step untuk mendirikan Perseroan Terbatas di Indonesia...",
+    date: "07-09-2025",
+    status: "publish",
   },
   {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
+    id: 4,
+    title: "Memahami Hak Kekayaan Intelektual",
+    category: "HAKI",
+    content: "Penjelasan lengkap tentang berbagai jenis hak kekayaan intelektual dan cara melindunginya...",
+    date: "06-09-2025",
+    status: "publish",
   },
   {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    id: 5,
+    title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
-  },
-  {
-    id: 1,
-    title: "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    category: "Pajak",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-    date: "09-09-2025",
-    status: "archive",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
   },
 ];
 
 export default function ArticlePage() {
   const statusArr = ["All", "Draft", "Archive", "Publish"];
   const pageLength = ["10", "20", "100"];
+  const router = useRouter();
+
+  // Fungsi untuk handle edit dengan passing data
+  const handleEdit = (row: Article) => {
+    // Method 1: Using localStorage (temporary storage)
+    localStorage.setItem('editArticleData', JSON.stringify({
+      id: row.id,
+      judul: row.title,
+      kategori: row.category,
+      konten: row.content,
+      status: row.status,
+      date: row.date
+    }));
+    
+    router.push(`/article/${row.id}/edit`);
+    
+    // Method 2: Using URL params (alternative approach)
+    // const params = new URLSearchParams({
+    //   judul: row.title,
+    //   kategori: row.category,
+    //   konten: row.content,
+    //   status: row.status
+    // });
+    // router.push(`/article/${row.id}/edit?${params.toString()}`);
+  };
 
   return (
     <Wrapper className="flex flex-col h-full">
@@ -194,7 +173,7 @@ export default function ArticlePage() {
         <TableList
           columns={articleColumns}
           data={articleData}
-          onEdit={(row) => console.log("Edit:", row)}
+          onEdit={handleEdit} // ⬅️ Updated: menggunakan handleEdit function
           onDelete={(row) => console.log("Delete:", row)}
         />
       </section>

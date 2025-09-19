@@ -5,8 +5,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@radix-ui/react-radio-group";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { SelectComponent } from "@/components/ui/select"; // ⬅️ import komponen select
+import { SelectComponent } from "@/components/ui/select";
 
 // Import Jodit secara dinamis biar aman dari SSR
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
@@ -23,6 +22,8 @@ interface InputWLabelProps {
   type: "text" | "textarea" | "select";
   placeholder?: string;
   options?: { label: string; value: string }[];
+  value?: string; // ⬅️ controlled value
+  onChange?: (val: string) => void; // ⬅️ handler
 }
 
 export function InputWithLabel({
@@ -31,10 +32,9 @@ export function InputWithLabel({
   type,
   placeholder,
   options,
+  value = "",
+  onChange,
 }: InputWLabelProps) {
-  const [content, setContent] = useState("");
-  const [selected, setSelected] = useState<string>("");
-
   return (
     <div className="grid w-full items-center gap-3">
       <Label className="text-white" htmlFor={id}>
@@ -49,6 +49,8 @@ export function InputWithLabel({
           name={id}
           type="text"
           placeholder={placeholder}
+          value={value} // ⬅️ pakai value
+          onChange={(e) => onChange?.(e.target.value)} // ⬅️ update formData
         />
       )}
 
@@ -56,8 +58,8 @@ export function InputWithLabel({
       {type === "textarea" && (
         <div className="rounded-secondary border bg-lightColor/50 dark:bg-darkColor/50 overflow-hidden">
           <JoditEditor
-            value={content}
-            onBlur={(newContent) => setContent(newContent)}
+            value={value}
+            onBlur={(newContent) => onChange?.(newContent)}
             onChange={() => {}}
             config={{
               readonly: false,
@@ -65,8 +67,7 @@ export function InputWithLabel({
               height: 300,
             }}
           />
-          {/* hidden input supaya value nya ikut formData */}
-          <input type="hidden" name={id} value={content} />
+          <input type="hidden" name={id} value={value} />
         </div>
       )}
 
@@ -74,15 +75,14 @@ export function InputWithLabel({
       {type === "select" &&
         options &&
         (id === "status" ? (
-          // 🔹 Status → radio pill
           <>
             <RadioGroup
-              value={selected}
-              onValueChange={(val) => setSelected(val)}
+              value={value}
+              onValueChange={(val) => onChange?.(val)}
               className="flex gap-1 p-1 bg-darkColor/30 rounded-full w-fit"
             >
               {options.map((opt) => {
-                const isActive = selected === opt.value;
+                const isActive = value === opt.value;
                 return (
                   <Label
                     key={opt.value}
@@ -108,21 +108,18 @@ export function InputWithLabel({
                 );
               })}
             </RadioGroup>
-            {/* hidden input supaya value ikut ke form */}
-            <input type="hidden" name={id} value={selected} />
+            <input type="hidden" name={id} value={value} />
           </>
         ) : (
-          // 🔹 Category → pakai SelectComponent
           <div className="w-full">
             <SelectComponent
               placeholder={placeholder ?? `Pilih ${label}`}
               options={options}
-              value={selected}
-              onChange={(val) => setSelected(val)}
+              value={value}
+              onChange={(val) => onChange?.(val)}
               className="w-full"
             />
-            {/* hidden input supaya value ikut form submit */}
-            <input type="hidden" name={id} value={selected} />
+            <input type="hidden" name={id} value={value} />
           </div>
         ))}
     </div>
