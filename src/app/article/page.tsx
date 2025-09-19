@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,9 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
+import { useState } from "react";
+import { ActionsDialog } from "@/components/actions-dialog";
+import Link from "next/link";
 
 // Tipe data untuk artikel
 interface Article {
@@ -29,9 +32,12 @@ interface Article {
 
 // Styles untuk status
 const statusStyles = {
-  draft: "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
-  archive: "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
-  publish: "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
+  draft:
+    "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
+  archive:
+    "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
+  publish:
+    "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
 };
 
 // Definisikan columns untuk artikel
@@ -44,15 +50,21 @@ const articleColumns: Column<Article>[] = [
     label: "Status",
     className: "w-[130px]",
     render: (row) => (
-      <div className={clsx(
-        "inline-flex items-center rounded-full gap-2 px-3 font-semibold py-1",
-        statusStyles[row.status]
-      )}>
+      <div
+        className={clsx(
+          "inline-flex items-center rounded-full gap-2 px-3 font-semibold py-1",
+          statusStyles[row.status]
+        )}
+      >
         <span>{row.status}</span>
       </div>
     ),
   },
-  { key: "date", label: "Tanggal Upload", className: "italic font-semibold w-[160px]" },
+  {
+    key: "date",
+    label: "Tanggal Upload",
+    className: "italic font-semibold w-[160px]",
+  },
 ];
 
 // Data contoh
@@ -169,10 +181,11 @@ export default function ArticlePage() {
           </div>
         </div>
         <div>
-          <Button>
-            <Plus />
-            Artikel Baru
-          </Button>
+          <Link href="/article/new">
+            <Button>
+              <Plus /> Artikel Baru
+            </Button>
+          </Link>
         </div>
       </section>
 

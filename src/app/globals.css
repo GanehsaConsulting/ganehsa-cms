@@ -16,6 +16,21 @@ button {
   @apply cursor-pointer
 }
 
+/* Glassmorphism untuk Jodit */
+.jodit_container {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Area tulisan */
+.jodit_wysiwyg {
+  background: transparent !important;
+  color: #fff; /* kalau mau white text */
+}
+
 
 @theme {
   /* Color */
