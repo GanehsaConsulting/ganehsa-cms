@@ -17,6 +17,7 @@ import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import { useState } from "react";
 import { DialogComponent } from "@/components/ui/dialog";
+import clsx from "clsx";
 
 // Tipe data untuk kategori
 interface Category {
@@ -24,7 +25,7 @@ interface Category {
   name: string;
   articleCount: number;
   slug: string;
-  highlight?: boolean;
+  highlight: boolean;
   date: string;
 }
 
@@ -33,7 +34,23 @@ const categoryColumns: Column<Category>[] = [
   { key: "name", label: "Name", className: "font-medium w-[130px]" },
   { key: "slug", label: "Slug", className: "italic font-semibold w-[190px]" },
   { key: "date", label: "Date created", className: "font-semibold w-[160px]" },
-  { key: "highlight", label: "Highlight", className: "font-bold w-[150px]" },
+  {
+    key: "highlight",
+    label: "Highlight",
+    className: `font-bold w-[150px] `,
+    render: (row) => (
+      <span
+        className={clsx(
+          "px-2 py-1 rounded-main text-xs font-semibold",
+          row.highlight
+            ? "bg-green-100/70 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+            : "bg-red-100/70 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+        )}
+      >
+        {row.highlight ? "active" : "inactive"}
+      </span>
+    ),
+  },
   {
     key: "articleCount",
     label: "Articles Count",
@@ -53,19 +70,27 @@ const categoryData: Category[] = [
   },
   {
     id: 2,
-    name: "Audit",
-    slug: "/jasa-audit",
-    articleCount: 8,
+    name: "Pajak",
+    slug: "/konsultan-pajak",
+    articleCount: 15,
     highlight: false,
-    date: "20-06-2025",
+    date: "19-06-2025",
   },
   {
-    id: 3,
-    name: "Legal",
-    slug: "/jasa-legal",
-    articleCount: 20,
+    id: 2,
+    name: "Pajak",
+    slug: "/konsultan-pajak",
+    articleCount: 15,
+    highlight: false,
+    date: "19-06-2025",
+  },
+  {
+    id: 2,
+    name: "Pajak",
+    slug: "/konsultan-pajak",
+    articleCount: 15,
     highlight: true,
-    date: "21-06-2025",
+    date: "19-06-2025",
   },
 ];
 
@@ -73,12 +98,13 @@ export default function ArticleCategoryPage() {
   const statusArr = ["All", "Draft", "Archive", "Publish"];
   const pageLength = ["10", "20", "100"];
 
-  const [showModal, setShowModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [newArtikelModal, setNewArtikelModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Category | null>(null);
 
   function handleEdit(row: Category) {
     setSelectedRow(row);
-    setShowModal(true);
+    setEditModal(true);
   }
 
   return (
@@ -99,7 +125,7 @@ export default function ArticleCategoryPage() {
           </div>
         </div>
         <div>
-          <Button>
+          <Button onClick={() => setNewArtikelModal(true)}>
             <Plus />
             Kategori Baru
           </Button>
@@ -152,14 +178,42 @@ export default function ArticleCategoryPage() {
       </section>
 
       {/* modal */}
-      {showModal && selectedRow && (
+      {editModal && selectedRow && (
         <DialogComponent
           title={`Edit kategori: ${selectedRow.name}`}
           desc="Ini akan merubah informasi kategori saat ini"
-          open={showModal}
-          onOpenChange={setShowModal}
-          columns={categoryColumns} // 👈 oper definisi kolom
-          rowData={selectedRow} // 👈 data row yg diklik
+          open={editModal}
+          onOpenChange={setEditModal}
+          columns={categoryColumns}
+          rowData={selectedRow}
+        />
+      )}
+
+      {editModal && selectedRow && (
+        <DialogComponent
+          title={`Edit kategori: ${selectedRow.name}`}
+          desc="Ini akan merubah informasi kategori saat ini"
+          open={editModal}
+          onOpenChange={setEditModal}
+          columns={categoryColumns}
+          rowData={selectedRow}
+          onSubmit={(values) => {
+            console.log("Edit result:", values); // ✅ hasil edit
+          }}
+        />
+      )}
+
+      {newArtikelModal && (
+        <DialogComponent
+          title={`Tambah Kategori`}
+          desc="Tambahkan kategori baru ke dalam list"
+          open={newArtikelModal}
+          onOpenChange={setNewArtikelModal}
+          columns={categoryColumns}
+          rowData={null} // ✅ kosong → mode tambah
+          onSubmit={(values) => {
+            console.log("New category:", values); // ✅ hasil tambah
+          }}
         />
       )}
     </Wrapper>

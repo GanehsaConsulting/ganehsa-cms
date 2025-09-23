@@ -4,10 +4,17 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "./button";
 import { Label } from "./label";
 import { Input } from "./input";
 import { Column } from "@/components/table-list";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "./button";
 
 function Dialog({
   ...props
@@ -138,8 +145,9 @@ interface DialogComponentProps<T> {
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  columns: Column<T>[];   // 👈 biar bisa auto-generate input
-  rowData: T;             // 👈 data dari row yang diklik
+  columns: Column<T>[];
+  rowData?: T | null; // ✅ bisa null kalau tambah baru
+  onSubmit?: (values: Partial<T>) => void;
 }
 
 export function DialogComponent<T extends { id: number | string }>({
@@ -150,7 +158,30 @@ export function DialogComponent<T extends { id: number | string }>({
   onOpenChange,
   columns,
   rowData,
+  onSubmit,
 }: DialogComponentProps<T>) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+    const values: Partial<T> = {} as Partial<T>;
+
+    columns.forEach((col) => {
+      const value = formData.get(col.key as string);
+
+      if (col.key === "highlight") {
+        (values as any)[col.key] = value === "true";
+      } else {
+        (values as any)[col.key] = value || "";
+      }
+    });
+
+    onSubmit?.(values);
+    onOpenChange?.(false);
+  };
+
+  const isEdit = !!rowData;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger}
@@ -160,24 +191,56 @@ export function DialogComponent<T extends { id: number | string }>({
           {desc && <DialogDescription>{desc}</DialogDescription>}
         </DialogHeader>
 
-        {/* Generate form otomatis */}
-        <div className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-4">
           {columns.map((col) => (
             <div className="grid gap-3" key={col.key as string}>
               <Label htmlFor={col.key as string}>{col.label}</Label>
-              <Input
-                id={col.key as string}
-                name={col.key as string}
-                defaultValue={String(rowData[col.key] ?? "")} // 👈 auto isi dari row
-              />
+
+              {col.key === "highlight" ? (
+                <Select
+                  defaultValue={
+                    isEdit ? (rowData?.[col.key] ? "true" : "false") : undefined
+                  }
+                  name={col.key as string}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">True</SelectItem>
+                    <SelectItem value="false">False</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id={col.key as string}
+                  name={col.key as string}
+                  defaultValue={
+                    isEdit ? String(rowData?.[col.key] ?? "") : undefined
+                  }
+                  placeholder={!isEdit ? `Masukkan ${col.label}` : undefined}
+                />
+              )}
             </div>
           ))}
-        </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="cancel"
+              type="button"
+              onClick={() => onOpenChange?.(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="default">
+              {isEdit ? "Save Changes" : "Add Category"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
 }
-
 
 export {
   Dialog,
