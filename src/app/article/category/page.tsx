@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
-import clsx from "clsx";
+import { useState } from "react";
+import { DialogComponent } from "@/components/ui/dialog";
 
 // Tipe data untuk kategori
 interface Category {
@@ -25,22 +26,19 @@ interface Category {
   slug: string;
   highlight?: boolean;
   date: string;
- }
-
-// Styles untuk status
-const statusStyles = {
-  draft: "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
-  archive: "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
-  publish: "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
-};
+}
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "name", label: "Name", className: "font-medium  w-[130px]" },
+  { key: "name", label: "Name", className: "font-medium w-[130px]" },
   { key: "slug", label: "Slug", className: "italic font-semibold w-[190px]" },
-  { key: "date", label: "Date created", className: " font-semibold w-[160px]" },
-  { key: "highlight", label: "highlight", className: "font-bold w-[150px]" },
-  { key: "articleCount", label: "Articles Count", className: "font-bold w-[190px]" },
+  { key: "date", label: "Date created", className: "font-semibold w-[160px]" },
+  { key: "highlight", label: "Highlight", className: "font-bold w-[150px]" },
+  {
+    key: "articleCount",
+    label: "Articles Count",
+    className: "font-bold w-[190px]",
+  },
 ];
 
 // Data contoh
@@ -53,11 +51,35 @@ const categoryData: Category[] = [
     highlight: true,
     date: "19-06-2025",
   },
+  {
+    id: 2,
+    name: "Audit",
+    slug: "/jasa-audit",
+    articleCount: 8,
+    highlight: false,
+    date: "20-06-2025",
+  },
+  {
+    id: 3,
+    name: "Legal",
+    slug: "/jasa-legal",
+    articleCount: 20,
+    highlight: true,
+    date: "21-06-2025",
+  },
 ];
 
 export default function ArticleCategoryPage() {
   const statusArr = ["All", "Draft", "Archive", "Publish"];
   const pageLength = ["10", "20", "100"];
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Category | null>(null);
+
+  function handleEdit(row: Category) {
+    setSelectedRow(row);
+    setShowModal(true);
+  }
 
   return (
     <Wrapper className="flex flex-col h-full">
@@ -89,7 +111,7 @@ export default function ArticleCategoryPage() {
         <TableList
           columns={categoryColumns}
           data={categoryData}
-          onEdit={(row) => console.log("Edit:", row)}
+          onEdit={handleEdit}
           onDelete={(row) => console.log("Delete:", row)}
         />
       </section>
@@ -128,6 +150,18 @@ export default function ArticleCategoryPage() {
           </Pagination>
         </div>
       </section>
+
+      {/* modal */}
+      {showModal && selectedRow && (
+        <DialogComponent
+          title={`Edit kategori: ${selectedRow.name}`}
+          desc="Ini akan merubah informasi kategori saat ini"
+          open={showModal}
+          onOpenChange={setShowModal}
+          columns={categoryColumns} // 👈 oper definisi kolom
+          rowData={selectedRow} // 👈 data row yg diklik
+        />
+      )}
     </Wrapper>
   );
 }

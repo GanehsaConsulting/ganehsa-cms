@@ -28,10 +28,11 @@ export interface Column<T> {
 interface TableListProps<T> {
   columns: Column<T>[];
   data: T[];
-  onEdit: (row: T) => void;
-  onDelete: (row: T) => void;
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
   rowClassName?: string;
   showActions?: boolean;
+  renderActions?: (row: T) => React.ReactNode; // 👈 opsional
 }
 
 export const TableList = <T extends { id: number | string }>({
@@ -41,6 +42,7 @@ export const TableList = <T extends { id: number | string }>({
   onDelete,
   rowClassName = "",
   showActions = true,
+  renderActions,
 }: TableListProps<T>) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [hasScroll, setHasScroll] = useState(false);
@@ -79,7 +81,10 @@ export const TableList = <T extends { id: number | string }>({
       </Table>
 
       {/* Body scrollable */}
-      <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+      <div
+        ref={bodyRef}
+        className="flex-1 min-h-0 overflow-y-auto no-scrollbar"
+      >
         <Table className="table-fixed w-full">
           <TableBody>
             {data.map((row, idx) => {
@@ -90,9 +95,9 @@ export const TableList = <T extends { id: number | string }>({
                   className={clsx(
                     "w-1/4",
                     idx % 2 !== 0
-                    ? "bg-lightColor/50 dark:bg-darkColor/40"
-                    : "bg-lightColor/45 dark:bg-darkColor/30"
-                    ,rowClassName
+                      ? "bg-lightColor/50 dark:bg-darkColor/40"
+                      : "bg-lightColor/45 dark:bg-darkColor/30",
+                    rowClassName
                   )}
                 >
                   {columns.map((col, colIdx) => {
@@ -127,22 +132,28 @@ export const TableList = <T extends { id: number | string }>({
                         isLastRow && !hasScroll ? "rounded-br-secondary" : ""
                       )}
                     >
-                      <Button
-                      size={"icon"}
-                        variant="ghost"
-                        className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
-                        onClick={() => onEdit(row)}
-                      >
-                        <RiEdit2Fill className="!w-5 !h-5" />
-                      </Button>
-                      <Button
-                      size={"icon"}
-                        variant="ghost"
-                        className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
-                        onClick={() => onDelete(row)}
-                      >
-                        <MdDelete className="!w-5 !h-5" />
-                      </Button>
+                      {renderActions ? (
+                        renderActions(row) // 👈 pakai custom kalau ada
+                      ) : (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
+                            onClick={() => onEdit?.(row)}
+                          >
+                            <RiEdit2Fill className="!w-5 !h-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
+                            onClick={() => onDelete?.(row)}
+                          >
+                            <MdDelete className="!w-5 !h-5" />
+                          </Button>
+                        </>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>
