@@ -23,6 +23,7 @@ interface Category {
   name: string;
   articleCount: number;
   slug: string;
+  highlight?: boolean;
   date: string;
  }
 
@@ -35,10 +36,11 @@ const statusStyles = {
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "name", label: "Name", className: "font-medium clamp-1" },
-  { key: "slug", label: "slug", className: "italic font-semibold" },
-  { key: "articleCount", label: "Articles Count", className: "font-bold " },
-  { key: "date", label: "date created", className: " font-semibold" },
+  { key: "name", label: "Name", className: "font-medium  w-[130px]" },
+  { key: "slug", label: "Slug", className: "italic font-semibold w-[190px]" },
+  { key: "date", label: "Date created", className: " font-semibold w-[160px]" },
+  { key: "highlight", label: "highlight", className: "font-bold w-[150px]" },
+  { key: "articleCount", label: "Articles Count", className: "font-bold w-[190px]" },
 ];
 
 // Data contoh
@@ -48,51 +50,9 @@ const categoryData: Category[] = [
     name: "Pajak",
     slug: "/konsultan-pajak",
     articleCount: 15,
+    highlight: true,
     date: "19-06-2025",
   },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  
 ];
 
 export default function ArticleCategoryPage() {

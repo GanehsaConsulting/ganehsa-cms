@@ -35,17 +35,17 @@ interface Article {
 // Styles untuk status
 const statusStyles = {
   draft:
-    "text-yellow-900 dark:text-white/80 border border-yellow-900 bg-yellow-400/20",
+    "text-yellow-900 dark:text-white/80  -yellow-900 bg-yellow-400/20",
   archive:
-    "text-blue-900 dark:text-white/80 border border-blue-900 bg-blue-400/20",
+    "text-blue-900 dark:text-white/80  -blue-900 bg-blue-400/20",
   publish:
-    "text-green-900 dark:text-white/80 border border-green-900 bg-green-400/20",
+    "text-green-900 dark:text-white/80  -green-900 bg-green-400/20",
 };
 
 // Definisikan columns untuk artikel
 const articleColumns: Column<Article>[] = [
-  { key: "title", label: "Title", className: "font-medium w-[210px]" },
-  { key: "category", label: "Category", className: "font-bold w-[100px]" },
+  { key: "title", label: "Title", className: "font-semibold w-[210px]" },
+  { key: "category", label: "Category", className: " w-[100px]" },
   { key: "content", label: "Content", className: "w-[220px]" },
   {
     key: "status",
@@ -65,7 +65,7 @@ const articleColumns: Column<Article>[] = [
   {
     key: "date",
     label: "Tanggal Upload",
-    className: "italic font-semibold w-[160px]",
+    className: " w-[160px]",
   },
 ];
 
@@ -111,6 +111,54 @@ const articleData: Article[] = [
     date: "05-09-2025",
     status: "draft",
   },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
+  {
+    id:6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+  },
 ];
 
 export default function ArticlePage() {
@@ -143,7 +191,7 @@ export default function ArticlePage() {
   };
 
   return (
-    <Wrapper className="flex flex-col h-full">
+    <Wrapper padding="p-5" className="flex flex-col h-full">
       {/* Header Action*/}
       <section className="flex items-center justify-between gap-0 w-full">
         <div className="flex items-center gap-4 w-full">
