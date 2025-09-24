@@ -18,6 +18,7 @@ import { TableList, Column } from "@/components/table-list";
 import { useState } from "react";
 import { DialogComponent } from "@/components/ui/dialog";
 import clsx from "clsx";
+import { IoLink } from "react-icons/io5";
 
 // Tipe data untuk kategori
 interface Category {
@@ -30,16 +31,25 @@ interface Category {
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "id", label: "No", className: "font-medium w-[80]" },
-  { key: "name", label: "Name", className: "font-medium " },
-  { key: "slug", label: "Slug", className: "italic font-semibold " },
-  { key: "date", label: "Date created", className: "font-semibold" },
- 
+  { key: "id", label: "No", className: "font-medium w-[80] text-center" },
+  { key: "name", label: "Name", className: "font-medium text-center" },
+  {
+    key: "slug",
+    label: "Slug",
+    className: "italic text-center",
+    render: (row) => (
+      <div className="flex items-center gap-2 bg-white/20 px-2 py-1 rounded-md w-fit">
+        <IoLink className="text-blue-900" />
+        <span className="font-medium">{row.slug}</span>
+      </div>
+    ),
+  },
   {
     key: "articleCount",
     label: "Articles Count",
-    className: "font-bold w-[190px]",
+    className: "font-bold w-[190px] text-center",
   },
+  { key: "date", label: "Date created", className: "font-semibold text-center" },
 ];
 
 // Data contoh
