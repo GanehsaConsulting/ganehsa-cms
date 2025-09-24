@@ -63,8 +63,8 @@ export const TableList = <T extends { id: number | string }>({
   return (
     <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <div className="bg-lightColor/50 p-2">
-        <Table className="table-fixed w-full bg-white/30 rounded-third">
+      <div className="bg-lightColor/50 dark:bg-darkColor/40 p-2">
+        <Table className="table-fixed w-full bg-white/30 dark:bg-darkColor/30 rounded-third">
           <colgroup>
             {columns.map((col) => (
               <col
