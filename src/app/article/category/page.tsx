@@ -25,32 +25,16 @@ interface Category {
   name: string;
   articleCount: number;
   slug: string;
-  highlight: boolean;
   date: string;
 }
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "name", label: "Name", className: "font-medium w-[130px]" },
-  { key: "slug", label: "Slug", className: "italic font-semibold w-[190px]" },
-  { key: "date", label: "Date created", className: "font-semibold w-[160px]" },
-  {
-    key: "highlight",
-    label: "Highlight",
-    className: `font-bold w-[150px] `,
-    render: (row) => (
-      <span
-        className={clsx(
-          "px-2 py-1 rounded-main text-xs font-semibold",
-          row.highlight
-            ? "bg-green-100/70 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-            : "bg-red-100/70 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-        )}
-      >
-        {row.highlight ? "active" : "inactive"}
-      </span>
-    ),
-  },
+  { key: "id", label: "No", className: "font-medium w-[80]" },
+  { key: "name", label: "Name", className: "font-medium " },
+  { key: "slug", label: "Slug", className: "italic font-semibold " },
+  { key: "date", label: "Date created", className: "font-semibold" },
+ 
   {
     key: "articleCount",
     label: "Articles Count",
@@ -65,7 +49,6 @@ const categoryData: Category[] = [
     name: "Pajak",
     slug: "/konsultan-pajak",
     articleCount: 15,
-    highlight: true,
     date: "19-06-2025",
   },
   {
@@ -73,7 +56,6 @@ const categoryData: Category[] = [
     name: "Pajak",
     slug: "/konsultan-pajak",
     articleCount: 15,
-    highlight: false,
     date: "19-06-2025",
   },
   {
@@ -81,7 +63,6 @@ const categoryData: Category[] = [
     name: "Pajak",
     slug: "/konsultan-pajak",
     articleCount: 15,
-    highlight: false,
     date: "19-06-2025",
   },
   {
@@ -89,7 +70,6 @@ const categoryData: Category[] = [
     name: "Pajak",
     slug: "/konsultan-pajak",
     articleCount: 15,
-    highlight: true,
     date: "19-06-2025",
   },
 ];

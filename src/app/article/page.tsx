@@ -30,27 +30,26 @@ interface Article {
   content: string;
   date: string;
   status: "draft" | "archive" | "publish";
+  highlight?: boolean;
 }
 
 // Styles untuk status
 const statusStyles = {
-  draft:
-    "text-yellow-900 dark:text-white/80  -yellow-900 bg-yellow-400/20",
-  archive:
-    "text-blue-900 dark:text-white/80  -blue-900 bg-blue-400/20",
-  publish:
-    "text-green-900 dark:text-white/80  -green-900 bg-green-400/20",
+  draft: "text-yellow-700 dark:text-white/80  -yellow-700 bg-yellow-200/20",
+  archive: "text-blue-700 dark:text-white/80  -blue-700 bg-blue-200/20",
+  publish: "text-green-700 dark:text-white/80  -green-700 bg-green-200/20",
 };
 
 // Definisikan columns untuk artikel
 const articleColumns: Column<Article>[] = [
-  { key: "title", label: "Title", className: "font-semibold w-[210px]" },
-  { key: "category", label: "Category", className: " w-[100px]" },
-  { key: "content", label: "Content", className: "w-[220px]" },
+  { key: "id", label: "No", className: "font-semibold w-[30]" },
+  { key: "title", label: "Title", className: "font-semibold " },
+  { key: "category", label: "Category", className: "" },
+  { key: "content", label: "Content", className: "" },
   {
     key: "status",
     label: "Status",
-    className: "w-[130px]",
+    className: "",
     render: (row) => (
       <div
         className={clsx(
@@ -65,7 +64,25 @@ const articleColumns: Column<Article>[] = [
   {
     key: "date",
     label: "Tanggal Upload",
-    className: " w-[160px]",
+    className: " ",
+  },
+  {
+    key: "highlight",
+    label: "Highlight",
+    className: "",
+    render: (row) => (
+      <div className="flex items-center gap-2 bg-lightColor/20 px-2 py-1 rounded-md w-fit">
+        <span
+          className={clsx(
+            "h-2 w-2 rounded-full",
+            row.highlight ? "bg-green-600" : "bg-red-700"
+          )}
+        />
+        <span className="font-medium " >
+          {row.highlight ? "Active" : "Inactive"}
+        </span>
+      </div>
+    ),
   },
 ];
 
@@ -75,15 +92,18 @@ const articleData: Article[] = [
     id: 1,
     title: "Panduan Lengkap Pajak Penghasilan untuk UKM",
     category: "Pajak",
-    content: "Artikel ini membahas secara lengkap tentang pajak penghasilan yang harus dibayar oleh usaha kecil dan menengah...",
+    content:
+      "Artikel ini membahas secara lengkap tentang pajak penghasilan yang harus dibayar oleh usaha kecil dan menengah...",
     date: "09-09-2025",
     status: "draft",
+    highlight: true,
   },
   {
     id: 2,
     title: "Cara Optimasi Website untuk SEO",
     category: "Website",
-    content: "Tips dan trik untuk mengoptimalkan website agar mudah ditemukan di mesin pencari...",
+    content:
+      "Tips dan trik untuk mengoptimalkan website agar mudah ditemukan di mesin pencari...",
     date: "08-09-2025",
     status: "archive",
   },
@@ -91,7 +111,8 @@ const articleData: Article[] = [
     id: 3,
     title: "Langkah-langkah Pendirian PT di Indonesia",
     category: "Pendirian PT",
-    content: "Panduan step by step untuk mendirikan Perseroan Terbatas di Indonesia...",
+    content:
+      "Panduan step by step untuk mendirikan Perseroan Terbatas di Indonesia...",
     date: "07-09-2025",
     status: "publish",
   },
@@ -99,63 +120,73 @@ const articleData: Article[] = [
     id: 4,
     title: "Memahami Hak Kekayaan Intelektual",
     category: "HAKI",
-    content: "Penjelasan lengkap tentang berbagai jenis hak kekayaan intelektual dan cara melindunginya...",
+    content:
+      "Penjelasan lengkap tentang berbagai jenis hak kekayaan intelektual dan cara melindunginya...",
     date: "06-09-2025",
     status: "publish",
+    highlight: true,
   },
   {
     id: 5,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    date: "05-09-2025",
+    status: "draft",
+    highlight: true,
+  },
+  {
+    id: 6,
+    title: "Update Regulasi Pajak Terbaru 2025",
+    category: "Pajak",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
   {
-    id:6,
+    id: 6,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
   {
-    id:6,
+    id: 6,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
   {
-    id:6,
+    id: 6,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
   {
-    id:6,
+    id: 6,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
   {
-    id:6,
+    id: 6,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  {
-    id:6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content: "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+    content:
+      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
     date: "05-09-2025",
     status: "draft",
   },
@@ -169,17 +200,20 @@ export default function ArticlePage() {
   // Fungsi untuk handle edit dengan passing data
   const handleEdit = (row: Article) => {
     // Method 1: Using localStorage (temporary storage)
-    localStorage.setItem('editArticleData', JSON.stringify({
-      id: row.id,
-      judul: row.title,
-      kategori: row.category,
-      konten: row.content,
-      status: row.status,
-      date: row.date
-    }));
-    
+    localStorage.setItem(
+      "editArticleData",
+      JSON.stringify({
+        id: row.id,
+        judul: row.title,
+        kategori: row.category,
+        konten: row.content,
+        status: row.status,
+        date: row.date,
+      })
+    );
+
     router.push(`/article/${row.id}/edit`);
-    
+
     // Method 2: Using URL params (alternative approach)
     // const params = new URLSearchParams({
     //   judul: row.title,

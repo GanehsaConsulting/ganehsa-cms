@@ -51,6 +51,15 @@ const articleInputFields: Field[] = [
       { label: "Publish", value: "publish" },
     ],
   },
+  {
+    key: "Highlight",
+    label: "Highlight",
+    type: "select",
+    options: [
+      { label: "active", value: "active" },
+      { label: "inactive", value: "inactive" },
+    ],
+  },
 ];
 
 

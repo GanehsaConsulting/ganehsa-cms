@@ -63,22 +63,33 @@ export const TableList = <T extends { id: number | string }>({
   return (
     <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <Table className="table-fixed w-full">
-        <TableHeader className="bg-lightColor/50 dark:bg-darkColor/40 text-blackColor">
-          <div className="p-2">
-            <div className="bg-white/30 dark:bg-darkColor/30 rounded-third">
-              <TableRow>
-                {columns.map((col) => (
-                  <TableHead className={col.className} key={col.key as string}>
-                    {col.label}
-                  </TableHead>
-                ))}
-                {showActions && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </div>
-          </div>
-        </TableHeader>
-      </Table>
+      <div className="bg-lightColor/50 p-2">
+        <Table className="table-fixed w-full bg-white/30 rounded-third">
+          <colgroup>
+            {columns.map((col) => (
+              <col
+                key={col.key as string}
+                style={{
+                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
+                }}
+              />
+            ))}
+            {showActions && <col style={{ width: "120px" }} />}
+          </colgroup>
+
+          {/* Transparan header supaya div parent rounded terlihat */}
+          <TableHeader className="text-blackColor bg-transparent">
+            <TableRow>
+              {columns.map((col) => (
+                <TableHead key={col.key as string} className={col.className}>
+                  {col.label}
+                </TableHead>
+              ))}
+              {showActions && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+        </Table>
+      </div>
 
       {/* Body scrollable */}
       <div
@@ -86,6 +97,18 @@ export const TableList = <T extends { id: number | string }>({
         className="flex-1 min-h-0 overflow-y-auto no-scrollbar"
       >
         <Table className="table-fixed w-full">
+          <colgroup>
+            {columns.map((col) => (
+              <col
+                key={col.key as string}
+                style={{
+                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
+                }}
+              />
+            ))}
+            {showActions && <col style={{ width: "120px" }} />}
+          </colgroup>
+
           <TableBody>
             {data.map((row, idx) => {
               const isLastRow = idx === data.length - 1;
@@ -93,7 +116,6 @@ export const TableList = <T extends { id: number | string }>({
                 <TableRow
                   key={row.id + "-" + idx}
                   className={clsx(
-                    "w-1/4",
                     idx % 2 !== 0
                       ? "bg-lightColor/50 dark:bg-darkColor/40"
                       : "bg-lightColor/45 dark:bg-darkColor/30",
@@ -108,16 +130,17 @@ export const TableList = <T extends { id: number | string }>({
                         key={col.key as string}
                         className={clsx(
                           col.className ?? "",
-                          isLastRow && isLastCol && !hasScroll ? "" : "",
                           isLastRow && colIdx === 0 && !hasScroll
                             ? "rounded-bl-secondary"
+                            : "",
+                          isLastRow && isLastCol && !showActions && !hasScroll
+                            ? "rounded-br-secondary"
                             : ""
                         )}
                       >
-                        {/* Slice khusus untuk content & title */}
                         {col.key === "content" || col.key === "title"
                           ? typeof row[col.key] === "string"
-                            ? (row[col.key] as string).slice(0, 25) + "..."
+                            ? (row[col.key] as string).slice(0, 13) + "..."
                             : (row[col.key] as React.ReactNode)
                           : col.render
                           ? col.render(row)
@@ -133,7 +156,7 @@ export const TableList = <T extends { id: number | string }>({
                       )}
                     >
                       {renderActions ? (
-                        renderActions(row) // 👈 pakai custom kalau ada
+                        renderActions(row)
                       ) : (
                         <>
                           <Button
