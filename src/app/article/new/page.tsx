@@ -15,6 +15,7 @@ interface Field {
   type: "text" | "textarea" | "select";
   placeholder?: string;
   options?: { label: string; value: string }[];
+  boolean?: boolean;
 }
 
 const tempDataKategori = ["website", "pajak", "HAKI"];
@@ -52,7 +53,7 @@ const articleInputFields: Field[] = [
     ],
   },
   {
-    key: "Highlight",
+    key: "switch",
     label: "Highlight",
     type: "select",
     options: [
@@ -61,7 +62,6 @@ const articleInputFields: Field[] = [
     ],
   },
 ];
-
 
 const NewArticlePage = () => {
   const router = useRouter();
@@ -95,6 +95,8 @@ const NewArticlePage = () => {
             type={field.type as any}
             placeholder={field.placeholder}
             options={field.options}
+            value={formData[field.key] || ""}
+            onChange={(val) => handleChange(field.key, val)}
           />
         ))}
 

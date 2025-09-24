@@ -52,13 +52,22 @@ const articleInputFields: Field[] = [
       { label: "Publish", value: "publish" },
     ],
   },
+  {
+    key: "switch",
+    label: "Highlight",
+    type: "select",
+    options: [
+      { label: "active", value: "active" },
+      { label: "inactive", value: "inactive" },
+    ],
+  },
 ];
 
 const EditArticlePage = () => {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  
+
   // State form dengan default value
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -67,22 +76,22 @@ const EditArticlePage = () => {
     const loadArticleData = () => {
       try {
         // Method 1: Get data from localStorage
-        const storedData = localStorage.getItem('editArticleData');
+        const storedData = localStorage.getItem("editArticleData");
         if (storedData) {
           const articleData = JSON.parse(storedData);
           setFormData(articleData);
           // Clear localStorage after using it
-          localStorage.removeItem('editArticleData');
+          localStorage.removeItem("editArticleData");
           setLoading(false);
           return;
         }
 
         // Method 2: Get data from URL params (fallback)
         const urlData = {
-          judul: searchParams.get('judul') || '',
-          kategori: searchParams.get('kategori') || '',
-          konten: searchParams.get('konten') || '',
-          status: searchParams.get('status') || 'draft'
+          judul: searchParams.get("judul") || "",
+          kategori: searchParams.get("kategori") || "",
+          konten: searchParams.get("konten") || "",
+          status: searchParams.get("status") || "draft",
         };
 
         // Check if URL params exist
@@ -95,9 +104,8 @@ const EditArticlePage = () => {
         // Method 3: Fetch from API (when no data available)
         // This is where you'd normally fetch from your API
         fetchArticleFromAPI();
-        
       } catch (error) {
-        console.error('Error loading article data:', error);
+        console.error("Error loading article data:", error);
         setLoading(false);
       }
     };
@@ -111,19 +119,19 @@ const EditArticlePage = () => {
       // Simulate API call
       // const response = await fetch(`/api/articles/${params.id}`);
       // const articleData = await response.json();
-      
+
       // For demo purposes, using mock data
       const mockData = {
         judul: "Default Article Title",
         kategori: "pajak",
         konten: "Default content here...",
-        status: "draft"
+        status: "draft",
       };
-      
+
       setFormData(mockData);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching article:', error);
+      console.error("Error fetching article:", error);
       setLoading(false);
     }
   };
@@ -172,7 +180,7 @@ const EditArticlePage = () => {
             type={field.type as any}
             placeholder={field.placeholder}
             options={field.options}
-            value={formData[field.key] ?? ""}
+            value={formData[field.key] || ""}
             onChange={(val) => handleChange(field.key, val)}
           />
         ))}
