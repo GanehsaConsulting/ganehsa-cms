@@ -1,4 +1,5 @@
-import React from "react";
+// table list
+import React, { useRef, useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,146 +9,179 @@ import {
   TableRow,
 } from "./ui/table";
 import { Button } from "./ui/button";
-import { TiEdit } from "react-icons/ti";
 import { MdDelete } from "react-icons/md";
-import { GrStatusGoodSmall } from "react-icons/gr";
+import { RiEdit2Fill } from "react-icons/ri";
 import clsx from "clsx";
 
-export const TableList = () => {
-  const statusArr = ["draft", "archive", "publish"];
+// Definisi Status
+export type Status = "draft" | "archive" | "publish";
 
-  const statusStyles: Record<string, string> = {
-    draft: "text-yellow-900 border border-yellow-900 bg-yellow-400/20",
-    archive: "text-blue-900 border border-blue-900 bg-blue-400/20",
-    publish: "text-green-900 border border-green-900 bg-green-400/20",
-  };
+// Definisi Column yang reusable
+export interface Column<T> {
+  key: keyof T;
+  label: string;
+  className?: string;
+  render?: (row: T) => React.ReactNode;
+}
 
-  const dataTable = [
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[1],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[0],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-    {
-      id: 1,
-      title: "vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-      category: "Pajak",
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: "09-09-2025",
-      status: statusArr[2],
-    },
-  ];
+// Props untuk TableList
+interface TableListProps<T> {
+  columns: Column<T>[];
+  data: T[];
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
+  rowClassName?: string;
+  showActions?: boolean;
+  renderActions?: (row: T) => React.ReactNode; // 👈 opsional
+}
+
+export const TableList = <T extends { id: number | string }>({
+  columns,
+  data,
+  onEdit,
+  onDelete,
+  rowClassName = "",
+  showActions = true,
+  renderActions,
+}: TableListProps<T>) => {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [hasScroll, setHasScroll] = useState(false);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const checkScroll = () => {
+      setHasScroll(el.scrollHeight > el.clientHeight);
+    };
+
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [data]);
 
   return (
-    <div className="mb-2 rounded-third overflow-hidden h-full flex flex-col">
-      {/* Header tetap */}
-      <Table className="table-fixed w-full">
-        <TableHeader className="bg-mainColor/70 dark:bg-darkColor">
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Content</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Tanggal Upload</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-      </Table>
-
-      {/* Body scrollable, fleksibel */}
-      <div className="flex-1 min-h-0 overflow-y-auto ">
-        <Table className="table-fixed w-full">
-          <TableBody>
-            {dataTable.map((e: any, idx: number) => (
-              <TableRow
-                key={e.id + idx}
-                className={`w-1/4 ${
-                  idx % 2 !== 0
-                    ? "bg-lightColor/30 dark:bg-darkColor/5"
-                    : "bg-lightColor/50"
-                } ${idx === dataTable.length - 1 ? "!border-b-third" : ""}`}
-              >
-                <TableCell className="font-medium whitespace-normal break-words clamp-1">
-                  {e.title}
-                </TableCell>
-                <TableCell className="whitespace-normal break-words font-bold">
-                  {e.category}
-                </TableCell>
-                <TableCell className="whitespace-normal break-words clamp-1">
-                  {e.content}
-                </TableCell>
-                <TableCell className="whitespace-normal">
-                  <div
-                    className={`flex justify-center items-center rounded-full w-17 gap-2 px-3 font-semibold py-1 ${
-                      statusStyles[e.status]
-                    } `}
-                  >
-                    <span>{e.status}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-normal italic font-semibold">
-                  {e.date}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button className="rounded-secondary">
-                    <TiEdit />
-                  </Button>
-                  <Button className="ms-1 bg-red-800 text-white rounded-third">
-                    <MdDelete />
-                  </Button>
-                </TableCell>
-              </TableRow>
+    <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col">
+      {/* Header */}
+      <div className="bg-lightColor/50 dark:bg-darkColor/40 p-2">
+        <Table className="table-fixed w-full bg-white/30 dark:bg-darkColor/30 rounded-third">
+          <colgroup>
+            {columns.map((col) => (
+              <col
+                key={col.key as string}
+                style={{
+                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
+                }}
+              />
             ))}
+            {showActions && <col style={{ width: "120px" }} />}
+          </colgroup>
+
+          {/* Transparan header supaya div parent rounded terlihat */}
+          <TableHeader className="text-blackColor bg-transparent">
+            <TableRow>
+              {columns.map((col) => (
+                <TableHead key={col.key as string} className={col.className}>
+                  {col.label}
+                </TableHead>
+              ))}
+              {showActions && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+        </Table>
+      </div>
+
+      {/* Body scrollable */}
+      <div
+        ref={bodyRef}
+        className="flex-1 min-h-0 overflow-y-auto no-scrollbar"
+      >
+        <Table className="table-fixed w-full">
+          <colgroup>
+            {columns.map((col) => (
+              <col
+                key={col.key as string}
+                style={{
+                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
+                }}
+              />
+            ))}
+            {showActions && <col style={{ width: "120px" }} />}
+          </colgroup>
+
+          <TableBody>
+            {data.map((row, idx) => {
+              const isLastRow = idx === data.length - 1;
+              return (
+                <TableRow
+                  key={row.id + "-" + idx}
+                  className={clsx(
+                    idx % 2 !== 0
+                      ? "bg-lightColor/50 dark:bg-darkColor/40"
+                      : "bg-lightColor/45 dark:bg-darkColor/30",
+                    rowClassName
+                  )}
+                >
+                  {columns.map((col, colIdx) => {
+                    const isLastCol = colIdx === columns.length - 1;
+
+                    return (
+                      <TableCell
+                        key={col.key as string}
+                        className={clsx(
+                          col.className ?? "",
+                          isLastRow && colIdx === 0 && !hasScroll
+                            ? "rounded-bl-secondary"
+                            : "",
+                          isLastRow && isLastCol && !showActions && !hasScroll
+                            ? "rounded-br-secondary"
+                            : ""
+                        )}
+                      >
+                        {col.key === "content" || col.key === "title"
+                          ? typeof row[col.key] === "string"
+                            ? (row[col.key] as string).slice(0, 13) + "..."
+                            : (row[col.key] as React.ReactNode)
+                          : col.render
+                          ? col.render(row)
+                          : (row[col.key] as React.ReactNode)}
+                      </TableCell>
+                    );
+                  })}
+
+                  {showActions && (
+                    <TableCell
+                      className={clsx(
+                        isLastRow && !hasScroll ? "rounded-br-secondary" : ""
+                      )}
+                    >
+                      {renderActions ? (
+                        renderActions(row)
+                      ) : (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
+                            onClick={() => onEdit?.(row)}
+                          >
+                            <RiEdit2Fill className="!w-5 !h-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
+                            onClick={() => onDelete?.(row)}
+                          >
+                            <MdDelete className="!w-5 !h-5" />
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
