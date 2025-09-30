@@ -6,6 +6,8 @@ import { Sidebar } from "@/components/sidebar";
 import { BackgroundImage } from "@/components/background-image";
 import { SidebarProvider } from "./contexts/sidebar-context";
 import { Header } from "@/components/header";
+import { Toaster } from "sonner";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ProtectedRoutes from "@/components/protected-layout";
 
 const geistSans = Geist({
@@ -34,28 +36,30 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider enableSystem={true} attribute="class">
-          <ProtectedRoutes>
-            <SidebarProvider>
-              <BackgroundImage />
+          {/* <ProtectedRoutes> */}
+              <SidebarProvider>
+                <BackgroundImage />
 
-              {/* Main Layout Container */}
-              <div className="w-full max-h-screen h-screen flex overflow-hidden">
-                {/* Sidebar */}
-                <Sidebar />
+                {/* Main Layout Container */}
+                <div className="w-full max-h-screen h-screen flex overflow-hidden">
+                  {/* Sidebar */}
+                  <Sidebar />
 
-                {/* Right Side: Header + Content */}
-                <div className="flex-1 flex flex-col min-w-0 ">
-                  {/* Header */}
-                  <Header />
+                  {/* Right Side: Header + Content */}
+                  <div className="flex-1 flex flex-col min-w-0 ">
+                    {/* Header */}
+                    <Header />
 
-                  {/* Content Area */}
-                  <main className="flex-1 overflow-hidden">
-                    {children}
-                  </main>
+                    {/* Content Area */}
+                    <main className="flex-1 overflow-hidden">
+                      {children}
+                    </main>
+                    <Toaster position="top-center" richColors />
+                  </div>
                 </div>
-              </div>
-            </SidebarProvider>
-          </ProtectedRoutes>
+              </SidebarProvider>
+
+          {/* </ProtectedRoutes> */}
         </ThemeProvider>
       </body>
     </html>

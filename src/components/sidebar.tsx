@@ -106,7 +106,7 @@ export const Sidebar = () => {
 
 
     return (
-        <section className={`${isExpanded ? "w-64" : "w-[79px]"} ${noNavigation.includes(path) && "hidden"} sticky top-0 h-screen flex transition-all duration-300 z-[100]`}>
+        <section className={`${isExpanded ? "w-64" : "w-[79px]"} ${noNavigation.includes(path) && "hidden"} sticky top-0 h-screen flex transition-all duration-300 z-40`}>
             <div className="relative w-full grow m-2 rounded-main bg-lightColor/15 dark:bg-darkColor/40 border border-lightColor/15 dark:border-darkColor/15 backdrop-blur-2xl flex flex-col">
 
                 {/* Header/Logo - Fixed */}

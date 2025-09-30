@@ -6,8 +6,6 @@ import { RadioGroup, RadioGroupItem } from "@radix-ui/react-radio-group";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
 import { SelectComponent } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { ThemeSwitch } from "../theme-switch";
 import { ToggleSwitch } from "../toogle-switch";
 
 // Import Jodit secara dinamis biar aman dari SSR

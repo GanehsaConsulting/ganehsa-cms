@@ -20,6 +20,35 @@ model User {
   password  String
   role      String   @default("editor") 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles  Article[]
+}
+
+model CategoryArticle {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  articles  Article[]
+}
+
+model Article {
+  id          Int              @id @default(autoincrement())
+  title       String
+  slug        String           @unique
+  excerpt     String?          
+  content     String
+  thumbnail   String?         
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  categoryId  Int
+  category    CategoryArticle  @relation(fields: [categoryId], references: [id])
+
+  authorId    Int
+  author      User             @relation(fields: [authorId], references: [id])
 }
 
 
