@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 "use client";
 
 import { Wrapper } from "@/components/wrapper";
@@ -92,6 +93,7 @@ const NewArticlePage = () => {
             key={field.key}
             id={field.key}
             label={field.label}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type={field.type as any}
             placeholder={field.placeholder}
             options={field.options}
@@ -121,7 +123,7 @@ const NewArticlePage = () => {
                 formData.status ?? "draft"
               }?`}
               continueAction={() => {
-                handleSubmit;
+                handleSubmit
               }}
             >
               <AlertDialogTrigger asChild>

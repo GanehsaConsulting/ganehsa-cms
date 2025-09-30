@@ -146,7 +146,7 @@ const articleData: Article[] = [
     status: "draft",
   },
   {
-    id: 6,
+    id: 7,
     title: "Update Regulasi Pajak Terbaru 2025",
     category: "Pajak",
     content:
@@ -154,42 +154,42 @@ const articleData: Article[] = [
     date: "05-09-2025",
     status: "draft",
   },
-  {
-    id: 6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  {
-    id: 6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  {
-    id: 6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  {
-    id: 6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
+  // {
+  //   id: 8,
+  //   title: "Update Regulasi Pajak Terbaru 2025",
+  //   category: "Pajak",
+  //   content:
+  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+  //   date: "05-09-2025",
+  //   status: "draft",
+  // },
+  // {
+  //   id: 9,
+  //   title: "Update Regulasi Pajak Terbaru 2025",
+  //   category: "Pajak",
+  //   content:
+  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+  //   date: "05-09-2025",
+  //   status: "draft",
+  // },
+  // {
+  //   id: 10,
+  //   title: "Update Regulasi Pajak Terbaru 2025",
+  //   category: "Pajak",
+  //   content:
+  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+  //   date: "05-09-2025",
+  //   status: "draft",
+  // },
+  // {
+  //   id: 11,
+  //   title: "Update Regulasi Pajak Terbaru 2025",
+  //   category: "Pajak",
+  //   content:
+  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
+  //   date: "05-09-2025",
+  //   status: "draft",
+  // },
 ];
 
 export default function ArticlePage() {
@@ -225,12 +225,12 @@ export default function ArticlePage() {
   };
 
   return (
-    <Wrapper padding="p-5" className="flex flex-col h-full">
+    <Wrapper className="flex flex-col">
       {/* Header Action*/}
       <section className="flex items-center justify-between gap-0 w-full">
         <div className="flex items-center gap-4 w-full">
           <div className="flex items-center gap-2">
-            <Input className="w-full" placeholder="Cari judul..." />
+            <Input className="w-100" placeholder="Cari judul..." />
             <Button>Cari</Button>
           </div>
           <div>

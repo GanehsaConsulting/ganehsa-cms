@@ -17,7 +17,6 @@ import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import { useState } from "react";
 import { DialogComponent } from "@/components/ui/dialog";
-import clsx from "clsx";
 import { IoLink } from "react-icons/io5";
 
 // Tipe data untuk kategori
@@ -31,12 +30,12 @@ interface Category {
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "id", label: "No", className: "font-medium w-[80] text-center" },
-  { key: "name", label: "Name", className: "font-medium text-center" },
+  { key: "id", label: "No", className: "font-medium w-[80]" },
+  { key: "name", label: "Name", className: "font-medium" },
   {
     key: "slug",
     label: "Slug",
-    className: "italic text-center",
+    className: "italic",
     render: (row) => (
       <div className="flex items-center gap-2 bg-white/20 px-2 py-1 rounded-md w-fit">
         <IoLink className="text-blue-900" />
@@ -47,9 +46,9 @@ const categoryColumns: Column<Category>[] = [
   {
     key: "articleCount",
     label: "Articles Count",
-    className: "font-bold w-[190px] text-center",
+    className: "font-bold w-[190px]",
   },
-  { key: "date", label: "Date created", className: "font-semibold text-center" },
+  { key: "date", label: "Date created", className: "font-semibold" },
 ];
 
 // Data contoh
@@ -98,12 +97,12 @@ export default function ArticleCategoryPage() {
   }
 
   return (
-    <Wrapper className="flex flex-col h-full">
+    <Wrapper className="flex flex-col">
       {/* Header Action*/}
       <section className="flex items-center justify-between gap-0 w-full">
         <div className="flex items-center gap-4 w-full">
           <div className="flex items-center gap-2">
-            <Input className="w-full" placeholder="Cari kategori..." />
+            <Input className="w-100" placeholder="Cari kategori..." />
             <Button>Cari</Button>
           </div>
           <div>

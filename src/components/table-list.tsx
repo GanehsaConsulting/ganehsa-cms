@@ -63,7 +63,7 @@ export const TableList = <T extends { id: number | string }>({
   return (
     <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <div className="bg-lightColor/50 dark:bg-darkColor/40 p-2">
+      <div className="bg-lightColor/50 dark:bg-darkColor/40 p-1.5">
         <Table className="table-fixed w-full bg-white/30 dark:bg-darkColor/30 rounded-third">
           <colgroup>
             {columns.map((col) => (
@@ -81,8 +81,8 @@ export const TableList = <T extends { id: number | string }>({
           <TableHeader className="text-blackColor bg-transparent">
             <TableRow>
               {columns.map((col) => (
-                <TableHead key={col.key as string} className={col.className}>
-                  {col.label}
+                <TableHead key={col.key as string} className={clsx(col.className)}>
+                    {col.label}
                 </TableHead>
               ))}
               {showActions && <TableHead>Actions</TableHead>}
@@ -128,7 +128,7 @@ export const TableList = <T extends { id: number | string }>({
                     return (
                       <TableCell
                         key={col.key as string}
-                        className={clsx(
+                        className={clsx("",
                           col.className ?? "",
                           isLastRow && colIdx === 0 && !hasScroll
                             ? "rounded-bl-secondary"
@@ -143,8 +143,8 @@ export const TableList = <T extends { id: number | string }>({
                             ? (row[col.key] as string).slice(0, 13) + "..."
                             : (row[col.key] as React.ReactNode)
                           : col.render
-                          ? col.render(row)
-                          : (row[col.key] as React.ReactNode)}
+                            ? col.render(row)
+                            : (row[col.key] as React.ReactNode)}
                       </TableCell>
                     );
                   })}
