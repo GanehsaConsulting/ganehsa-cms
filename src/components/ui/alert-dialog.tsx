@@ -166,7 +166,7 @@ function AlertDialogComponent({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={(e) => continueAction(e as any)} >
+          <AlertDialogAction onClick={(e) => continueAction(e as never)} >
             Continue
           </AlertDialogAction>
         </AlertDialogFooter>

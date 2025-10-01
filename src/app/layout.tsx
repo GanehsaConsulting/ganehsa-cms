@@ -42,12 +42,10 @@ export default function RootLayout({
 
                 {/* Main Layout Container */}
                 <div className="w-full max-h-screen h-screen flex overflow-hidden">
-                  {/* Sidebar */}
                   <Sidebar />
 
                   {/* Right Side: Header + Content */}
                   <div className="flex-1 flex flex-col min-w-0 ">
-                    {/* Header */}
                     <Header />
 
                     {/* Content Area */}
