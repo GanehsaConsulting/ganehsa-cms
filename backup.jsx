@@ -227,3 +227,94 @@ const EditArticlePage = () => {
 };
 
 export default EditArticlePage;
+
+
+<TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + (showActions ? 1 : 0)}
+                  className="text-center py-6 text-muted-foreground"
+                >
+                  No data available
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((row, idx) => {
+                const isLastRow = idx === data.length - 1;
+                return (
+                  <TableRow
+                    key={row.id}
+                    className={clsx(
+                      idx % 2 !== 0
+                        ? "bg-lightColor/50 dark:bg-darkColor/40"
+                        : "bg-lightColor/45 dark:bg-darkColor/30",
+                      rowClassName
+                    )}
+                  >
+                    {columns.map((col, colIdx) => {
+                      const isLastCol = colIdx === columns.length - 1;
+
+                      return (
+                        <TableCell
+                          key={col.key as string}
+                          className={clsx(
+                            col.className ?? "",
+                            isLastRow && colIdx === 0 && !hasScroll
+                              ? "rounded-bl-secondary"
+                              : "",
+                            isLastRow && isLastCol && !showActions && !hasScroll
+                              ? "rounded-br-secondary"
+                              : ""
+                          )}
+                        >
+                          {col.key === "content" ||
+                          col.key === "title" ||
+                          col.key === "excerpt"
+                            ? typeof row[col.key] === "string"
+                              ? truncate(row[col.key] as string, 20)
+                              : (row[col.key] as React.ReactNode)
+                            : col.render
+                            ? col.render(row)
+                            : (row[col.key] as React.ReactNode)}
+                        </TableCell>
+                      );
+                    })}
+
+                    {showActions && (
+                      <TableCell
+                        className={clsx(
+                          isLastRow && !hasScroll ? "rounded-br-secondary" : ""
+                        )}
+                      >
+                        {renderActions ? (
+                          renderActions(row)
+                        ) : (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label="Edit row"
+                              className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
+                              onClick={() => onEdit?.(row)}
+                            >
+                              <RiEdit2Fill className="!w-5 !h-5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label="Delete row"
+                              className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
+                              onClick={() => onDelete?.(row)}
+                            >
+                              <MdDelete className="!w-5 !h-5" />
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>

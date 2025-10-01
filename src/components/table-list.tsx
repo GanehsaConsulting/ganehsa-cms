@@ -35,6 +35,10 @@ interface TableListProps<T> {
   renderActions?: (row: T) => React.ReactNode; // 👈 opsional
 }
 
+// helper truncate
+const truncate = (str: string, max: number) =>
+  str.length > max ? str.slice(0, max) + "..." : str;
+
 export const TableList = <T extends { id: number | string }>({
   columns,
   data,
@@ -60,130 +64,159 @@ export const TableList = <T extends { id: number | string }>({
     return () => window.removeEventListener("resize", checkScroll);
   }, [data]);
 
+  // fungsi buat dapetin width dari className tailwind `w-[100px]`
+  const getWidth = (className?: string) => {
+    const match = className?.match(/w-\[(\d+)px\]/);
+    return match ? `${match[1]}px` : undefined;
+  };
+
   return (
-    <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col">
-      {/* Header */}
-      <div className="bg-lightColor/50 dark:bg-darkColor/40 p-1.5">
-        <Table className="table-fixed w-full bg-white/30 dark:bg-darkColor/30 rounded-third">
-          <colgroup>
-            {columns.map((col) => (
-              <col
-                key={col.key as string}
-                style={{
-                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
-                }}
-              />
-            ))}
-            {showActions && <col style={{ width: "120px" }} />}
-          </colgroup>
+    <div className="mb-2 rounded-secondary overflow-hidden h-full flex flex-col ">
+      {/* wrapper scroll-x satu kesatuan */}
+      <div className="flex-1 min-h-0 overflow-x-auto">
+        <div className="inline-block min-w-full h-full">
+          <div className="relative h-full flex flex-col">
+            {/* Header tetap sticky */}
+            <Table className="table-fixed  w-full bg-white/30 dark:bg-darkColor/30  rounded-third">
+              <colgroup>
+                {columns.map((col) => (
+                  <col
+                    key={col.key as string}
+                    style={{ width: getWidth(col.className) }}
+                  />
+                ))}
+                {showActions && <col style={{ width: "120px" }} />}
+              </colgroup>
 
-          {/* Transparan header supaya div parent rounded terlihat */}
-          <TableHeader className="text-blackColor bg-transparent">
-            <TableRow>
-              {columns.map((col) => (
-                <TableHead key={col.key as string} className={clsx(col.className)}>
-                    {col.label}
-                </TableHead>
-              ))}
-              {showActions && <TableHead>Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-        </Table>
-      </div>
-
-      {/* Body scrollable */}
-      <div
-        ref={bodyRef}
-        className="flex-1 min-h-0 overflow-y-auto no-scrollbar"
-      >
-        <Table className="table-fixed w-full">
-          <colgroup>
-            {columns.map((col) => (
-              <col
-                key={col.key as string}
-                style={{
-                  width: col.className?.match(/w-\[(\d+)px\]/)?.[1] + "px",
-                }}
-              />
-            ))}
-            {showActions && <col style={{ width: "120px" }} />}
-          </colgroup>
-
-          <TableBody>
-            {data.map((row, idx) => {
-              const isLastRow = idx === data.length - 1;
-              return (
-                <TableRow
-                  key={row.id + "-" + idx}
-                  className={clsx(
-                    idx % 2 !== 0
-                      ? "bg-lightColor/50 dark:bg-darkColor/40"
-                      : "bg-lightColor/45 dark:bg-darkColor/30",
-                    rowClassName
-                  )}
-                >
-                  {columns.map((col, colIdx) => {
-                    const isLastCol = colIdx === columns.length - 1;
-
-                    return (
-                      <TableCell
-                        key={col.key as string}
-                        className={clsx("",
-                          col.className ?? "",
-                          isLastRow && colIdx === 0 && !hasScroll
-                            ? "rounded-bl-secondary"
-                            : "",
-                          isLastRow && isLastCol && !showActions && !hasScroll
-                            ? "rounded-br-secondary"
-                            : ""
-                        )}
-                      >
-                        {col.key === "content" || col.key === "title"
-                          ? typeof row[col.key] === "string"
-                            ? (row[col.key] as string).slice(0, 13) + "..."
-                            : (row[col.key] as React.ReactNode)
-                          : col.render
-                            ? col.render(row)
-                            : (row[col.key] as React.ReactNode)}
-                      </TableCell>
-                    );
-                  })}
-
-                  {showActions && (
-                    <TableCell
-                      className={clsx(
-                        isLastRow && !hasScroll ? "rounded-br-secondary" : ""
-                      )}
+              <TableHeader className="sticky top-0 z-10 bg-lightColor/50 dark:bg-darkColor/40">
+                <TableRow>
+                  {columns.map((col) => (
+                    <TableHead
+                      key={col.key as string}
+                      className={clsx(col.className)}
                     >
-                      {renderActions ? (
-                        renderActions(row)
-                      ) : (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
-                            onClick={() => onEdit?.(row)}
-                          >
-                            <RiEdit2Fill className="!w-5 !h-5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
-                            onClick={() => onDelete?.(row)}
-                          >
-                            <MdDelete className="!w-5 !h-5" />
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
-                  )}
+                      {col.label}
+                    </TableHead>
+                  ))}
+                  {showActions && <TableHead>Actions</TableHead>}
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              </TableHeader>
+            </Table>
+
+            {/* Body scroll-y */}
+            <div
+              ref={bodyRef}
+              className="flex-1 min-h-0 overflow-y-auto no-scrollbar"
+            >
+              <Table className="table-fixed w-full">
+                <colgroup>
+                  {columns.map((col) => (
+                    <col
+                      key={col.key as string}
+                      style={{ width: getWidth(col.className) }}
+                    />
+                  ))}
+                  {showActions && <col style={{ width: "120px" }} />}
+                </colgroup>
+
+                <TableBody>
+                  {data.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length + (showActions ? 1 : 0)}
+                        className="text-center py-6 text-muted-foreground"
+                      >
+                        No data available
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((row, idx) => {
+                      const isLastRow = idx === data.length - 1;
+                      return (
+                        <TableRow
+                          key={row.id}
+                          className={clsx(
+                            idx % 2 !== 0
+                              ? "bg-lightColor/50 dark:bg-darkColor/40"
+                              : "bg-lightColor/45 dark:bg-darkColor/30",
+                            rowClassName
+                          )}
+                        >
+                          {columns.map((col, colIdx) => {
+                            const isLastCol = colIdx === columns.length - 1;
+
+                            return (
+                              <TableCell
+                                key={col.key as string}
+                                className={clsx(
+                                  col.className ?? "",
+                                  isLastRow && colIdx === 0 && !hasScroll
+                                    ? "rounded-bl-secondary"
+                                    : "",
+                                  isLastRow &&
+                                    isLastCol &&
+                                    !showActions &&
+                                    !hasScroll
+                                    ? "rounded-br-secondary"
+                                    : ""
+                                )}
+                              >
+                                {col.key === "content" ||
+                                col.key === "title" ||
+                                col.key === "excerpt"
+                                  ? typeof row[col.key] === "string"
+                                    ? truncate(row[col.key] as string, 20)
+                                    : (row[col.key] as React.ReactNode)
+                                  : col.render
+                                  ? col.render(row)
+                                  : (row[col.key] as React.ReactNode)}
+                              </TableCell>
+                            );
+                          })}
+
+                          {showActions && (
+                            <TableCell
+                              className={clsx(
+                                isLastRow && !hasScroll
+                                  ? "rounded-br-secondary"
+                                  : ""
+                              )}
+                            >
+                              {renderActions ? (
+                                renderActions(row)
+                              ) : (
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label="Edit row"
+                                    className="bg-transparent text-muted-foreground rounded-secondary dark:text-white"
+                                    onClick={() => onEdit?.(row)}
+                                  >
+                                    <RiEdit2Fill className="!w-5 !h-5" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label="Delete row"
+                                    className="bg-transparent ms-1 text-red-800 dark:text-red-300 rounded-third"
+                                    onClick={() => onDelete?.(row)}
+                                  >
+                                    <MdDelete className="!w-5 !h-5" />
+                                  </Button>
+                                </>
+                              )}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
