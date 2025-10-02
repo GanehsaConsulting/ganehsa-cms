@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -10,10 +10,10 @@ async function main() {
     where: { email: "admin@cms.com" },
     update: {},
     create: {
-      name: "admin",
+      name: "Admin",
       email: "admin@cms.com",
       password: hashedPassword,
-      role: "SUPER ADMIN",
+      role: Role.SUPER_ADMIN,
     },
   })
 
