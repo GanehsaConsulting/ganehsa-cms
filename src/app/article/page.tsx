@@ -1,4 +1,3 @@
-// article page - updated with data passing
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -17,15 +16,15 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useState } from "react";
-import { ActionsDialog } from "@/components/actions-dialog";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // Tipe data untuk artikel
 interface Article {
   id: number;
   title: string;
+  slug: string;
+  excerpt?: string;
   category: string;
   content: string;
   date: string;
@@ -35,21 +34,28 @@ interface Article {
 
 // Styles untuk status
 const statusStyles = {
-  draft: "text-yellow-700 dark:text-white/80  -yellow-700 bg-yellow-200/20",
-  archive: "text-blue-700 dark:text-white/80  -blue-700 bg-blue-200/20",
-  publish: "text-green-700 dark:text-white/80  -green-700 bg-green-200/20",
+  draft: "text-yellow-700 dark:text-white/80 bg-yellow-200/20",
+  archive: "text-blue-700 dark:text-white/80 bg-blue-200/20",
+  publish: "text-green-700 dark:text-white/80 bg-green-200/20",
 };
 
-// Definisikan columns untuk artikel
+// Kolom table
 const articleColumns: Column<Article>[] = [
-  { key: "id", label: "No", className: "font-semibold w-[30]" },
-  { key: "title", label: "Title", className: "font-semibold " },
-  { key: "category", label: "Category", className: "" },
-  { key: "content", label: "Content", className: "" },
+  { key: "id", label: "No", className: "font-semibold w-[40px]" },
+  { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
+  { key: "slug", label: "Slug", className: "min-w-[190px] ", 
+    render: (row) => (
+      <div className="bg-white/20 w-fit px-2 py-1 rounded-md font-semibold italic" >
+        /{row.slug}
+      </div>
+    )
+   },
+  { key: "category", label: "Category", className: "min-w-[120px]" },
+  { key: "excerpt", label: "Excerpt", className: "min-w-[200px]" },
   {
     key: "status",
     label: "Status",
-    className: "",
+    className: "min-w-[120px]",
     render: (row) => (
       <div
         className={clsx(
@@ -62,14 +68,9 @@ const articleColumns: Column<Article>[] = [
     ),
   },
   {
-    key: "date",
-    label: "Tanggal Upload",
-    className: " ",
-  },
-  {
     key: "highlight",
     label: "Highlight",
-    className: "",
+    className: "min-w-[120px]",
     render: (row) => (
       <div className="flex items-center gap-2 bg-lightColor/20 px-2 py-1 rounded-md w-fit">
         <span
@@ -78,22 +79,24 @@ const articleColumns: Column<Article>[] = [
             row.highlight ? "bg-green-600" : "bg-red-700"
           )}
         />
-        <span className="font-medium " >
+        <span className="font-medium">
           {row.highlight ? "Active" : "Inactive"}
         </span>
       </div>
     ),
   },
+  { key: "date", label: "Tanggal Upload", className: "min-w-[140px]" },
 ];
 
-// Data contoh - updated dengan id yang berbeda
+// Data contoh
 const articleData: Article[] = [
   {
     id: 1,
     title: "Panduan Lengkap Pajak Penghasilan untuk UKM",
+    slug: "panduan-pajak-ukm",
+    excerpt: "Artikel ini membahas pajak penghasilan UKM secara lengkap...",
     category: "Pajak",
-    content:
-      "Artikel ini membahas secara lengkap tentang pajak penghasilan yang harus dibayar oleh usaha kecil dan menengah...",
+    content: "Full content pajak...",
     date: "09-09-2025",
     status: "draft",
     highlight: true,
@@ -101,95 +104,23 @@ const articleData: Article[] = [
   {
     id: 2,
     title: "Cara Optimasi Website untuk SEO",
+    slug: "optimasi-website-seo",
+    excerpt: "Tips mengoptimalkan website agar ditemukan di mesin pencari...",
     category: "Website",
-    content:
-      "Tips dan trik untuk mengoptimalkan website agar mudah ditemukan di mesin pencari...",
+    content: "Full content SEO...",
     date: "08-09-2025",
     status: "archive",
   },
   {
     id: 3,
     title: "Langkah-langkah Pendirian PT di Indonesia",
+    slug: "pendirian-pt",
+    excerpt: "Panduan step by step untuk mendirikan Perseroan Terbatas...",
     category: "Pendirian PT",
-    content:
-      "Panduan step by step untuk mendirikan Perseroan Terbatas di Indonesia...",
+    content: "Full content PT...",
     date: "07-09-2025",
     status: "publish",
   },
-  {
-    id: 4,
-    title: "Memahami Hak Kekayaan Intelektual",
-    category: "HAKI",
-    content:
-      "Penjelasan lengkap tentang berbagai jenis hak kekayaan intelektual dan cara melindunginya...",
-    date: "06-09-2025",
-    status: "publish",
-    highlight: true,
-  },
-  {
-    id: 5,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-    highlight: true,
-  },
-  {
-    id: 6,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  {
-    id: 7,
-    title: "Update Regulasi Pajak Terbaru 2025",
-    category: "Pajak",
-    content:
-      "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-    date: "05-09-2025",
-    status: "draft",
-  },
-  // {
-  //   id: 8,
-  //   title: "Update Regulasi Pajak Terbaru 2025",
-  //   category: "Pajak",
-  //   content:
-  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-  //   date: "05-09-2025",
-  //   status: "draft",
-  // },
-  // {
-  //   id: 9,
-  //   title: "Update Regulasi Pajak Terbaru 2025",
-  //   category: "Pajak",
-  //   content:
-  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-  //   date: "05-09-2025",
-  //   status: "draft",
-  // },
-  // {
-  //   id: 10,
-  //   title: "Update Regulasi Pajak Terbaru 2025",
-  //   category: "Pajak",
-  //   content:
-  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-  //   date: "05-09-2025",
-  //   status: "draft",
-  // },
-  // {
-  //   id: 11,
-  //   title: "Update Regulasi Pajak Terbaru 2025",
-  //   category: "Pajak",
-  //   content:
-  //     "Informasi terkini tentang perubahan regulasi pajak yang berlaku di tahun 2025...",
-  //   date: "05-09-2025",
-  //   status: "draft",
-  // },
 ];
 
 export default function ArticlePage() {
@@ -197,9 +128,8 @@ export default function ArticlePage() {
   const pageLength = ["10", "20", "100"];
   const router = useRouter();
 
-  // Fungsi untuk handle edit dengan passing data
+  // Handle edit
   const handleEdit = (row: Article) => {
-    // Method 1: Using localStorage (temporary storage)
     localStorage.setItem(
       "editArticleData",
       JSON.stringify({
@@ -209,25 +139,18 @@ export default function ArticlePage() {
         konten: row.content,
         status: row.status,
         date: row.date,
+        slug: row.slug,
+        excerpt: row.excerpt,
+        highlight: row.highlight,
       })
     );
-
     router.push(`/article/${row.id}/edit`);
-
-    // Method 2: Using URL params (alternative approach)
-    // const params = new URLSearchParams({
-    //   judul: row.title,
-    //   kategori: row.category,
-    //   konten: row.content,
-    //   status: row.status
-    // });
-    // router.push(`/article/${row.id}/edit?${params.toString()}`);
   };
 
   return (
     <Wrapper className="flex flex-col">
-      {/* Header Action*/}
-      <section className="flex items-center justify-between gap-0 w-full">
+      {/* Header Action */}
+      <section className="flex items-center justify-between gap-0 w-full mb-4">
         <div className="flex items-center gap-4 w-full">
           <div className="flex items-center gap-2">
             <Input className="w-100" placeholder="Cari judul..." />
@@ -250,18 +173,18 @@ export default function ArticlePage() {
         </div>
       </section>
 
-      {/* TableList */}
-      <section className="flex-1 min-h-0">
+      {/* TableList with scroll */}
+      <section className="flex-1 min-h-0 ">
         <TableList
           columns={articleColumns}
           data={articleData}
-          onEdit={handleEdit} // ⬅️ Updated: menggunakan handleEdit function
+          onEdit={handleEdit}
           onDelete={(row) => console.log("Delete:", row)}
         />
       </section>
 
       {/* Pagination */}
-      <section className="flex items-center justify-between">
+      <section className="flex items-center justify-between mt-4">
         <SelectComponent
           label="Data Per Halaman"
           placeholder="Data Per Halaman"
