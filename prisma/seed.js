@@ -10,7 +10,7 @@ async function main() {
     where: { email: "admin@cms.com" },
     update: {},
     create: {
-      name: "Rafly",
+      name: "admin",
       email: "admin@cms.com",
       password: hashedPassword,
       role: "SUPER ADMIN",
@@ -27,3 +27,7 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
+
+
+// npx prisma db push
+// npx prisma db seed
