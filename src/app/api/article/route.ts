@@ -7,14 +7,7 @@ const prisma = new PrismaClient();
 // GET SEMUA ARTIKEL
 export async function GET(req: Request) {
   try {
-    // 🔒 ambil token dari cookie
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
-
-    const user = verifyAuth(token);
+    const user = verifyAuth(req);
 
     if (!user) {
       return NextResponse.json(
@@ -26,14 +19,16 @@ export async function GET(req: Request) {
     // 📂 ambil semua artikel + relasi author & category
     const articlesData = await prisma.article.findMany({
       include: {
-        author: {   // relasi user
+        author: {
+          // relasi user
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        category: { // relasi category
+        category: {
+          // relasi category
           select: {
             id: true,
             name: true,
@@ -68,18 +63,17 @@ export async function GET(req: Request) {
   }
 }
 
-
 // TAMBAH ARTIKEL
 export async function POST(req: Request) {
   try {
-    // 🔒 ambil token dari cookie
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
+    const user = verifyAuth(req);
 
-    const user = verifyAuth(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized", data: [] },
+        { status: 401 }
+      );
+    }
 
     if (!user) {
       return NextResponse.json(

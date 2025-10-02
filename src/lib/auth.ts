@@ -1,12 +1,25 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
-export function verifyAuth(token?: string) {
-    if (!token) return null
+export interface DecodedUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export function verifyAuth(req: Request): DecodedUser | null {
+  const authHeader = req.headers.get("authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.split(" ")[1]; // ambil token dari "Bearer <token>"
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string)
-    return decoded as { id: string; email: string; name: string; role: string }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    return decoded as DecodedUser;
   } catch (err) {
-    return null
+    return null;
   }
 }

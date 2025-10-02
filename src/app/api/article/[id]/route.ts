@@ -5,17 +5,18 @@ import { verifyAuth } from "@/lib/auth";
 const prisma = new PrismaClient();
 
 // EDIT ARTIKEL
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
+    const user = verifyAuth(req);
 
-    const user = verifyAuth(token);
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized", data: [] },
+        { status: 401 }
+      );
     }
 
     const articleId = Number(params.id);
@@ -42,24 +43,27 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE ARTIKEL
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
+    const user = verifyAuth(req);
 
-    const user = verifyAuth(token);
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized", data: [] },
+        { status: 401 }
+      );
     }
-
     const articleId = Number(params.id);
 
     await prisma.article.delete({
@@ -72,6 +76,9 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

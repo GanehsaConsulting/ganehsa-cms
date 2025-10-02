@@ -7,14 +7,7 @@ const prisma = new PrismaClient();
 // GET ALL CATEGORIES
 export async function GET(req: Request) {
   try {
-    // 🔒 ambil token dari cookie
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
-
-    const user = verifyAuth(token);
+   const user = verifyAuth(req)
 
     if (!user) {
       return NextResponse.json(
@@ -48,14 +41,7 @@ export async function GET(req: Request) {
 // ADD NEW CATEGORY
 export async function POST(req: Request) {
   try {
-    // 🔒 ambil token dari cookie
-    const cookie = req.headers.get("cookie") || "";
-    const token = cookie
-      .split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
-
-    const user = verifyAuth(token);
+    const user = verifyAuth(req);
 
     if (!user) {
       return NextResponse.json(
