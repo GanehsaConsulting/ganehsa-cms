@@ -28,8 +28,8 @@ export const Sidebar = () => {
   const path = usePathname();
   const noNavigation = ["/login", "/forgot-password", "/reset-password"];
   const [currentUser, setCurrentUser] = useState<UserLoggedIn>();
-  const token = localStorage.getItem("token");
   const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (!token) return;
@@ -38,7 +38,7 @@ export const Sidebar = () => {
       setLoading(true);
 
       try {
-        const res = await fetch("http://localhost:3000/api/auth/whoAmI", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/whoAmI`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

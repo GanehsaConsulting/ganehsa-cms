@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DialogComponent } from "@/components/ui/dialog";
 import { IoLink } from "react-icons/io5";
+import { toast } from "sonner";
 
 // Tipe data untuk kategori
 interface Category {
@@ -90,11 +91,42 @@ export default function ArticleCategoryPage() {
   const [editModal, setEditModal] = useState(false);
   const [newArtikelModal, setNewArtikelModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Category | null>(null);
+  const [dataCategories, setDataCategories] = useState<Category[]>([]);
+  const token = localStorage.getItem("token");
 
   function handleEdit(row: Category) {
     setSelectedRow(row);
     setEditModal(true);
   }
+
+  useEffect(() => {
+    if (!token) return;
+
+    async function fetchDataCategory() {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const data = await res.json();
+        if (data) {
+          setDataCategories(data.data);
+        }
+      } catch (err) {
+        const errMessage = err instanceof Error ? err.message : "unknown errors"
+        console.log(errMessage);
+        toast.error(errMessage)
+        
+      }
+    }
+    fetchDataCategory();
+  }, []);
 
   return (
     <Wrapper className="flex flex-col">
@@ -125,7 +157,7 @@ export default function ArticleCategoryPage() {
       <section className="flex-1 min-h-0">
         <TableList
           columns={categoryColumns}
-          data={categoryData}
+          data={dataCategories}
           onEdit={handleEdit}
           onDelete={(row) => console.log("Delete:", row)}
         />
@@ -208,3 +240,5 @@ export default function ArticleCategoryPage() {
     </Wrapper>
   );
 }
+
+// adjust sekarang dari endpoint http://localhost:3000/api/article/category pakai token dari localstorage
