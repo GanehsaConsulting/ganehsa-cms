@@ -1,43 +1,33 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { XIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Label } from "./label";
-import { Input } from "./input";
-import { Column } from "@/components/table-list";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "./button";
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { XIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
 
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
 function DialogOverlay({
@@ -53,7 +43,7 @@ function DialogOverlay({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function DialogContent({
@@ -62,7 +52,7 @@ function DialogContent({
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean;
+  showCloseButton?: boolean
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -87,7 +77,7 @@ function DialogContent({
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
-  );
+  )
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -97,7 +87,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
-  );
+  )
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -110,7 +100,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function DialogTitle({
@@ -123,7 +113,7 @@ function DialogTitle({
       className={cn("text-lg leading-none font-semibold", className)}
       {...props}
     />
-  );
+  )
 }
 
 function DialogDescription({
@@ -136,110 +126,7 @@ function DialogDescription({
       className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
-  );
-}
-
-interface DialogComponentProps<T> {
-  title: string;
-  desc?: string;
-  trigger?: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  columns: Column<T>[];
-  rowData?: T | null; // ✅ bisa null kalau tambah baru
-  onSubmit?: (values: Partial<T>) => void;
-}
-
-export function DialogComponent<T extends { id: number | string }>({
-  title,
-  desc,
-  trigger,
-  open,
-  onOpenChange,
-  columns,
-  rowData,
-  onSubmit,
-}: DialogComponentProps<T>) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.currentTarget);
-    const values: Partial<T> = {} as Partial<T>;
-
-    columns.forEach((col) => {
-      const value = formData.get(col.key as string);
-
-      if (col.key === "highlight") {
-        (values as any)[col.key] = value === "true";
-      } else {
-        (values as any)[col.key] = value || "";
-      }
-    });
-
-    onSubmit?.(values);
-    onOpenChange?.(false);
-  };
-
-  const isEdit = !!rowData;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {desc && <DialogDescription>{desc}</DialogDescription>}
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          {columns.map((col) => (
-            <div className="grid gap-3" key={col.key as string}>
-              <Label htmlFor={col.key as string}>{col.label}</Label>
-
-              {col.key === "highlight" ? (
-                <Select
-                  defaultValue={
-                    isEdit ? (rowData?.[col.key] ? "true" : "false") : undefined
-                  }
-                  name={col.key as string}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">True</SelectItem>
-                    <SelectItem value="false">False</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id={col.key as string}
-                  name={col.key as string}
-                  defaultValue={
-                    isEdit ? String(rowData?.[col.key] ?? "") : undefined
-                  }
-                  placeholder={!isEdit ? `Masukkan ${col.label}` : undefined}
-                />
-              )}
-            </div>
-          ))}
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="cancel"
-              type="button"
-              onClick={() => onOpenChange?.(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" variant="default">
-              {isEdit ? "Save Changes" : "Add Category"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+  )
 }
 
 export {
@@ -253,4 +140,4 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-};
+}

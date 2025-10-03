@@ -36,7 +36,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider enableSystem={true} attribute="class">
-          <ProtectedRoutes>
+          {/* <ProtectedRoutes> */}
               <SidebarProvider>
                 <BackgroundImage />
 
@@ -57,7 +57,7 @@ export default function RootLayout({
                 </div>
               </SidebarProvider>
 
-          </ProtectedRoutes>
+          {/* </ProtectedRoutes> */}
         </ThemeProvider>
       </body>
     </html>
