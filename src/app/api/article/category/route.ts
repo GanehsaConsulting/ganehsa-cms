@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
     // 📂 ambil semua kategori + hitung jumlah article
     const categories = await prisma.categoryArticle.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" }, // 👈 urut dari paling lama
       include: {
         _count: {
           select: { articles: true }, // "articles" = nama relasi di schema Prisma

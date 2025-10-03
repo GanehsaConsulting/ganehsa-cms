@@ -16,9 +16,10 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import { useEffect, useState } from "react";
-import { DialogComponent } from "@/components/ui/dialog";
 import { IoLink } from "react-icons/io5";
 import { toast } from "sonner";
+import { DialogInput } from "@/components/dialog-input";
+import { TableSkeleton } from "@/components/skeletons/table-list";
 
 // Tipe data untuk kategori
 interface Category {
@@ -52,36 +53,9 @@ const categoryColumns: Column<Category>[] = [
   { key: "date", label: "Date created", className: "font-semibold" },
 ];
 
-// Data contoh
-const categoryData: Category[] = [
-  {
-    id: 1,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 2,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 2,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
-  {
-    id: 2,
-    name: "Pajak",
-    slug: "/konsultan-pajak",
-    articleCount: 15,
-    date: "19-06-2025",
-  },
+export const formCategoryColumns: Column<Category>[] = [
+  { key: "name", label: "Name" },
+  { key: "slug", label: "Slug" },
 ];
 
 export default function ArticleCategoryPage() {
@@ -92,45 +66,117 @@ export default function ArticleCategoryPage() {
   const [newArtikelModal, setNewArtikelModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Category | null>(null);
   const [dataCategories, setDataCategories] = useState<Category[]>([]);
-  const token = localStorage.getItem("token");
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleEdit(row: Category) {
-    setSelectedRow(row);
-    setEditModal(true);
+  // 📌 Fetch kategori dari API
+  async function fetchDataCategory() {
+    if (!token) return;
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      if (data) setDataCategories(data.data);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : "unknown errors";
+      console.log(errMessage);
+      toast.error(errMessage);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
-    if (!token) return;
-
-    async function fetchDataCategory() {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const data = await res.json();
-        if (data) {
-          setDataCategories(data.data);
-        }
-      } catch (err) {
-        const errMessage = err instanceof Error ? err.message : "unknown errors"
-        console.log(errMessage);
-        toast.error(errMessage)
-        
-      }
-    }
     fetchDataCategory();
   }, []);
 
+  // ➕ Tambah kategori
+  async function handleNewCategory(values: Partial<Category>) {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to add category");
+
+      toast.success("Kategori berhasil ditambahkan!");
+      fetchDataCategory();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "unknown errors");
+    }
+  }
+
+  // ✏️ Edit kategori
+  async function handleUpdateCategory(values: Partial<Category>) {
+    if (!selectedRow) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${selectedRow.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update category");
+
+      toast.success("Kategori berhasil diupdate!");
+      fetchDataCategory();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "unknown errors");
+    }
+  }
+
+  // 🗑️ Hapus kategori
+  async function handleDeleteCategory(row: Category) {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${row.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to delete category");
+
+      toast.success("Kategori berhasil dihapus!");
+      fetchDataCategory();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "unknown errors");
+    }
+  }
+
   return (
     <Wrapper className="flex flex-col">
-      {/* Header Action*/}
+      {/* Header Action */}
       <section className="flex items-center justify-between gap-0 w-full">
         <div className="flex items-center gap-4 w-full">
           <div className="flex items-center gap-2">
@@ -155,90 +201,56 @@ export default function ArticleCategoryPage() {
 
       {/* TableList */}
       <section className="flex-1 min-h-0">
-        <TableList
-          columns={categoryColumns}
-          data={dataCategories}
-          onEdit={handleEdit}
-          onDelete={(row) => console.log("Delete:", row)}
-        />
+        {isLoading ? (
+          <TableSkeleton columns={4} rows={4} showActions={true} />
+        ) : (
+          <TableList
+            columns={categoryColumns}
+            data={dataCategories}
+            onEdit={(row) => {
+              setSelectedRow(row);
+              setEditModal(true);
+            }}
+            onDelete={handleDeleteCategory} // 🔥 integrasi delete
+          />
+        )}
       </section>
 
-      {/* Pagination */}
+      {/* Pagination (dummy) */}
       <section className="flex items-center justify-between">
         <SelectComponent
           label="Data Per Halaman"
           placeholder="Data Per Halaman"
           options={pageLength.map((s) => ({ label: s, value: s }))}
         />
-        <div className="text-white">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  2
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">3</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <div className="text-white"> ...pagination component... </div>
       </section>
 
-      {/* modal */}
+      {/* Edit Modal */}
       {editModal && selectedRow && (
-        <DialogComponent
+        <DialogInput
           title={`Edit kategori: ${selectedRow.name}`}
           desc="Ini akan merubah informasi kategori saat ini"
           open={editModal}
           onOpenChange={setEditModal}
-          columns={categoryColumns}
+          columns={formCategoryColumns} // ✅ pakai form column
           rowData={selectedRow}
+          onSubmit={handleUpdateCategory}
         />
       )}
 
-      {editModal && selectedRow && (
-        <DialogComponent
-          title={`Edit kategori: ${selectedRow.name}`}
-          desc="Ini akan merubah informasi kategori saat ini"
-          open={editModal}
-          onOpenChange={setEditModal}
-          columns={categoryColumns}
-          rowData={selectedRow}
-          onSubmit={(values) => {
-            console.log("Edit result:", values); // ✅ hasil edit
-          }}
-        />
-      )}
-
+      {/* Add Modal */}
       {newArtikelModal && (
-        <DialogComponent
+        <DialogInput
           title={`Tambah Kategori`}
           desc="Tambahkan kategori baru ke dalam list"
           open={newArtikelModal}
           onOpenChange={setNewArtikelModal}
-          columns={categoryColumns}
-          rowData={null} // ✅ kosong → mode tambah
-          onSubmit={(values) => {
-            console.log("New category:", values); // ✅ hasil tambah
-          }}
+          columns={formCategoryColumns} // ✅ pakai form column
+          rowData={null}
+          onSubmit={handleNewCategory}
         />
       )}
     </Wrapper>
   );
 }
-
-// adjust sekarang dari endpoint http://localhost:3000/api/article/category pakai token dari localstorage
