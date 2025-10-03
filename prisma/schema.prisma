@@ -14,6 +14,12 @@ enum Role {
   VIEWER
 }
 
+enum Status {
+  DRAFT
+  PUBLISH
+  ARCHIVE
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -29,19 +35,13 @@ model User {
 }
 
 model CategoryArticle {
-  id           Int        @id @default(autoincrement())
-  name         String     @unique
-  slug         String     @unique
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  articles     Article[]
-}
-
-enum Status {
-  DRAFT
-  PUBLISH
-  ARCHIVE
+  articles  Article[]
 }
 
 model Article {
@@ -60,12 +60,12 @@ model Article {
   authorId    Int
   author      User      @relation(fields: [authorId], references: [id])
 
-  // One-to-one thumbnail
+  // Thumbnail (satu gambar khusus)
   thumbnailId Int?      @unique
   thumbnail   Media?    @relation("ArticleThumbnail", fields: [thumbnailId], references: [id])
 
-  // One-to-many additional medias
-  medias      Media[]   @relation("ArticleMedias")
+  // Many-to-many ke Media (galeri artikel)
+  medias      ArticleMedia[]
 }
 
 model Activity {
@@ -73,36 +73,55 @@ model Activity {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  status      Status    @default(DRAFT)
+  status    Status   @default(DRAFT)
 
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
 
-  // Media attached to activity
-  medias    Media[]  @relation("ActivityMedias")
+  // Many-to-many ke Media
+  medias    ActivityMedia[]
 }
 
 model Media {
   id           Int      @id @default(autoincrement())
   url          String
-  type         String
+  type         String          // "image", "video", dll.
   title        String?
   alt          String?
   size         Int?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   uploadedById Int?
   uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
 
-  // One-to-many relation with Article
-  articleId    Int?
-  article      Article? @relation("ArticleMedias", fields: [articleId], references: [id])
-
-  // One-to-one thumbnail relation
+  // Thumbnail reverse relation
   articleThumbnail Article? @relation("ArticleThumbnail")
 
-  // One-to-many relation with Activity
-  activityId   Int?
-  activity     Activity? @relation("ActivityMedias", fields: [activityId], references: [id])
+  // Many-to-many backrefs
+  articles  ArticleMedia[]
+  activities ActivityMedia[]
+}
+
+//
+// Join tables explicit untuk many-to-many
+//
+model ArticleMedia {
+  articleId Int
+  mediaId   Int
+
+  article Article @relation(fields: [articleId], references: [id])
+  media   Media   @relation(fields: [mediaId], references: [id])
+
+  @@id([articleId, mediaId])
+}
+
+model ActivityMedia {
+  activityId Int
+  mediaId    Int
+
+  activity Activity @relation(fields: [activityId], references: [id])
+  media    Media    @relation(fields: [mediaId], references: [id])
+
+  @@id([activityId, mediaId])
 }

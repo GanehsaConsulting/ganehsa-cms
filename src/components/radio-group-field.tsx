@@ -1,12 +1,13 @@
 
 "use client";
 
+import * as React from "react"
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@radix-ui/react-radio-group";
 import clsx from "clsx";
 
 interface RadioOption {
-  label: string;
+  label?: React.ReactNode | string;
   value?: string;
   color?: "green" | "red" | "yellow" | "blue" | "orange" | "purple" | "pink" | "gray" | "indigo" | "cyan";
 }
@@ -48,7 +49,7 @@ const DEFAULT_VALUE_COLORS: Record<string, string> = {
   active: "green",
   inactive: "gray",
   archived: "gray",
-  
+
   // Priority
   critical: "red",
   urgent: "red",
@@ -56,14 +57,14 @@ const DEFAULT_VALUE_COLORS: Record<string, string> = {
   medium: "yellow",
   normal: "blue",
   low: "blue",
-  
+
   // State
   success: "green",
   error: "red",
   warning: "yellow",
   info: "blue",
   danger: "red",
-  
+
   // Boolean
   yes: "green",
   no: "red",
@@ -85,7 +86,7 @@ export const RadioGroupField = ({
   orientation = "horizontal",
 }: RadioGroupFieldProps) => {
   return (
-    <div className={clsx("grid w-full items-center gap-3", containerClassName)}>
+    <div className={clsx("grid items-center gap-3", containerClassName)}>
       {/* Label */}
       {label && <Label className="text-white">{label}</Label>}
 
@@ -101,10 +102,10 @@ export const RadioGroupField = ({
       >
         {options.map((opt) => {
           const isActive = value === opt.value;
-          
+
           // Determine active style dari color
           let activeStyle = "text-white border-blue-500 bg-blue-500/20"; // default
-          
+
           if (isActive) {
             // Priority: explicit color prop > default value mapping
             const colorToUse =
@@ -112,7 +113,7 @@ export const RadioGroupField = ({
               (typeof opt.value === "string"
                 ? DEFAULT_VALUE_COLORS[opt.value.toLowerCase()]
                 : undefined);
-            
+
             if (colorToUse && COLOR_STYLES[colorToUse]) {
               activeStyle = COLOR_STYLES[colorToUse];
             }
