@@ -32,7 +32,7 @@ interface Category {
 
 // Definisikan columns untuk kategori
 const categoryColumns: Column<Category>[] = [
-  { key: "id", label: "No", className: "font-medium w-[80]" },
+  { key: "id", label: "ID", className: "font-medium w-[80]" },
   { key: "name", label: "Name", className: "font-medium" },
   {
     key: "slug",
@@ -216,14 +216,39 @@ export default function ArticleCategoryPage() {
         )}
       </section>
 
-      {/* Pagination (dummy) */}
+      {/* Pagination */}
       <section className="flex items-center justify-between">
         <SelectComponent
           label="Data Per Halaman"
           placeholder="Data Per Halaman"
           options={pageLength.map((s) => ({ label: s, value: s }))}
         />
-        <div className="text-white"> ...pagination component... </div>
+        <div className="text-white">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious href="#" />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink href="#">1</PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink href="#" isActive>
+                  2
+                </PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink href="#">3</PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext href="#" />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </section>
 
       {/* Edit Modal */}
