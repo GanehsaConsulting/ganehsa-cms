@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { verifyAuth } from "@/lib/auth"; // helper auth pakai jsonwebtoken
+import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-// GET SEMUA ARTIKEL
+// GET ARTIKEL
 export async function GET(req: Request) {
   try {
     const user = verifyAuth(req);
@@ -16,32 +16,23 @@ export async function GET(req: Request) {
       );
     }
 
-    // 📂 ambil semua artikel + relasi author & category
     const articlesData = await prisma.article.findMany({
       include: {
         author: {
-          // relasi user
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+          select: { id: true, name: true, email: true },
         },
         category: {
-          // relasi category
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
+          select: { id: true, name: true, slug: true },
         },
+        thumbnail: {
+          select: { id: true, url: true, title: true, alt: true },
+        },
+        // Hapus medias karena tidak butuh gallery
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
-    if (!articlesData || articlesData.length === 0) {
+    if (!articlesData.length) {
       return NextResponse.json({
         success: false,
         message: "Article data not found",
@@ -52,7 +43,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       message: "Success get article data",
-      data: articlesData,
+      data: articlesData, // Langsung return tanpa format medias
     });
   } catch (err) {
     console.error(err);
@@ -63,50 +54,63 @@ export async function GET(req: Request) {
   }
 }
 
-// TAMBAH ARTIKEL
+// ADD NEW ARTIKEL
 export async function POST(req: Request) {
   try {
     const user = verifyAuth(req);
-
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized", data: [] },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized", data: [] },
-        { status: 401 }
-      );
-    }
-
-    // 🔎 ambil body
     const body = await req.json();
-    const { title, content, thumbnail, slug, excerpt, categoryId } = body;
+    const { 
+      title, 
+      content, 
+      slug, 
+      excerpt, 
+      categoryId, 
+      thumbnailId, 
+      status,
+      highlight // ✅ Tambahkan highlight dari body
+    } = body;
 
-    // 🛡️ validasi simple
+    // Validasi input
     if (!title || !content || !slug || !categoryId) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid request: required fields missing",
-        },
+        { success: false, message: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // 📝 simpan ke database
+    // Simpan ke database
     const newArticle = await prisma.article.create({
       data: {
         title,
         content,
-        thumbnail,
         slug,
         excerpt,
-        categoryId: Number(categoryId), // pastikan jadi number
-        authorId: Number(user.id), // convert string -> number
+        categoryId: Number(categoryId),
+        authorId: Number(user.id),
+        status: status || "DRAFT",
+        highlight: highlight || false, // ✅ Simpan highlight
+        // Thumbnail opsional
+        ...(thumbnailId && { thumbnailId: Number(thumbnailId) }),
+        // Hapus mediaIds karena tidak butuh gallery
+      },
+      include: {
+        category: {
+          select: { id: true, name: true, slug: true }
+        },
+        author: {
+          select: { id: true, name: true, email: true }
+        },
+        thumbnail: {
+          select: { id: true, url: true, title: true, alt: true }
+        },
+        // Hapus include medias
       },
     });
 
@@ -118,10 +122,18 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error("Error creating article:", err);
+    
+    if (err.code === 'P2002') {
+      return NextResponse.json(
+        { success: false, message: "Slug already exists" },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, message: "Internal server error", data: [] },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

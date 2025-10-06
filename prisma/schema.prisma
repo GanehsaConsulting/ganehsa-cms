@@ -1,3 +1,4 @@
+// schema.prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -53,6 +54,7 @@ model Article {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   status      Status    @default(DRAFT)
+  highlight   Boolean   @default(false)
 
   categoryId  Int
   category    CategoryArticle @relation(fields: [categoryId], references: [id])
@@ -63,9 +65,6 @@ model Article {
   // Thumbnail (satu gambar khusus)
   thumbnailId Int?      @unique
   thumbnail   Media?    @relation("ArticleThumbnail", fields: [thumbnailId], references: [id])
-
-  // Many-to-many ke Media (galeri artikel)
-  medias      ArticleMedia[]
 }
 
 model Activity {
@@ -85,7 +84,7 @@ model Activity {
 model Media {
   id           Int      @id @default(autoincrement())
   url          String
-  type         String          // "image", "video", dll.
+  type         String
   title        String?
   alt          String?
   size         Int?
@@ -98,30 +97,16 @@ model Media {
   // Thumbnail reverse relation
   articleThumbnail Article? @relation("ArticleThumbnail")
 
-  // Many-to-many backrefs
-  articles  ArticleMedia[]
+  // Many-to-many untuk Activity
   activities ActivityMedia[]
-}
-
-//
-// Join tables explicit untuk many-to-many
-//
-model ArticleMedia {
-  articleId Int
-  mediaId   Int
-
-  article Article @relation(fields: [articleId], references: [id])
-  media   Media   @relation(fields: [mediaId], references: [id])
-
-  @@id([articleId, mediaId])
 }
 
 model ActivityMedia {
   activityId Int
   mediaId    Int
 
-  activity Activity @relation(fields: [activityId], references: [id])
-  media    Media    @relation(fields: [mediaId], references: [id])
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  media    Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@id([activityId, mediaId])
 }

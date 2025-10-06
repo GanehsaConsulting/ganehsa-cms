@@ -196,6 +196,7 @@ interface SelectComponentProps {
   value?: string;
   onChange?: (value: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export function SelectComponent({

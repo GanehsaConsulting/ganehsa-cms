@@ -22,6 +22,7 @@ interface RadioGroupFieldProps {
   containerClassName?: string;
   inactiveStyle?: string;
   orientation?: "horizontal" | "vertical";
+  disabled?: boolean;
 }
 
 // Simple color mapping
