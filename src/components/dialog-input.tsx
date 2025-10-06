@@ -100,7 +100,7 @@ export function DialogInput<T extends { id: number | string }>({
               Cancel
             </Button>
             <Button type="submit" variant="default">
-              {isEdit ? "Save Changes" : "Add Category"}
+              {isEdit ? "Save Changes" : "Add z"}
             </Button>
           </div>
         </form>
