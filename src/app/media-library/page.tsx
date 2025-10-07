@@ -73,6 +73,15 @@ export default function MediaPage() {
     title: "",
     type: "",
   });
+  const [search, setSearch] = useState("");
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    currentPage: 1,
+  });
+  const [fetchFunction, setFetchFunction] = useState<
+    ((search?: string, page?: number) => void) | null
+  >(null);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -94,17 +103,26 @@ export default function MediaPage() {
   useEffect(() => {
     if (!token) return;
 
-    async function getMedias() {
+    async function getMedias(search: string = "", page: number = 1) {
       setIsLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/media?search=${encodeURIComponent(
+            search
+          )}&page=${page}&limit=12`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
         const data = await res.json();
         if (res.ok) {
           setMedias(data.data);
+          setPagination({
+            total: data.pagination.total,
+            totalPages: data.pagination.totalPages,
+            currentPage: data.pagination.currentPage,
+          });
         } else {
           toast.error(data.message || "Gagal mengambil data media");
         }
@@ -116,7 +134,9 @@ export default function MediaPage() {
       }
     }
 
+    // initial fetch
     getMedias();
+    setFetchFunction(() => getMedias);
   }, [token]);
 
   // Upload media baru
@@ -210,9 +230,20 @@ export default function MediaPage() {
         header={
           <div className="sticky top-0 z-20 flex items-center justify-between px-5 pt-5 pb-2">
             <div className="flex items-center gap-2">
-              <SearchInput className="max-w-sm" placeholder="Search media..." />
-              <Button variant="secondary">Cari</Button>
+              <SearchInput
+                className="max-w-sm"
+                placeholder="Search media..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Button
+                variant="secondary"
+                onClick={() => fetchFunction && fetchFunction(search, 1)}
+              >
+                Cari
+              </Button>
             </div>
+
             <RadioGroupField
               id="status"
               label=""
@@ -304,6 +335,35 @@ export default function MediaPage() {
             </table>
           )}
         </div>
+        {!isLoading && pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center gap-3 mt-6">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pagination.currentPage === 1}
+              onClick={() =>
+                fetchFunction &&
+                fetchFunction(search, pagination.currentPage - 1)
+              }
+            >
+              Previous
+            </Button>
+            <span className="text-white text-sm">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pagination.currentPage === pagination.totalPages}
+              onClick={() =>
+                fetchFunction &&
+                fetchFunction(search, pagination.currentPage + 1)
+              }
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </Wrapper>
 
       {/* Dialog Upload Media */}
@@ -393,14 +453,14 @@ export default function MediaPage() {
                 <FileType className="w-5 h-5 text-neutral-400 mt-0.5" />
                 <div>
                   <p className="text-sm text-neutral-300">Type</p>
-                  <p className="text-white">{selectedMedia?.type}</p>
+                  <p className="dark:text-white">{selectedMedia?.type}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <HardDrive className="w-5 h-5 text-neutral-400 mt-0.5" />
                 <div>
                   <p className="text-sm text-neutral-300">Size</p>
-                  <p className="text-white">
+                  <p className="dark:text-white">
                     {selectedMedia && (selectedMedia.size / 1024).toFixed(2)} KB
                   </p>
                 </div>
@@ -409,7 +469,7 @@ export default function MediaPage() {
                 <Calendar className="w-5 h-5 text-neutral-400 mt-0.5" />
                 <div>
                   <p className="text-sm text-neutral-300">Uploaded</p>
-                  <p className="text-white">
+                  <p className="dark:text-white">
                     {selectedMedia?.createdAt.toLocaleString?.()}
                   </p>
                 </div>

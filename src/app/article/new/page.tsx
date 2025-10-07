@@ -19,9 +19,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 // Dynamic Import - Jodit Editor
-const JoditEditor = dynamic(() => import("jodit-react"), { 
+const JoditEditor = dynamic(() => import("jodit-react"), {
   ssr: false,
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  loading: () => (
+    <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  ),
 });
 
 // Constants
@@ -62,12 +64,15 @@ export default function NewArticlePage() {
   const [highlight, setHighlight] = useState("inactive"); // ✅ Pertahankan highlight
   const [excerpt, setExcerpt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Media State (hanya thumbnail)
   const [medias, setMedias] = useState<Media[]>([]);
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [dataCategories, setDataCategories] = useState<Category[]>([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Get token safely
   const getToken = () => {
@@ -97,11 +102,11 @@ export default function NewArticlePage() {
           },
         }
       );
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       if (data.success) {
         setDataCategories(data.data);
@@ -117,25 +122,25 @@ export default function NewArticlePage() {
   }
 
   // Fetch media (hanya untuk thumbnail)
-  async function getMedias() {
+  async function getMedias(currentSearch = "", currentPage = 1) {
     const token = getToken();
     if (!token) return;
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/media?search=${currentSearch}&page=${currentPage}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
       const data = await res.json();
       if (data.success) {
         setMedias(data.data);
+        setTotalPages(data.totalPages || 1);
       } else {
         toast.error(data.message || "Gagal mengambil data media");
       }
@@ -149,8 +154,8 @@ export default function NewArticlePage() {
 
   useEffect(() => {
     fetchDataCategory();
-    getMedias();
-  }, []);
+    getMedias(search, page);
+  }, [search, page]);
 
   // Auto generate slug from title
   const handleTitleChange = (value: string) => {
@@ -177,17 +182,17 @@ export default function NewArticlePage() {
       toast.error("Judul artikel wajib diisi!");
       return;
     }
-    
+
     if (!slug.trim()) {
       toast.error("Slug wajib diisi!");
       return;
     }
-    
+
     if (!category) {
       toast.error("Kategori wajib dipilih!");
       return;
     }
-    
+
     if (!content.trim()) {
       toast.error("Konten artikel wajib diisi!");
       return;
@@ -285,7 +290,9 @@ export default function NewArticlePage() {
         <div className="lg:col-span-7 space-y-5">
           {/* Title */}
           <div className="space-y-3">
-            <Label htmlFor="title" className="text-white">Judul Artikel *</Label>
+            <Label htmlFor="title" className="text-white">
+              Judul Artikel *
+            </Label>
             <Input
               id="title"
               type="text"
@@ -310,14 +317,33 @@ export default function NewArticlePage() {
                   readonly: isLoading,
                   toolbarAdaptive: false,
                   buttons: [
-                    'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'ul', 'ol', '|',
-                    'outdent', 'indent', '|',
-                    'font', 'fontsize', 'brush', '|',
-                    'image', 'video', 'table', 'link', '|',
-                    'align', 'undo', 'redo', '|',
-                    'preview', 'fullscreen'
-                  ]
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strikethrough",
+                    "|",
+                    "ul",
+                    "ol",
+                    "|",
+                    "outdent",
+                    "indent",
+                    "|",
+                    "font",
+                    "fontsize",
+                    "brush",
+                    "|",
+                    "image",
+                    "video",
+                    "table",
+                    "link",
+                    "|",
+                    "align",
+                    "undo",
+                    "redo",
+                    "|",
+                    "preview",
+                    "fullscreen",
+                  ],
                 }}
               />
             </div>
@@ -336,7 +362,7 @@ export default function NewArticlePage() {
               {thumbnailId ? (
                 <div className="relative">
                   <img
-                    src={medias.find(m => m.id === thumbnailId)?.url}
+                    src={medias.find((m) => m.id === thumbnailId)?.url}
                     alt="Thumbnail"
                     className="w-full h-40 object-cover"
                   />
@@ -355,7 +381,9 @@ export default function NewArticlePage() {
 
           {/* Slug */}
           <div className="space-y-3">
-            <Label htmlFor="slug" className="text-white">Slug *</Label>
+            <Label htmlFor="slug" className="text-white">
+              Slug *
+            </Label>
             <Input
               id="slug"
               type="text"
@@ -371,7 +399,9 @@ export default function NewArticlePage() {
 
           {/* Excerpt */}
           <div className="space-y-3">
-            <Label htmlFor="excerpt" className="text-white">Ringkasan</Label>
+            <Label htmlFor="excerpt" className="text-white">
+              Ringkasan
+            </Label>
             <Textarea
               id="excerpt"
               className="resize-none h-24"
@@ -387,12 +417,14 @@ export default function NewArticlePage() {
             <Label className="text-white">Kategori *</Label>
             {dataCategories.length === 0 ? (
               <div className="text-sm text-gray-400 italic">
-                {isLoading ? "Memuat kategori..." : "Tidak ada kategori tersedia"}
+                {isLoading
+                  ? "Memuat kategori..."
+                  : "Tidak ada kategori tersedia"}
               </div>
             ) : (
               <SelectComponent
                 placeholder="Pilih Kategori"
-                options={dataCategories.map(cat => ({
+                options={dataCategories.map((cat) => ({
                   label: cat.name,
                   value: String(cat.id),
                 }))}
@@ -428,51 +460,103 @@ export default function NewArticlePage() {
       {/* Media Selection Modal - Hanya untuk thumbnail */}
       {showMediaModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-lg font-semibold">Pilih Thumbnail</h2>
-              <Button
-                variant="ghost"
-                onClick={() => setShowMediaModal(false)}
-              >
+              <Button variant="ghost" onClick={() => setShowMediaModal(false)}>
                 ✕
               </Button>
             </div>
-            
-            <div className="p-6 overflow-y-auto flex-grow">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {medias
-                  .filter(m => m.type.startsWith('image'))
-                  .map((media) => (
-                    <div
-                      key={media.id}
-                      className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                        media.id === thumbnailId 
-                          ? 'border-primary ring-2 ring-primary/20' 
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      onClick={() => handleSelectThumbnail(media.id)}
-                    >
-                      <img
-                        src={media.url}
-                        alt={media.alt || ''}
-                        className="w-full h-20 object-cover"
-                      />
-                      <div className="p-2 text-xs truncate">
-                        {media.title || 'Untitled'}
-                      </div>
-                    </div>
-                  ))}
-              </div>
+
+            {/* Search bar */}
+            <div className="flex items-center gap-3 p-4 border-b">
+              <Input
+                placeholder="Cari media berdasarkan judul..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="flex-1"
+              />
+              <Button
+                variant="secondary"
+                onClick={() => getMedias(search, 1)}
+                disabled={isLoading}
+              >
+                Cari
+              </Button>
             </div>
 
-            <div className="flex justify-end gap-3 p-6 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setShowMediaModal(false)}
-              >
-                Tutup
-              </Button>
+            {/* Media grid */}
+            <div className="p-6 overflow-y-auto flex-grow">
+              {isLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-full h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
+                    ></div>
+                  ))}
+                </div>
+              ) : medias.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {medias
+                    .filter((m) => m.type.startsWith("image"))
+                    .map((media) => (
+                      <div
+                        key={media.id}
+                        className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
+                          media.id === thumbnailId
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-gray-200 hover:border-gray-400"
+                        }`}
+                        onClick={() => handleSelectThumbnail(media.id)}
+                      >
+                        <img
+                          src={media.url}
+                          alt={media.alt || ""}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="p-2 text-xs truncate">
+                          {media.title || "Untitled"}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-400 italic">
+                  Tidak ada media ditemukan.
+                </p>
+              )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-between items-center p-6 border-t">
+              <p className="text-sm text-gray-500">
+                Halaman {page} dari {totalPages}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={page === 1 || isLoading}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={page === totalPages || isLoading}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
         </div>

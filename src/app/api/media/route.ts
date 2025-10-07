@@ -9,12 +9,11 @@ import crypto from "crypto";
 const prisma = new PrismaClient();
 
 // ======================
-// GET MEDIAS
+// GET MEDIAS (with pagination + search)
 // ======================
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized", data: [] },
@@ -22,15 +21,52 @@ export async function GET(req: Request) {
       );
     }
 
-    const medias = await prisma.media.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    // Parse query parameters from the URL
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const skip = (page - 1) * limit;
+
+    // Query database with search and pagination
+    const [medias, total] = await Promise.all([
+      prisma.media.findMany({
+        where: search
+          ? {
+              OR: [
+                { title: { contains: search, mode: "insensitive" } },
+                { alt: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {},
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.media.count({
+        where: search
+          ? {
+              OR: [
+                { title: { contains: search, mode: "insensitive" } },
+                { alt: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {},
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
-      status: 200,
       success: true,
       message: "Get medias data successfully",
       data: medias,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -84,7 +120,7 @@ export async function POST(req: Request) {
     // Generate metadata
     const url = `/uploads/${randomName}`;
     const alt = title;
-    const size =  file.size
+    const size = file.size;
     const uploadedById = Number(user.id);
 
     // Simpan ke database

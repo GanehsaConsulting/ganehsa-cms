@@ -146,7 +146,7 @@ interface AlertDialogProps {
   header: string;
   desc: string;
   continueAction: (e?: React.FormEvent<HTMLFormElement>) => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 function AlertDialogComponent({
