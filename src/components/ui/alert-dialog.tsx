@@ -149,16 +149,24 @@ interface AlertDialogProps {
   children?: React.ReactNode;
 }
 
-function AlertDialogComponent({
+// components/ui/alert-dialog.tsx
+interface AlertDialogComponentProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  header: string;
+  desc: string;
+  continueAction: () => void;
+}
+
+const AlertDialogComponent: React.FC<AlertDialogComponentProps> = ({
+  open,
+  onOpenChange,
   header,
   desc,
   continueAction,
-  children,
-}: AlertDialogProps) {
-
+}) => {
   return (
-    <AlertDialog>
-      {children}
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{header}</AlertDialogTitle>
@@ -166,14 +174,15 @@ function AlertDialogComponent({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={(e) => continueAction(e as never)} >
+          <AlertDialogAction onClick={continueAction}>
             Continue
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
-}
+};
+
 
 export {
   AlertDialogComponent,

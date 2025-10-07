@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-// GET ARTIKEL
 export async function GET(req: Request) {
   try {
-    const user = verifyAuth(req);
+    const user = await verifyAuth(req);
 
     if (!user) {
       return NextResponse.json(
@@ -16,37 +15,51 @@ export async function GET(req: Request) {
       );
     }
 
-    const articlesData = await prisma.article.findMany({
-      include: {
-        author: {
-          select: { id: true, name: true, email: true },
-        },
-        category: {
-          select: { id: true, name: true, slug: true },
-        },
-        thumbnail: {
-          select: { id: true, url: true, title: true, alt: true },
-        },
-        // Hapus medias karena tidak butuh gallery
-      },
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search")?.trim() || "";
+
+    const skip = (page - 1) * limit;
+
+    const whereCondition: Prisma.ArticleWhereInput = search
+      ? {
+          title: {
+            contains: search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        }
+      : {};
+
+    const totalItems = await prisma.article.count({
+      where: whereCondition,
     });
 
-    if (!articlesData.length) {
-      return NextResponse.json({
-        success: false,
-        message: "Article data not found",
-        data: [],
-      });
-    }
+    const articles = await prisma.article.findMany({
+      where: whereCondition,
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+        category: { select: { id: true, name: true, slug: true } },
+        thumbnail: { select: { id: true, url: true, title: true, alt: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
 
     return NextResponse.json({
       success: true,
       message: "Success get article data",
-      data: articlesData, // Langsung return tanpa format medias
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        limit,
+      },
+      data: articles,
     });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error fetching articles:", err);
     return NextResponse.json(
       { success: false, message: "Internal server error", data: [] },
       { status: 500 }
@@ -66,15 +79,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { 
-      title, 
-      content, 
-      slug, 
-      excerpt, 
-      categoryId, 
-      thumbnailId, 
+    const {
+      title,
+      content,
+      slug,
+      excerpt,
+      categoryId,
+      thumbnailId,
       status,
-      highlight // ✅ Tambahkan highlight dari body
+      highlight, // ✅ Tambahkan highlight dari body
     } = body;
 
     // Validasi input
@@ -102,13 +115,13 @@ export async function POST(req: Request) {
       },
       include: {
         category: {
-          select: { id: true, name: true, slug: true }
+          select: { id: true, name: true, slug: true },
         },
         author: {
-          select: { id: true, name: true, email: true }
+          select: { id: true, name: true, email: true },
         },
         thumbnail: {
-          select: { id: true, url: true, title: true, alt: true }
+          select: { id: true, url: true, title: true, alt: true },
         },
         // Hapus include medias
       },
@@ -124,14 +137,14 @@ export async function POST(req: Request) {
     );
   } catch (err: any) {
     console.error("Error creating article:", err);
-    
-    if (err.code === 'P2002') {
+
+    if (err.code === "P2002") {
       return NextResponse.json(
         { success: false, message: "Slug already exists" },
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
