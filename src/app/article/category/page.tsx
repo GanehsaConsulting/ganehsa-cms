@@ -20,8 +20,8 @@ import { IoLink } from "react-icons/io5";
 import { toast } from "sonner";
 import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
+import { MdOutlineLoop } from "react-icons/md";
 
-// Tipe data untuk kategori
 interface Category {
   id: number;
   name: string;
@@ -30,7 +30,13 @@ interface Category {
   date: string;
 }
 
-// Definisikan columns untuk kategori
+interface PaginationData {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 const categoryColumns: Column<Category>[] = [
   { key: "id", label: "ID", className: "font-medium w-[80]" },
   { key: "name", label: "Name", className: "font-medium" },
@@ -59,25 +65,43 @@ export const formCategoryColumns: Column<Category>[] = [
 ];
 
 export default function ArticleCategoryPage() {
-  const statusArr = ["All", "Draft", "Archive", "Publish"];
-  const pageLength = ["10", "20", "100"];
+  const pageLength = ["10", "20", "50"];
 
   const [editModal, setEditModal] = useState(false);
   const [newArtikelModal, setNewArtikelModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Category | null>(null);
   const [dataCategories, setDataCategories] = useState<Category[]>([]);
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const [isLoading, setIsLoading] = useState(false);
 
-  // 📌 Fetch kategori dari API
+  // Pagination & Search States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [pagination, setPagination] = useState<PaginationData>({
+    page: 1,
+    limit: 10,
+    totalCount: 0,
+    totalPages: 1,
+  });
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  // Fetch kategori dari API dengan pagination & search
   async function fetchDataCategory() {
     if (!token) return;
     setIsLoading(true);
 
     try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString(),
+        ...(searchQuery && { search: searchQuery }),
+      });
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+        `${process.env.NEXT_PUBLIC_API_URL}/article/category?${params}`,
         {
           method: "GET",
           headers: {
@@ -87,7 +111,11 @@ export default function ArticleCategoryPage() {
         }
       );
       const data = await res.json();
-      if (data) setDataCategories(data.data);
+
+      if (data.success) {
+        setDataCategories(data.data);
+        setPagination(data.pagination);
+      }
     } catch (err) {
       const errMessage = err instanceof Error ? err.message : "unknown errors";
       console.log(errMessage);
@@ -99,9 +127,52 @@ export default function ArticleCategoryPage() {
 
   useEffect(() => {
     fetchDataCategory();
-  }, []);
+  }, [currentPage, limit, searchQuery]);
 
-  // ➕ Tambah kategori
+  // Handle search
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+    setCurrentPage(1); // Reset ke halaman pertama saat search
+  };
+
+  // Handle enter key di search
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Handle limit change
+  const handleLimitChange = (value: string) => {
+    setLimit(Number(value));
+    setCurrentPage(1); // Reset ke halaman pertama saat ganti limit
+  };
+
+  // Generate page numbers
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(pagination.totalPages, start + maxVisible - 1);
+
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
+
   async function handleNewCategory(values: Partial<Category>) {
     try {
       const res = await fetch(
@@ -125,7 +196,6 @@ export default function ArticleCategoryPage() {
     }
   }
 
-  // ✏️ Edit kategori
   async function handleUpdateCategory(values: Partial<Category>) {
     if (!selectedRow) return;
 
@@ -151,7 +221,6 @@ export default function ArticleCategoryPage() {
     }
   }
 
-  // 🗑️ Hapus kategori
   async function handleDeleteCategory(row: Category) {
     try {
       const res = await fetch(
@@ -180,15 +249,18 @@ export default function ArticleCategoryPage() {
       <section className="flex items-center justify-between gap-0 w-full">
         <div className="flex items-center gap-4 w-full">
           <div className="flex items-center gap-2">
-            <Input className="w-100" placeholder="Cari kategori..." />
-            <Button>Cari</Button>
-          </div>
-          <div>
-            <SelectComponent
-              label="Filter By status"
-              placeholder="Filter By status"
-              options={statusArr.map((s) => ({ label: s, value: s }))}
+            <Input
+              className="w-100"
+              placeholder="Cari kategori..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
             />
+            <Button onClick={handleSearch}>Cari</Button>
+            <Button onClick={() => fetchDataCategory()}>
+              <MdOutlineLoop />
+              <span>Refresh</span>
+            </Button>
           </div>
         </div>
         <div>
@@ -204,47 +276,86 @@ export default function ArticleCategoryPage() {
         {isLoading ? (
           <TableSkeleton columns={4} rows={4} showActions={true} />
         ) : (
-          <TableList
-            columns={categoryColumns}
-            data={dataCategories}
-            onEdit={(row) => {
-              setSelectedRow(row);
-              setEditModal(true);
-            }}
-            onDelete={handleDeleteCategory} // 🔥 integrasi delete
-          />
+          <>
+            <TableList
+              columns={categoryColumns}
+              data={dataCategories}
+              onEdit={(row) => {
+                setSelectedRow(row);
+                setEditModal(true);
+              }}
+              onDelete={handleDeleteCategory}
+            />
+            {dataCategories.length === 0 && (
+              <div className="text-center py-8 text-gray-400">
+                Tidak ada data kategori yang ditemukan
+              </div>
+            )}
+          </>
         )}
       </section>
 
       {/* Pagination */}
       <section className="flex items-center justify-between">
-        <SelectComponent
-          label="Data Per Halaman"
-          placeholder="Data Per Halaman"
-          options={pageLength.map((s) => ({ label: s, value: s }))}
-        />
+        <div className="flex items-center gap-4">
+          <SelectComponent
+            label="Data Per Halaman"
+            placeholder={limit.toString()}
+            options={pageLength.map((s) => ({
+              label: `${s} per halaman`,
+              value: s,
+            }))}
+            value={limit.toString()}
+            onChange={handleLimitChange}
+          />
+          <span className="text-white text-sm">
+            Menampilkan {(currentPage - 1) * limit + 1} -{" "}
+            {Math.min(currentPage * limit, pagination.totalCount)} dari{" "}
+            {pagination.totalCount} data
+          </span>
+        </div>
         <div className="text-white">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
               </PaginationItem>
+
+              {generatePageNumbers().map((pageNum) => (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(pageNum)}
+                    isActive={currentPage === pageNum}
+                    className="cursor-pointer"
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              {pagination.totalPages > 5 &&
+                currentPage < pagination.totalPages - 2 && (
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                )}
+
               <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  2
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">3</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={
+                    currentPage === pagination.totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
@@ -258,7 +369,7 @@ export default function ArticleCategoryPage() {
           desc="Ini akan merubah informasi kategori saat ini"
           open={editModal}
           onOpenChange={setEditModal}
-          columns={formCategoryColumns} // ✅ pakai form column
+          columns={formCategoryColumns}
           rowData={selectedRow}
           onSubmit={handleUpdateCategory}
         />
@@ -271,7 +382,7 @@ export default function ArticleCategoryPage() {
           desc="Tambahkan kategori baru ke dalam list"
           open={newArtikelModal}
           onOpenChange={setNewArtikelModal}
-          columns={formCategoryColumns} // ✅ pakai form column
+          columns={formCategoryColumns}
           rowData={null}
           onSubmit={handleNewCategory}
         />

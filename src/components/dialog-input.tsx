@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
+import { FaPlus } from "react-icons/fa6";
 
 interface DialogInputProps<T> {
   title: string;
@@ -100,7 +101,7 @@ export function DialogInput<T extends { id: number | string }>({
               Cancel
             </Button>
             <Button type="submit" variant="default">
-              {isEdit ? "Save Changes" : "Add z"}
+              {isEdit ? "Save Changes" : "+ Add"}
             </Button>
           </div>
         </form>

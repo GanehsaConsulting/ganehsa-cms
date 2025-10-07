@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { verifyAuth } from "@/lib/auth"; // helper auth pakai jsonwebtoken
+import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-// GET ALL CATEGORIES
+// GET ALL CATEGORIES WITH PAGINATION & SEARCH
 export async function GET(req: Request) {
   try {
     const user = verifyAuth(req);
@@ -16,24 +16,41 @@ export async function GET(req: Request) {
       );
     }
 
-    const { searchParams } = new URL(req.url)
-    const page = Number(searchParams.get("page")) || 1
-    const limit = Number(searchParams.get("limit")) || 10
-    const search = searchParams.get("search")?.trim() || ""
-    const skip = (page -1) * limit;
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search")?.trim() || "";
+    const skip = (page - 1) * limit;
 
+    // Build where condition for search
+    const whereCondition = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { slug: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
 
-    // 📂 ambil semua kategori + hitung jumlah article
+    // Get total count for pagination
+    const totalCount = await prisma.categoryArticle.count({
+      where: whereCondition,
+    });
+
+    // Fetch categories with pagination
     const categories = await prisma.categoryArticle.findMany({
-      orderBy: { createdAt: "asc" }, // 👈 urut dari paling lama
+      where: whereCondition,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
       include: {
         _count: {
-          select: { articles: true }, // "articles" = nama relasi di schema Prisma
+          select: { articles: true },
         },
       },
     });
 
-    // 🎯 mapping biar sesuai goals response
+    // Format response
     const formatted = categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
@@ -46,11 +63,19 @@ export async function GET(req: Request) {
       }),
     }));
 
+    const totalPages = Math.ceil(totalCount / limit);
+
     return NextResponse.json(
       {
         success: true,
         message: "Success to fetch all article categories",
         data: formatted,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+        },
       },
       { status: 200 }
     );
@@ -62,8 +87,6 @@ export async function GET(req: Request) {
     );
   }
 }
-
-// terapkan pagination dan search 
 
 // ADD NEW CATEGORY
 export async function POST(req: Request) {
@@ -77,11 +100,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔎 ambil body
     const body = await req.json();
     const { name, slug } = body;
 
-    // 🛡️ validasi simple
     if (!name || !slug) {
       return NextResponse.json(
         {
@@ -92,7 +113,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 📝 simpan ke database
     const newArticleCategory = await prisma.categoryArticle.create({
       data: {
         name,
