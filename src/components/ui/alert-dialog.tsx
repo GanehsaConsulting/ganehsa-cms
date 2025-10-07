@@ -142,47 +142,41 @@ function AlertDialogCancel({
   );
 }
 
-interface AlertDialogProps {
-  header: string;
-  desc: string;
-  continueAction: (e?: React.FormEvent<HTMLFormElement>) => void;
-  children?: React.ReactNode;
-}
-
-// components/ui/alert-dialog.tsx
 interface AlertDialogComponentProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   header: string;
   desc: string;
   continueAction: () => void;
+  children?: React.ReactNode; // Untuk trigger button
+  open?: boolean; // Untuk controlled state
+  onOpenChange?: (open: boolean) => void; // Untuk controlled state
 }
 
-const AlertDialogComponent: React.FC<AlertDialogComponentProps> = ({
-  open,
-  onOpenChange,
+function AlertDialogComponent({
   header,
   desc,
   continueAction,
-}) => {
+  children,
+  open,
+  onOpenChange,
+}: AlertDialogComponentProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {children && children}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{header}</AlertDialogTitle>
           <AlertDialogDescription>{desc}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
           <AlertDialogAction onClick={continueAction}>
-            Continue
+            Lanjutkan
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
-};
-
+}
 
 export {
   AlertDialogComponent,

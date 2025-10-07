@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth"; // helper auth pakai jsonwebtoken
-import { responseCookiesToRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 const prisma = new PrismaClient();
 
@@ -16,6 +15,13 @@ export async function GET(req: Request) {
         { status: 401 }
       );
     }
+
+    const { searchParams } = new URL(req.url)
+    const page = Number(searchParams.get("page")) || 1
+    const limit = Number(searchParams.get("limit")) || 10
+    const search = searchParams.get("search")?.trim() || ""
+    const skip = (page -1) * limit;
+
 
     // 📂 ambil semua kategori + hitung jumlah article
     const categories = await prisma.categoryArticle.findMany({
@@ -56,6 +62,8 @@ export async function GET(req: Request) {
     );
   }
 }
+
+// terapkan pagination dan search 
 
 // ADD NEW CATEGORY
 export async function POST(req: Request) {
