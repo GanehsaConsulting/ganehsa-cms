@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
       prisma.activity.count({ where }),
     ]);
 
+
     return NextResponse.json({
       success: true,
       message: "Success get activities data",

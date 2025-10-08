@@ -43,9 +43,9 @@ export default function AddNewActivity() {
   const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [showTitle, setshowTitle] = useState("inactive");
+  const [showTitle, setshowTitle] = useState("inActive");
   const [instaUrl, setInstaUrl] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]); // Changed to store media IDs instead of URLs
 
   // Media State
   const [medias, setMedias] = useState<Media[]>([]);
@@ -91,20 +91,20 @@ export default function AddNewActivity() {
     }
   }
 
-  // Handle select images
-  const handleSelectImages = (mediaUrl: string) => {
-    if (imageUrls.includes(mediaUrl)) {
+  // Handle select images - now using media IDs
+  const handleSelectImages = (mediaId: number) => {
+    if (selectedMediaIds.includes(mediaId)) {
       // Remove if already selected
-      setImageUrls(imageUrls.filter((url) => url !== mediaUrl));
+      setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
       toast.success("Gambar dihapus dari pilihan!");
     } else {
       // Add if not selected
-      setImageUrls([...imageUrls, mediaUrl]);
+      setSelectedMediaIds([...selectedMediaIds, mediaId]);
       toast.success("Gambar dipilih!");
     }
   };
 
-  // Handle submit
+  // Handle submit - integrated with the endpoint
   const handleSubmit = async () => {
     const token = getToken();
     if (!token) {
@@ -112,7 +112,7 @@ export default function AddNewActivity() {
       return;
     }
 
-    // Validasi
+    // Validasi sesuai endpoint requirements
     if (!title.trim()) {
       toast.error("Judul activity wajib diisi!");
       return;
@@ -133,28 +133,34 @@ export default function AddNewActivity() {
       return;
     }
 
-    if (showTitle === "active" && !instaUrl.trim()) {
-      toast.error("Instagram URL wajib diisi ketika Instagram aktif!");
+    // Validasi showTitle boolean conversion
+    const showTitleBoolean = showTitle === "active";
+
+    if (showTitleBoolean && !instaUrl.trim()) {
+      toast.error("Instagram URL wajib diisi ketika Show Title aktif!");
       return;
     }
 
     setIsLoading(true);
     try {
+      const requestBody = {
+        title: title.trim(),
+        desc: desc.trim(),
+        longDesc: longDesc.trim(),
+        date: date.toISOString().split("T")[0], // Format YYYY-MM-DD
+        showTitle: showTitleBoolean,
+        instaUrl: instaUrl.trim(),
+        status: "DRAFT", // Default status as per endpoint
+        mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined, // Only include if media selected
+      };
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activity`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: title.trim(),
-          desc: desc.trim(),
-          longDesc: longDesc.trim(),
-          date: date.toISOString().split("T")[0], // Format YYYY-MM-DD
-          showTitle: showTitle === "active",
-          instaUrl: instaUrl.trim(),
-          imageUrl: imageUrls,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await res.json();
@@ -175,6 +181,19 @@ export default function AddNewActivity() {
 
   const handleCancel = () => {
     router.push("/activity");
+  };
+
+  // Get selected media URLs for preview
+  const getSelectedMediaUrls = () => {
+    return selectedMediaIds.map(mediaId => {
+      const media = medias.find(m => m.id === mediaId);
+      return media?.url || '';
+    }).filter(url => url !== '');
+  };
+
+  // Remove selected media
+  const removeSelectedMedia = (mediaId: number) => {
+    setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
   };
 
   return (
@@ -328,7 +347,7 @@ export default function AddNewActivity() {
             </Popover>
           </div>
 
-          {/* Instagram Status */}
+          {/* Show Title Status */}
           <RadioGroupField
             id="showTitle"
             label="Show Title"
@@ -339,45 +358,48 @@ export default function AddNewActivity() {
           />
 
           {/* Instagram URL (conditional) */}
-          <div className="space-y-3">
-            <Label htmlFor="instaUrl" className="text-white">
-              Instagram URL *
-            </Label>
-            <Input
-              id="instaUrl"
-              type="text"
-              placeholder="https://instagram.com/..."
-              value={instaUrl}
-              onChange={(e) => setInstaUrl(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
+          {showTitle === "active" && (
+            <div className="space-y-3">
+              <Label htmlFor="instaUrl" className="text-white">
+                Instagram URL *
+              </Label>
+              <Input
+                id="instaUrl"
+                type="text"
+                placeholder="https://instagram.com/..."
+                value={instaUrl}
+                onChange={(e) => setInstaUrl(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+          )}
 
           {/* Image Picker */}
           <div className="space-y-3">
             <Label className="text-white">Gambar Activity</Label>
             <div className="space-y-3">
               {/* Selected Images Preview */}
-              {imageUrls.length > 0 && (
+              {getSelectedMediaUrls().length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Selected ${index + 1}`}
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setImageUrls(imageUrls.filter((_, i) => i !== index))
-                        }
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                  {getSelectedMediaUrls().map((url, index) => {
+                    const mediaId = selectedMediaIds[index];
+                    return (
+                      <div key={mediaId} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Selected ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedMedia(mediaId)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -393,7 +415,7 @@ export default function AddNewActivity() {
                   <div className="text-lg mb-2">📷</div>
                   <div>Klik untuk memilih gambar</div>
                   <div className="text-xs mt-1">
-                    {imageUrls.length} gambar dipilih
+                    {selectedMediaIds.length} gambar dipilih
                   </div>
                 </div>
               </div>
@@ -421,11 +443,11 @@ export default function AddNewActivity() {
                     <div
                       key={media.id}
                       className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                        imageUrls.includes(media.url)
+                        selectedMediaIds.includes(media.id)
                           ? "border-primary ring-2 ring-primary/20"
                           : "border-gray-200 hover:border-gray-400"
                       }`}
-                      onClick={() => handleSelectImages(media.url)}
+                      onClick={() => handleSelectImages(media.id)}
                     >
                       <img
                         src={media.url}

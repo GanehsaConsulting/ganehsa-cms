@@ -21,7 +21,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 
-const IS_INSTAGRAM = [
+const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
   { label: "Inactive", value: "inactive", color: "gray" as const },
 ];
@@ -40,11 +40,26 @@ interface Activity {
   desc: string;
   longDesc: string;
   date: string;
-  isInsta: boolean;
+  showTitle: boolean;
   instaUrl: string;
-  imageUrl: string[];
+  status: string;
   createdAt: string;
   updatedAt: string;
+  author: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  medias: {
+    media: {
+      id: number;
+      url: string;
+      type: string;
+      title: string | null;
+      alt: string | null;
+      size: number;
+    };
+  }[];
 }
 
 export default function EditActivityPage() {
@@ -60,14 +75,18 @@ export default function EditActivityPage() {
   const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [isInsta, setIsInsta] = useState("inactive");
+  const [showTitle, setShowTitle] = useState("inactive");
   const [instaUrl, setInstaUrl] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [status, setStatus] = useState("DRAFT");
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
   
   // Media State
   const [medias, setMedias] = useState<Media[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [open, setOpen] = useState(false);
+
+  // Activity data state
+  const [activityData, setActivityData] = useState<Activity | null>(null);
 
   // Get token safely
   const getToken = () => {
@@ -113,14 +132,20 @@ export default function EditActivityPage() {
       const data = await res.json();
       if (data.success) {
         const activity: Activity = data.data;
+        setActivityData(activity);
+        
         // Populate form with existing data
         setTitle(activity.title);
         setDesc(activity.desc);
         setLongDesc(activity.longDesc);
         setDate(new Date(activity.date));
-        setIsInsta(activity.isInsta ? "active" : "inactive");
+        setShowTitle(activity.showTitle ? "active" : "inactive");
         setInstaUrl(activity.instaUrl || "");
-        setImageUrls(activity.imageUrl || []);
+        setStatus(activity.status);
+        
+        // Set selected media IDs from existing medias
+        const mediaIds = activity.medias.map(mediaItem => mediaItem.media.id);
+        setSelectedMediaIds(mediaIds);
       } else {
         toast.error(data.message || "Gagal mengambil data activity");
         router.push("/activity");
@@ -162,20 +187,20 @@ export default function EditActivityPage() {
     }
   }
 
-  // Handle select images
-  const handleSelectImages = (mediaUrl: string) => {
-    if (imageUrls.includes(mediaUrl)) {
+  // Handle select images - using media IDs
+  const handleSelectImages = (mediaId: number) => {
+    if (selectedMediaIds.includes(mediaId)) {
       // Remove if already selected
-      setImageUrls(imageUrls.filter(url => url !== mediaUrl));
+      setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
       toast.success("Gambar dihapus dari pilihan!");
     } else {
       // Add if not selected
-      setImageUrls([...imageUrls, mediaUrl]);
+      setSelectedMediaIds([...selectedMediaIds, mediaId]);
       toast.success("Gambar dipilih!");
     }
   };
 
-  // Handle update
+  // Handle update using PATCH method
   const handleUpdate = async () => {
     const token = getToken();
     if (!token) {
@@ -204,30 +229,34 @@ export default function EditActivityPage() {
       return;
     }
 
-    if (isInsta === "active" && !instaUrl.trim()) {
-      toast.error("Instagram URL wajib diisi ketika Instagram aktif!");
+    const showTitleBoolean = showTitle === "active";
+    if (showTitleBoolean && !instaUrl.trim()) {
+      toast.error("Instagram URL wajib diisi ketika Show Title aktif!");
       return;
     }
 
     setIsLoading(true);
     try {
+      const requestBody = {
+        title: title.trim(),
+        desc: desc.trim(),
+        longDesc: longDesc.trim(),
+        date: date.toISOString().split('T')[0], // Format YYYY-MM-DD
+        showTitle: showTitleBoolean,
+        instaUrl: instaUrl.trim(),
+        status: status,
+        mediaIds: selectedMediaIds,
+      };
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            title: title.trim(),
-            desc: desc.trim(),
-            longDesc: longDesc.trim(),
-            date: date.toISOString().split('T')[0], // Format YYYY-MM-DD
-            isInsta: isInsta === "active",
-            instaUrl: instaUrl.trim(),
-            imageUrl: imageUrls,
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -287,6 +316,19 @@ export default function EditActivityPage() {
     }
   };
 
+  // Get selected media URLs for preview
+  const getSelectedMediaUrls = () => {
+    return selectedMediaIds.map(mediaId => {
+      const media = medias.find(m => m.id === mediaId);
+      return media?.url || '';
+    }).filter(url => url !== '');
+  };
+
+  // Remove selected media
+  const removeSelectedMedia = (mediaId: number) => {
+    setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
+  };
+
   if (isFetching) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -310,8 +352,6 @@ export default function EditActivityPage() {
             header="Hapus Activity?"
             desc="Activity yang dihapus tidak dapat dikembalikan."
             continueAction={handleDelete}
-            // continueLabel="Hapus"
-            // variant="destructive"
           >
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" disabled={isLoading}>
@@ -463,18 +503,18 @@ export default function EditActivityPage() {
             </Popover>
           </div>
 
-          {/* Instagram Status */}
+          {/* Show Title Status */}
           <RadioGroupField
-            id="isInsta"
-            label="Instagram"
-            value={isInsta}
-            onChange={setIsInsta}
-            options={IS_INSTAGRAM}
+            id="showTitle"
+            label="Show Title"
+            value={showTitle}
+            onChange={setShowTitle}
+            options={SHOW_TITLE}
             disabled={isLoading}
           />
 
           {/* Instagram URL (conditional) */}
-          {isInsta === "active" && (
+          {showTitle === "active" && (
             <div className="space-y-3">
               <Label htmlFor="instaUrl" className="text-white">
                 Instagram URL *
@@ -490,30 +530,51 @@ export default function EditActivityPage() {
             </div>
           )}
 
+          {/* Status Select */}
+          <div className="space-y-3">
+            <Label htmlFor="status" className="text-white">
+              Status
+            </Label>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={isLoading}
+              className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISH">Publish</option>
+              <option value="ARCHIVE">Archive</option>
+            </select>
+          </div>
+
           {/* Image Picker */}
           <div className="space-y-3">
             <Label className="text-white">Gambar Activity</Label>
             <div className="space-y-3">
               {/* Selected Images Preview */}
-              {imageUrls.length > 0 && (
+              {getSelectedMediaUrls().length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Selected ${index + 1}`}
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setImageUrls(imageUrls.filter((_, i) => i !== index))}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        disabled={isLoading}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                  {getSelectedMediaUrls().map((url, index) => {
+                    const mediaId = selectedMediaIds[index];
+                    return (
+                      <div key={mediaId} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Selected ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedMedia(mediaId)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          disabled={isLoading}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               
@@ -529,7 +590,7 @@ export default function EditActivityPage() {
                   <div className="text-lg mb-2">📷</div>
                   <div>Klik untuk memilih gambar</div>
                   <div className="text-xs mt-1">
-                    {imageUrls.length} gambar dipilih
+                    {selectedMediaIds.length} gambar dipilih
                   </div>
                 </div>
               </div>
@@ -537,20 +598,25 @@ export default function EditActivityPage() {
           </div>
 
           {/* Activity Info */}
-          <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg space-y-2">
-            <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">
-              Informasi Activity
-            </h3>
-            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              <div>ID: {activityId}</div>
-              <div>
-                Dibuat: {new Date().toLocaleDateString('id-ID')}
-              </div>
-              <div>
-                Diupdate: {new Date().toLocaleDateString('id-ID')}
+          {activityData && (
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg space-y-2">
+              <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">
+                Informasi Activity
+              </h3>
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <div>ID: {activityData.id}</div>
+                <div>
+                  Dibuat: {new Date(activityData.createdAt).toLocaleDateString('id-ID')}
+                </div>
+                <div>
+                  Diupdate: {new Date(activityData.updatedAt).toLocaleDateString('id-ID')}
+                </div>
+                <div>
+                  Author: {activityData.author.name}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </Wrapper>
 
@@ -577,11 +643,11 @@ export default function EditActivityPage() {
                     <div
                       key={media.id}
                       className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                        imageUrls.includes(media.url)
+                        selectedMediaIds.includes(media.id)
                           ? 'border-primary ring-2 ring-primary/20' 
                           : 'border-gray-200 hover:border-gray-400'
                       }`}
-                      onClick={() => handleSelectImages(media.url)}
+                      onClick={() => handleSelectImages(media.id)}
                     >
                       <img
                         src={media.url}

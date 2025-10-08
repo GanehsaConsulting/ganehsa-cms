@@ -1,4 +1,3 @@
-// article page - updated with data passing
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -17,13 +16,13 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
-import { ActionsDialog } from "@/components/actions-dialog";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 
 interface TableActivity {
   id: number;
@@ -33,19 +32,25 @@ interface TableActivity {
   date: string;
   showTitle: boolean;
   instaUrl: string;
-  imageUrl: string[];
+  medias: string[];
+  status: string;
+  createdAt: string;
+  author: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
-// Definisikan columns untuk artikel
 const activityColumns: Column<TableActivity>[] = [
   { key: "id", label: "ID", className: "font-semibold w-[30]" },
   { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
-  { key: "desc", label: "description", className: "min-w-[180px]" },
-  { key: "longDesc", label: "long description", className: "min-w-[180px]" },
+  { key: "desc", label: "Description", className: "min-w-[180px]" },
+  { key: "longDesc", label: "Long Description", className: "min-w-[180px]" },
   {
     key: "date",
-    label: "Tanggal Upload",
-    className: "w-[150px]",
+    label: "Date",
+    className: "w-[120px]",
   },
   {
     key: "showTitle",
@@ -56,187 +61,441 @@ const activityColumns: Column<TableActivity>[] = [
         <span
           className={clsx(
             "h-2 w-2 rounded-full",
-            row.showTitle ? "bg-green-600 text-green-600" : "bg-red-700"
+            row.showTitle ? "bg-green-600" : "bg-red-700"
           )}
         />
-        <span className="font-medium ">
-          {row.showTitle ? "active" : "inactive"}
+        <span className="font-medium">
+          {row.showTitle ? "Active" : "Inactive"}
         </span>
       </div>
     ),
   },
   {
     key: "instaUrl",
-    label: "instagram url",
-    className: "w-[180px] ",
+    label: "Instagram URL",
+    className: "w-[180px] truncate",
+    render: (row) => (
+      <a 
+        href={row.instaUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline truncate block max-w-[150px]"
+      >
+        {row.instaUrl || "-"}
+      </a>
+    ),
   },
   {
-    key: "imageUrl",
-    label: "image url",
-    className: "w-[190px]",
+    key: "medias",
+    label: "Images",
+    className: "w-[160px]",
+    render: (row) => (
+      <div className="flex gap-1">
+        {row.medias.slice(0, 3).map((media, index) => (
+          <img
+            key={index}
+            src={media}
+            alt={`Media ${index + 1}`}
+            className="w-8 h-8 rounded object-cover"
+          />
+        ))}
+        {row.medias.length > 3 && (
+          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs">
+            +{row.medias.length - 3}
+          </div>
+        )}
+      </div>
+    ),
   },
 ];
 
-// Data contoh - updated dengan id yang berbeda
-const activityData: TableActivity[] = [
-  {
-    id: 1,
-    title: "Lorem ipsum dolor sit amet, consakjd dfhkash webiashd iwosnaos",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ",
-    longDesc:
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    date: "19-06-04",
-    showTitle: true,
-    instaUrl:
-      "https://images.pexels.com/photos/4625868/pexels-photo-4625868.jpeg",
-    imageUrl: [
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-    ],
-  },
-  {
-    id: 2,
-    title: "Lorem ipsum dolor sit amet, consakjd dfhkash webiashd iwosnaos",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ",
-    longDesc:
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    date: "19-06-04",
-    showTitle: false,
-    instaUrl:
-      "https://images.pexels.com/photos/4625868/pexels-photo-4625868.jpeg",
-    imageUrl: [
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-    ],
-  },
-  {
-    id: 3,
-    title: "Lorem ipsum dolor sit amet, consakjd dfhkash webiashd iwosnaos",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ",
-    longDesc:
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
-    date: "19-06-04",
-    showTitle: true,
-    instaUrl:
-      "https://images.pexels.com/photos/4625868/pexels-photo-4625868.jpeg",
-    imageUrl: [
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-      "https://images.pexels.com/photos/33857618/pexels-photo-33857618.jpeg",
-    ],
-  },
-];
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function ActivityPage() {
-  const statusArr = ["All", "Showing Title", "Not Showing Title"];
+  const statusArr = ["All", "DRAFT", "PUBLISH", "ARCHIVE"];
+  const showTitleArr = ["All", "Showing Title", "Not Showing Title"];
   const pageLength = ["10", "20", "100"];
+  
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [activities, setActivities] = useState<TableActivity[]>([])
-  const token = localStorage.getItem("token")
+  const [activities, setActivities] = useState<TableActivity[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [showTitleFilter, setShowTitleFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  async function fetchActivities() {
-    try { 
-      const res = await fetch("", {})
-      const data = res.json()
+  // Alert dialog state
+  const [showAlertDelete, setShowAlertDelete] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<TableActivity | null>(null);
 
-    } catch(err){
-      const errMsg = err instanceof Error ? err.message : "unknown error"
-      toast.error(errMsg)
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  const getToken = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token");
     }
-  }
+    return null;
+  }, []);
 
-  useEffect(() =>{
-    fetchActivities()
-  }, [])
+  const fetchActivities = useCallback(async (
+    token: string, 
+    page: number = 1, 
+    limit: number = 10, 
+    search: string = "", 
+    status: string = "", 
+    showTitle: string = ""
+  ) => {
+    if (!token) {
+      toast.error("Token tidak ditemukan");
+      return;
+    }
+    setIsLoading(true);
 
-  function handleEdit(row: TableActivity){
-    
-  }
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+        ...(status && status !== "All" && { status }),
+        ...(showTitle === "Showing Title" && { showTitle: "true" }),
+        ...(showTitle === "Not Showing Title" && { showTitle: "false" }),
+      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/activity?${params}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        const transformedData = data.data.map((activity: any) => ({
+          ...activity,
+          medias: activity.medias.map((mediaItem: any) => mediaItem.media.url),
+        }));
+        
+        setActivities(transformedData);
+        setTotal(data.pagination.total);
+        setTotalPages(data.pagination.totalPages);
+      } else {
+        toast.error(data.message || "Failed to fetch activities");
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
+      toast.error(errMsg);
+      console.error("Fetch activities error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      fetchActivities(
+        token, 
+        page, 
+        limit, 
+        debouncedSearchQuery, 
+        statusFilter !== "All" ? statusFilter : "",
+        showTitleFilter !== "All" ? showTitleFilter : ""
+      );
+    }
+  }, [page, limit, debouncedSearchQuery, statusFilter, showTitleFilter, fetchActivities, getToken]);
+
+  const handleSearchSubmit = () => {
+    setSearchQuery(searchInput);
+    setPage(1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
+
+  const handleRefresh = () => {
+    const token = getToken();
+    if (token) {
+      fetchActivities(
+        token, 
+        page, 
+        limit, 
+        searchQuery, 
+        statusFilter !== "All" ? statusFilter : "",
+        showTitleFilter !== "All" ? showTitleFilter : ""
+      );
+    }
+  };
+
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handleShowTitleFilter = (value: string) => {
+    setShowTitleFilter(value);
+    setPage(1);
+  };
+
+  const handleLimitChange = (value: string) => {
+    setLimit(parseInt(value));
+    setPage(1);
+  };
+
+  const handleEdit = (row: TableActivity) => {
+    router.push(`/activity/${row.id}/edit`);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedActivity) return;
+
+    const token = getToken();
+    if (!token) {
+      toast.error("Token tidak ditemukan");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/activity/${selectedActivity.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(`Activity "${selectedActivity.title}" deleted successfully!`);
+        
+        // Refresh the activities list
+        const token = getToken();
+        if (token) {
+          await fetchActivities(
+            token, 
+            page, 
+            limit, 
+            searchQuery, 
+            statusFilter !== "All" ? statusFilter : "",
+            showTitleFilter !== "All" ? showTitleFilter : ""
+          );
+        }
+      } else {
+        toast.error(data.message || "Failed to delete activity");
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
+      toast.error(errMsg);
+      console.error("Delete activity error:", err);
+    } finally {
+      setShowAlertDelete(false);
+      setSelectedActivity(null);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setPage(1);
+  };
 
   return (
-    <Wrapper className="flex flex-col">
-      {/* Header Action*/}
-      <section className="flex items-center justify-between gap-0 w-full mb-4">
-        <div className="flex items-center gap-4 w-full">
-          <div className="flex items-center gap-2">
-            <Input className="w-100" placeholder="Cari judul..." />
-            <Button>Cari</Button>
+    <>
+      {/* Alert Dialog for Delete Confirmation */}
+      {showAlertDelete && selectedActivity && (
+        <AlertDialogComponent
+          open={showAlertDelete}
+          onOpenChange={(open) => {
+            setShowAlertDelete(open);
+            if (!open) {
+              setSelectedActivity(null);
+            }
+          }}
+          header="Hapus Activity"
+          desc={`Apakah Anda yakin ingin menghapus activity "${selectedActivity.title}"?`}
+          continueAction={handleDeleteConfirm}
+        />
+      )}
+
+      <Wrapper className="flex flex-col">
+        {/* Header Action*/}
+        <section className="flex items-center justify-between gap-0 w-full mb-4">
+          <div className="flex items-center gap-4 w-full">
+            <div className="flex items-center gap-2">
+              <Input 
+                className="w-100" 
+                placeholder="Cari judul atau deskripsi..." 
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              <Button onClick={handleSearchSubmit}>Cari</Button>
+              {(searchInput || searchQuery) && (
+                <Button variant="outline" onClick={handleClearSearch}>
+                  Clear
+                </Button>
+              )}
+            </div>
+            <div>
+              <SelectComponent
+                label="Filter By Status"
+                placeholder="Filter By Status"
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                options={statusArr.map((s) => ({ label: s, value: s }))}
+              />
+            </div>
+            <Button onClick={handleRefresh} disabled={isLoading}>
+              <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
+              <span>Refresh</span>
+            </Button>
           </div>
           <div>
-            <SelectComponent
-              label="Filter By"
-              placeholder="Filter By"
-              options={statusArr.map((s) => ({ label: s, value: s }))}
-            />
+            <Link href="/activity/new">
+              <Button>
+                <Plus /> Activity Baru
+              </Button>
+            </Link>
           </div>
-          <Button onClick={() => { window.location.reload() } }>
-            <MdOutlineLoop />
-            <span>Refresh</span>
-          </Button>
-        </div>
-        <div>
-          <Link href="/activity/new">
-            <Button>
-              <Plus /> Activity Baru
-            </Button>
-          </Link>
-        </div>
-      </section>
+        </section>
 
-      {/* TableList */}
-      <section className="flex-1 min-h-0">
-        {isLoading ? (
-          <TableSkeleton columns={4} rows={4} showActions={true} />
-        ) : (
-          <TableList
-            columns={activityColumns}
-            data={activityData}
-            onEdit={handleEdit} // ⬅️ Updated: menggunakan handleEdit function
-            onDelete={(row) => console.log("Delete:", row)}
-          />
-        )}
-      </section>
+        {/* TableList */}
+        <section className="flex-1 min-h-0">
+          {isLoading ? (
+            <TableSkeleton columns={activityColumns.length} rows={5} showActions={true} />
+          ) : (
+            <TableList
+              columns={activityColumns}
+              data={activities}
+              onEdit={handleEdit}
+              onDelete={(row) => {
+                setSelectedActivity(row);
+                setShowAlertDelete(true);
+              }}
+            />
+          )}
+        </section>
 
-      {/* Pagination */}
-      <section className="flex items-center justify-between">
-        <SelectComponent
-          label="Data Per Halaman"
-          placeholder="Data Per Halaman"
-          options={pageLength.map((s) => ({ label: s, value: s }))}
-        />
-        <div className="text-white">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  2
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">3</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </section>
-    </Wrapper>
+        {/* Pagination */}
+        <section className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-4">
+            <SelectComponent
+              label="Data Per Halaman"
+              placeholder="Data Per Halaman"
+              value={limit.toString()}
+              onChange={handleLimitChange}
+              options={pageLength.map((s) => ({ label: s, value: s }))}
+            />
+            <div className="text-sm text-gray-600">
+              Menampilkan {activities.length} dari {total} data
+              {searchQuery && ` untuk "${searchQuery}"`}
+            </div>
+          </div>
+          <div className="text-white">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(page - 1);
+                    }}
+                    className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(pageNum);
+                        }}
+                        isActive={pageNum === page}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+
+                {totalPages > 5 && (
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                )}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(page + 1);
+                    }}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </section>
+      </Wrapper>
+    </>
   );
 }
