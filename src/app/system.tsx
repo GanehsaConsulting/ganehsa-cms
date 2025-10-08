@@ -36,7 +36,7 @@ export const navigationItems = {
         icon: <HiCamera />,
         subs: [
           { name: "Activity List", path: "/activity" },
-          { name: "Category Activity", path: "/activity/category" } 
+          // { name: "Category Activity", path: "/activity/category" } 
         ]
       },
 

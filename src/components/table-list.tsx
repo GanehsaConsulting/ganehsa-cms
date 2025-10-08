@@ -163,10 +163,32 @@ export const TableList = <T extends { id: number | string }>({
                               >
                                 {col.key === "content" ||
                                 col.key === "title" ||
-                                col.key === "excerpt"
+                                col.key === "excerpt" ||
+                                col.key === "longDesc" ||
+                                col.key === "desc" ||
+                                col.key === "instaUrl"
+                                // *truncate / line clamp manual
                                   ? typeof row[col.key] === "string"
                                     ? truncate(row[col.key] as string, 20)
                                     : (row[col.key] as React.ReactNode)
+                                  // *nampilin arr of string + count length array 
+                                    : col.key === "imageUrl"
+                                  ? (() => {
+                                      const images = row[col.key] as
+                                        | string[]
+                                        | undefined;
+                                      if (
+                                        Array.isArray(images) &&
+                                        images.length > 0
+                                      ) {
+                                        return `${truncate(images[0], 15)} ${
+                                          images.length > 1
+                                            ? `(+${images.length - 1})`
+                                            : ""
+                                        }`;
+                                      }
+                                      return "-";
+                                    })()
                                   : col.render
                                   ? col.render(row)
                                   : (row[col.key] as React.ReactNode)}
