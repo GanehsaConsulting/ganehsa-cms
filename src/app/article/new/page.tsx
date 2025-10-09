@@ -18,6 +18,7 @@ import { RadioGroupField } from "@/components/radio-group-field";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
+import { useCategory } from "@/hooks/useCategory";
 
 // Dynamic Import - Jodit Editor
 const JoditEditor = dynamic(() => import("jodit-react"), { 
@@ -68,47 +69,8 @@ export default function NewArticlePage() {
   const [medias, setMedias] = useState<Media[]>([]);
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [dataCategories, setDataCategories] = useState<Category[]>([]);
-
-  // Fetch categories
-  async function fetchDataCategory() {
-    const token = getToken();
-    if (!token) {
-      toast.error("Token tidak ditemukan");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      if (data.success) {
-        setDataCategories(data.data);
-      } else {
-        toast.error(data.message || "Gagal mengambil kategori");
-      }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      toast.error("Gagal mengambil data kategori");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
+  const { dataCategories } = useCategory()
+ 
   // Fetch media (hanya untuk thumbnail)
   async function getMedias() {
     const token = getToken();
@@ -141,7 +103,7 @@ export default function NewArticlePage() {
   }
 
   useEffect(() => {
-    fetchDataCategory();
+    // fetchDataCategory();
     getMedias();
   }, []);
 

@@ -21,6 +21,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { combineDateAndTime, getToken } from "@/lib/helpers";
+import { useMedias } from "@/hooks/useMedias";
 
 const SHOW_TITLE = [
   { label: "active", value: "active", color: "green" as const },
@@ -49,41 +50,8 @@ export default function AddNewActivity() {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("00:00:00"); 
-
-  // Media State
-  const [medias, setMedias] = useState<Media[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
-
-  // Fetch media
-  async function getMedias() {
-    const token = getToken();
-    if (!token) return;
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setMedias(data.data);
-      } else {
-        toast.error(data.message || "Gagal mengambil data media");
-      }
-    } catch (err) {
-      console.error("Error fetching media:", err);
-      toast.error("Gagal mengambil data media");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const { getMedias, token, medias} = useMedias()
 
   // Handle select images - now using media IDs
   const handleSelectImages = (mediaId: number) => {
@@ -100,7 +68,6 @@ export default function AddNewActivity() {
 
   // Handle submit - integrated with the endpoint
   const handleSubmit = async () => {
-    const token = getToken();
     if (!token) {
       toast.error("Anda belum login!");
       return;

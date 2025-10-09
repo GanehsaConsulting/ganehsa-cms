@@ -24,9 +24,10 @@ import { TableSkeleton } from "@/components/skeletons/table-list";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { IoSearch } from "react-icons/io5";
 import { MdOutlineLoop } from "react-icons/md";
-import { getToken } from "@/lib/helpers";
+import { formatDate, getToken } from "@/lib/helpers";
+import { useArticles } from "@/hooks/useArticles";
 
-interface Article {
+export interface Article {
   id: number;
   title: string;
   slug: string;
@@ -54,7 +55,7 @@ interface Article {
   };
 }
 
-interface TableArticle {
+export interface TableArticle {
   id: number;
   title: string;
   slug: string;
@@ -87,7 +88,6 @@ const articleColumns: Column<TableArticle>[] = [
     ),
   },
   { key: "category", label: "Category", className: "min-w-[120px]" },
-  { key: "excerpt", label: "Excerpt", className: "min-w-[200px]" },
   {
     key: "status",
     label: "Status",
@@ -121,102 +121,62 @@ const articleColumns: Column<TableArticle>[] = [
       </div>
     ),
   },
-  { key: "date", label: "Tanggal Upload", className: "min-w-[140px]" },
+  { key: "date", label: "Tanggal Upload", className: "min-w-[200px]" },
 ];
 
 export default function ArticlePage() {
   const statusArr = ["All", "Draft", "Archive", "Publish"];
   const pageLength = ["10", "20", "100"];
   const router = useRouter();
-  
-  const [articles, setArticles] = useState<TableArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
-
-  // Alert dialog state
   const [showAlertDelete, setShowAlertDelete] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(
+    null
+  );
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  // Custom Fetch Hooks yey
+  const { articles, isLoading, setSearchTerm, fetchArticles } = useArticles();
 
-  const mapStatus = (status: string): "draft" | "archive" | "publish" => {
-    switch (status) {
-      case "DRAFT":
-        return "draft";
-      case "ARCHIVE":
-        return "archive";
-      case "PUBLISH":
-        return "publish";
-      default:
-        return "draft";
-    }
-  };
-
-  async function fetchArticles() {
+  const handleDelete = async (row: TableArticle) => {
     const token = getToken();
     if (!token) {
       toast.error("Token tidak ditemukan");
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const url = searchTerm
-        ? `${process.env.NEXT_PUBLIC_API_URL}/article?search=${encodeURIComponent(searchTerm)}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/article`;
+    const originalId = row.originalId || row.id;
 
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/article/${originalId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await res.json();
-      if (data.success && data.data) {
-        const transformed: TableArticle[] = data.data.map((article: Article) => ({
-          id: article.id,
-          originalId: article.id,
-          title: article.title,
-          slug: article.slug,
-          excerpt: article.excerpt || "-",
-          category: article.category.name,
-          content: article.content,
-          date: formatDate(article.createdAt),
-          status: mapStatus(article.status),
-          highlight: article.highlight,
-        }));
-        setArticles(transformed);
+
+      if (res.ok && data.success) {
+        toast.success("Artikel berhasil dihapus");
+        window.location.reload();
       } else {
-        toast.error(data.message || "Gagal mengambil data artikel");
-        setArticles([]);
+        toast.error(data.message || "Gagal menghapus artikel");
       }
     } catch (err) {
-      console.error("Error fetching articles:", err);
-      toast.error("Gagal mengambil data artikel");
-      setArticles([]);
+      console.error("Error deleting article:", err);
+      toast.error("Terjadi kesalahan saat menghapus artikel");
     } finally {
-      setIsLoading(false);
+      setShowAlertDelete(false);
+      setSelectedArticle(null);
     }
-  }
-
-  useEffect(() => {
-    fetchArticles();
-  }, [searchTerm]);
+  };
 
   // Handle search
   const handleSearch = () => {
@@ -254,44 +214,6 @@ export default function ArticlePage() {
         })
       );
       router.push(`/article/${original.originalId || row.id}/edit`);
-    }
-  };
-
-  const handleDelete = async (row: TableArticle) => {
-    const token = getToken();
-    if (!token) {
-      toast.error("Token tidak ditemukan");
-      return;
-    }
-
-    const originalId = row.originalId || row.id;
-
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${originalId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        toast.success("Artikel berhasil dihapus");
-        fetchArticles();
-      } else {
-        toast.error(data.message || "Gagal menghapus artikel");
-      }
-    } catch (err) {
-      console.error("Error deleting article:", err);
-      toast.error("Terjadi kesalahan saat menghapus artikel");
-    } finally {
-      setShowAlertDelete(false);
-      setSelectedArticle(null);
     }
   };
 
@@ -348,7 +270,9 @@ export default function ArticlePage() {
           }}
           header="Hapus Artikel"
           desc={`Apakah Anda yakin ingin menghapus artikel "${selectedArticle?.title}"?`}
-          continueAction={() => selectedArticle && handleDelete(selectedArticle)}
+          continueAction={() =>
+            selectedArticle && handleDelete(selectedArticle)
+          }
         />
       )}
 
@@ -432,12 +356,17 @@ export default function ArticlePage() {
             <SelectComponent
               label="Data Per Halaman"
               placeholder={limit.toString()}
-              options={pageLength.map((s) => ({ label: `${s} per halaman`, value: s }))}
+              options={pageLength.map((s) => ({
+                label: `${s} per halaman`,
+                value: s,
+              }))}
               value={limit.toString()}
               onChange={handleLimitChange}
             />
             <span className="text-white text-sm">
-              Menampilkan {startIndex + 1} - {Math.min(startIndex + limit, filteredArticles.length)} dari {filteredArticles.length} data
+              Menampilkan {startIndex + 1} -{" "}
+              {Math.min(startIndex + limit, filteredArticles.length)} dari{" "}
+              {filteredArticles.length} data
             </span>
           </div>
           <div className="text-white">

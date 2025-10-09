@@ -21,6 +21,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
+import { useMedias } from "@/hooks/useMedias";
 
 const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
@@ -82,9 +83,9 @@ export default function EditActivityPage() {
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
 
   // Media State
-  const [medias, setMedias] = useState<Media[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [open, setOpen] = useState(false);
+  const { medias, getMedias } = useMedias()
 
   // Activity data state
   const [activityData, setActivityData] = useState<Activity | null>(null);
@@ -113,7 +114,6 @@ export default function EditActivityPage() {
   useEffect(() => {
     if (activityId) {
       fetchActivity();
-      getMedias();
     }
   }, [activityId]);
 
@@ -176,33 +176,6 @@ export default function EditActivityPage() {
     }
   }
 
-  // Fetch media
-  async function getMedias() {
-    const token = getToken();
-    if (!token) return;
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setMedias(data.data);
-      } else {
-        toast.error(data.message || "Gagal mengambil data media");
-      }
-    } catch (err) {
-      console.error("Error fetching media:", err);
-      toast.error("Gagal mengambil data media");
-    }
-  }
 
   // Handle select images - using media IDs
   const handleSelectImages = (mediaId: number) => {

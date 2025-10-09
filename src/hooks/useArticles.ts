@@ -1,0 +1,84 @@
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { formatDate, getToken } from "@/lib/helpers";
+import { TableArticle } from "@/app/article/page";
+import { Article } from "@prisma/client";
+
+export const useArticles = () => {
+  const [articles, setArticles] = useState<TableArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const mapStatus = (status: string): "draft" | "archive" | "publish" => {
+    switch (status) {
+      case "DRAFT":
+        return "draft";
+      case "ARCHIVE":
+        return "archive";
+      case "PUBLISH":
+        return "publish";
+      default:
+        return "draft";
+    }
+  };
+
+  const fetchArticles = async () => {
+    const token = getToken();
+    if (!token) {
+      toast.error("Token tidak ditemukan");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const url = searchTerm
+        ? `${process.env.NEXT_PUBLIC_API_URL}/article?search=${encodeURIComponent(searchTerm)}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/article`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        const transformed: TableArticle[] = data.data.map((article: Article) => ({
+          id: article.id,
+          originalId: article.id,
+          title: article.title,
+          slug: article.slug,
+          excerpt: article.excerpt || "-",
+          content: article.content,
+          date: article.createdAt,
+          status: mapStatus(article.status),
+          highlight: article.highlight,
+        }));
+        setArticles(transformed);
+      } else {
+        toast.error(data.message || "Gagal mengambil data artikel");
+        setArticles([]);
+      }
+    } catch (err) {
+      console.error("Error fetching articles:", err);
+      toast.error("Gagal mengambil data artikel");
+      setArticles([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticles();
+  }, [searchTerm]);
+
+  return {
+    articles,
+    isLoading,
+    searchTerm,
+    setSearchTerm,
+    fetchArticles,
+  };
+};

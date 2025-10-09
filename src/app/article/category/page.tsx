@@ -22,8 +22,9 @@ import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
 import { getToken } from "@/lib/helpers";
+import { useCategory } from "@/hooks/useCategory";
 
-interface Category {
+export interface Category {
   id: number;
   name: string;
   articleCount: number;
@@ -31,7 +32,7 @@ interface Category {
   date: string;
 }
 
-interface PaginationData {
+export interface PaginationData {
   page: number;
   limit: number;
   totalCount: number;
@@ -67,67 +68,22 @@ export const formCategoryColumns: Column<Category>[] = [
 
 export default function ArticleCategoryPage() {
   const pageLength = ["10", "20", "50"];
-
   const [editModal, setEditModal] = useState(false);
   const [newArtikelModal, setNewArtikelModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Category | null>(null);
-  const [dataCategories, setDataCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Pagination & Search States
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    isLoading,
+    pagination,
+    token,
+    fetchDataCategory,
+    currentPage,
+    setCurrentPage,
+    limit,
+    setLimit,
+    setSearchQuery,
+    dataCategories,
+  } = useCategory();
   const [searchInput, setSearchInput] = useState("");
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    limit: 10,
-    totalCount: 0,
-    totalPages: 1,
-  });
-
-  const token = getToken();
-
-  // Fetch kategori dari API dengan pagination & search
-  async function fetchDataCategory() {
-    if (!token) return;
-    setIsLoading(true);
-
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: limit.toString(),
-        ...(searchQuery && { search: searchQuery }),
-      });
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category?${params}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await res.json();
-
-      if (data.success) {
-        setDataCategories(data.data);
-        setPagination(data.pagination);
-      }
-    } catch (err) {
-      const errMessage = err instanceof Error ? err.message : "unknown errors";
-      console.log(errMessage);
-      toast.error(errMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchDataCategory();
-  }, [currentPage, limit, searchQuery]);
 
   // Handle search
   const handleSearch = () => {

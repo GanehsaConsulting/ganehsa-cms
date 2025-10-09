@@ -31,8 +31,9 @@ import { Input } from "@/components/ui/input";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { MediaSkeleton } from "@/components/skeletons/media-skeletons";
 import { SelectComponent } from "@/components/ui/select";
+import { useMedias } from "@/hooks/useMedias";
 
-type MediaItem = {
+export type MediaItem = {
   id: number;
   url: string;
   type: string;
@@ -44,7 +45,7 @@ type MediaItem = {
   updatedAt: Date;
 };
 
-interface Medias {
+export interface Medias {
   id: number;
   url: string;
   type: "image" | "video";
@@ -66,25 +67,12 @@ export default function MediaPage() {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [dialogPreview, setdialogPreview] = useState(false);
   const [dialogNew, setDialogNew] = useState(false);
-  const [medias, setMedias] = useState<Medias[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [formValues, setFormValues] = useState({
     file: null as File | null,
     title: "",
     type: "",
   });
   const [search, setSearch] = useState("");
-  const [pagination, setPagination] = useState({
-    total: 0,
-    totalPages: 1,
-    currentPage: 1,
-  });
-  const [fetchFunction, setFetchFunction] = useState<
-    ((search?: string, page?: number) => void) | null
-  >(null);
-
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const VIEW_OPTIONS = [
     {
@@ -98,46 +86,15 @@ export default function MediaPage() {
       color: "pink" as const,
     },
   ];
-
-  // Fetch data media
-  useEffect(() => {
-    if (!token) return;
-
-    async function getMedias(search: string = "", page: number = 1) {
-      setIsLoading(true);
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/media?search=${encodeURIComponent(
-            search
-          )}&page=${page}&limit=12`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        const data = await res.json();
-        if (res.ok) {
-          setMedias(data.data);
-          setPagination({
-            total: data.pagination.total,
-            totalPages: data.pagination.totalPages,
-            currentPage: data.pagination.currentPage,
-          });
-        } else {
-          toast.error(data.message || "Gagal mengambil data media");
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        toast.error(msg);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // initial fetch
-    getMedias();
-    setFetchFunction(() => getMedias);
-  }, [token]);
+  const {
+    token,
+    pagination,
+    fetchFunction,
+    isLoading,
+    setIsLoading,
+    medias,
+    setMedias,
+  } = useMedias()
 
   // Upload media baru
   async function handleNewMedia(e: React.FormEvent<HTMLFormElement>) {
