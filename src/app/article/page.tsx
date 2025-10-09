@@ -24,6 +24,7 @@ import { TableSkeleton } from "@/components/skeletons/table-list";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { IoSearch } from "react-icons/io5";
 import { MdOutlineLoop } from "react-icons/md";
+import { getToken } from "@/lib/helpers";
 
 interface Article {
   id: number;
@@ -141,9 +142,6 @@ export default function ArticlePage() {
   // Alert dialog state
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(null);
-
-  const getToken = () =>
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

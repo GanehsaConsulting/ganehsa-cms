@@ -17,6 +17,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { HeaderActions } from "@/components/header-actions";
 import { RadioGroupField } from "@/components/radio-group-field";
 import { Textarea } from "@/components/ui/textarea";
+import { getToken } from "@/lib/helpers";
 
 // Dynamic Import - Jodit Editor
 const JoditEditor = dynamic(() => import("jodit-react"), {
@@ -97,14 +98,6 @@ export default function EditArticlePage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Get token safely
-  const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
 
   // Fetch article data
   const fetchArticleData = async () => {

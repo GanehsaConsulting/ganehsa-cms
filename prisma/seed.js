@@ -17,7 +17,7 @@ async function main() {
     },
   })
 
-  console.log("✅ Seeding selesai:", admin)
+  // console.log("✅ Seeding selesai:", admin)
 }
 
 main()

@@ -17,6 +17,7 @@ import { HeaderActions } from "@/components/header-actions";
 import { RadioGroupField } from "@/components/radio-group-field";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { getToken } from "@/lib/helpers";
 
 // Dynamic Import - Jodit Editor
 const JoditEditor = dynamic(() => import("jodit-react"), { 
@@ -68,14 +69,6 @@ export default function NewArticlePage() {
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [dataCategories, setDataCategories] = useState<Category[]>([]);
-
-  // Get token safely
-  const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
 
   // Fetch categories
   async function fetchDataCategory() {

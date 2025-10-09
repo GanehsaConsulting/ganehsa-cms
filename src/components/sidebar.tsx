@@ -11,6 +11,7 @@ import { navigationItems } from "@/app/system";
 import { ThemeSwitch } from "./theme-switch";
 import { useSidebar } from "@/app/contexts/sidebar-context";
 import { toast } from "sonner";
+import { getToken } from "@/lib/helpers";
 
 interface UserLoggedIn {
   id: number;
@@ -29,23 +30,26 @@ export const Sidebar = () => {
   const noNavigation = ["/login", "/forgot-password", "/reset-password"];
   const [currentUser, setCurrentUser] = useState<UserLoggedIn>();
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
+    const token = getToken();
     if (!token) return;
 
     const fetchUserLoggedIn = async () => {
       setLoading(true);
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/whoAmI`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          credentials: "include"
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/whoAmI`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
 
         const data = await res.json();
 
@@ -56,7 +60,7 @@ export const Sidebar = () => {
         }
 
         if (data) {
-          console.log("user login:", data);
+          // console.log("user login:", data);
           setCurrentUser(data.user);
         }
       } catch (err) {
@@ -414,20 +418,23 @@ export const Sidebar = () => {
               className="flex items-center gap-3 cursor-pointer"
               onClick={toggleSidebar}
             >
-              <Image
+              {/* <Image
                 width={50}
                 height={50}
                 className="w-10 h-10 aspect-square object-cover rounded-full"
                 src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Profile Photo"
-              />
+              /> */}
+              <div className="h-11 w-15 rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center" >
+                <span className="font-bold uppercase" >{currentUser?.name.split("").slice(0, 2).join("")}</span>
+              </div>
               {isExpanded && (
                 <div className="flex items-center justify-between w-full">
                   <div>
                     <h2 className="text-white font-semibold text-sm">
-                      {currentUser?.name}
+                      {loading ? "memuat..." : currentUser?.name}
                     </h2>
-                    <p className="text-white/70 text-xs">{currentUser?.role}</p>
+                    <p className="text-white/70 text-xs">{loading ? "memuat..." : currentUser?.role}</p>
                   </div>
                   <div className="text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300">
                     <TbDotsVertical />

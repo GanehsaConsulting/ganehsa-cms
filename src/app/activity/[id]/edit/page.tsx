@@ -20,6 +20,7 @@ import { ChevronDownIcon, Plus, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
+import { getToken } from "@/lib/helpers";
 
 const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
@@ -69,17 +70,17 @@ export default function EditActivityPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  
+
   // Form State
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState("00:00:00");
   const [showTitle, setShowTitle] = useState("inactive");
   const [instaUrl, setInstaUrl] = useState("");
-  const [status, setStatus] = useState("DRAFT");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
-  
+
   // Media State
   const [medias, setMedias] = useState<Media[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -88,12 +89,24 @@ export default function EditActivityPage() {
   // Activity data state
   const [activityData, setActivityData] = useState<Activity | null>(null);
 
-  // Get token safely
-  const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
+  // Function to combine date and time into ISO string
+  const combineDateAndTime = (selectedDate: Date, selectedTime: string) => {
+    if (!selectedDate) return undefined;
+
+    const [hours, minutes, seconds] = selectedTime.split(":").map(Number);
+    const combinedDate = new Date(selectedDate);
+    combinedDate.setHours(hours, minutes, seconds || 0, 0);
+
+    return combinedDate.toISOString();
+  };
+
+  // Function to extract time from ISO string
+  const extractTimeFromISO = (isoString: string) => {
+    const date = new Date(isoString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
   };
 
   // Fetch activity data
@@ -124,27 +137,31 @@ export default function EditActivityPage() {
           },
         }
       );
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       if (data.success) {
         const activity: Activity = data.data;
         setActivityData(activity);
-        
+
         // Populate form with existing data
         setTitle(activity.title);
         setDesc(activity.desc);
         setLongDesc(activity.longDesc);
-        setDate(new Date(activity.date));
+
+        // Set date and time from existing activity date
+        const activityDate = new Date(activity.date);
+        setDate(activityDate);
+        setTime(extractTimeFromISO(activity.date));
+
         setShowTitle(activity.showTitle ? "active" : "inactive");
         setInstaUrl(activity.instaUrl || "");
-        setStatus(activity.status);
-        
+
         // Set selected media IDs from existing medias
-        const mediaIds = activity.medias.map(mediaItem => mediaItem.media.id);
+        const mediaIds = activity.medias.map((mediaItem) => mediaItem.media.id);
         setSelectedMediaIds(mediaIds);
       } else {
         toast.error(data.message || "Gagal mengambil data activity");
@@ -170,11 +187,11 @@ export default function EditActivityPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       if (data.success) {
         setMedias(data.data);
@@ -191,7 +208,7 @@ export default function EditActivityPage() {
   const handleSelectImages = (mediaId: number) => {
     if (selectedMediaIds.includes(mediaId)) {
       // Remove if already selected
-      setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
+      setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
       toast.success("Gambar dihapus dari pilihan!");
     } else {
       // Add if not selected
@@ -213,19 +230,33 @@ export default function EditActivityPage() {
       toast.error("Judul activity wajib diisi!");
       return;
     }
-    
+
     if (!desc.trim()) {
       toast.error("Description wajib diisi!");
       return;
     }
-    
+
     if (!longDesc.trim()) {
       toast.error("Long description wajib diisi!");
       return;
     }
-    
+
     if (!date) {
-      toast.error("Tanggal upload wajib dipilih!");
+      toast.error("Tanggal wajib dipilih!");
+      return;
+    }
+
+    if (!time) {
+      toast.error("Waktu wajib dipilih!");
+      return;
+    }
+
+    // Combine date and time
+    const combinedDateTime = combineDateAndTime(date, time);
+    if (!combinedDateTime) {
+      toast.error(
+        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!"
+      );
       return;
     }
 
@@ -241,10 +272,9 @@ export default function EditActivityPage() {
         title: title.trim(),
         desc: desc.trim(),
         longDesc: longDesc.trim(),
-        date: date.toISOString().split('T')[0], // Format YYYY-MM-DD
+        date: combinedDateTime, // Use combined date and time
         showTitle: showTitleBoolean,
         instaUrl: instaUrl.trim(),
-        status: status,
         mediaIds: selectedMediaIds,
       };
 
@@ -318,15 +348,17 @@ export default function EditActivityPage() {
 
   // Get selected media URLs for preview
   const getSelectedMediaUrls = () => {
-    return selectedMediaIds.map(mediaId => {
-      const media = medias.find(m => m.id === mediaId);
-      return media?.url || '';
-    }).filter(url => url !== '');
+    return selectedMediaIds
+      .map((mediaId) => {
+        const media = medias.find((m) => m.id === mediaId);
+        return media?.url || "";
+      })
+      .filter((url) => url !== "");
   };
 
   // Remove selected media
   const removeSelectedMedia = (mediaId: number) => {
-    setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
+    setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
   };
 
   if (isFetching) {
@@ -412,8 +444,8 @@ export default function EditActivityPage() {
             <Label htmlFor="desc" className="text-white">
               Description *
             </Label>
-            <Textarea 
-              id="desc" 
+            <Textarea
+              id="desc"
               placeholder="Masukkan description activity..."
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
@@ -470,37 +502,52 @@ export default function EditActivityPage() {
 
         {/* right column */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Date Picker */}
-          <div className="space-y-3">
-            <Label htmlFor="title" className="text-white">
-              Tanggal Upload*
-            </Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"glass"}
-                  id="date"
-                  className="w-full justify-between font-normal"
+          {/* Date and Time Picker */}
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="date-picker" className="px-1 text-white">
+                Date *
+              </Label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="glass"
+                    id="date-picker"
+                    className="w-32 justify-between font-normal"
+                  >
+                    {date ? date.toLocaleDateString("id-ID") : "Select date"}
+                    <ChevronDownIcon />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
                 >
-                  {date ? date.toLocaleDateString('id-ID') : "Pilih tanggal"}
-                  <ChevronDownIcon />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-              >
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  captionLayout="dropdown"
-                  onSelect={(date) => {
-                    setDate(date);
-                    setOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    captionLayout="dropdown"
+                    onSelect={(date) => {
+                      setDate(date);
+                      setOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="time-picker" className="px-1 text-white">
+                Time *
+              </Label>
+              <Input
+                type="time"
+                id="time-picker"
+                step="1"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              />
+            </div>
           </div>
 
           {/* Show Title Status */}
@@ -513,39 +560,19 @@ export default function EditActivityPage() {
             disabled={isLoading}
           />
 
-          {/* Instagram URL (conditional) */}
-          {showTitle === "active" && (
-            <div className="space-y-3">
-              <Label htmlFor="instaUrl" className="text-white">
-                Instagram URL *
-              </Label>
-              <Input
-                id="instaUrl"
-                type="text"
-                placeholder="https://instagram.com/..."
-                value={instaUrl}
-                onChange={(e) => setInstaUrl(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-          )}
-
-          {/* Status Select */}
+          {/* Instagram URL */}
           <div className="space-y-3">
-            <Label htmlFor="status" className="text-white">
-              Status
+            <Label htmlFor="instaUrl" className="text-white">
+              Instagram URL *
             </Label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
+            <Input
+              id="instaUrl"
+              type="text"
+              placeholder="https://instagram.com/..."
+              value={instaUrl}
+              onChange={(e) => setInstaUrl(e.target.value)}
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISH">Publish</option>
-              <option value="ARCHIVE">Archive</option>
-            </select>
+            />
           </div>
 
           {/* Image Picker */}
@@ -577,7 +604,7 @@ export default function EditActivityPage() {
                   })}
                 </div>
               )}
-              
+
               {/* Image Picker Button */}
               <div
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
@@ -606,14 +633,14 @@ export default function EditActivityPage() {
               <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                 <div>ID: {activityData.id}</div>
                 <div>
-                  Dibuat: {new Date(activityData.createdAt).toLocaleDateString('id-ID')}
+                  Dibuat:{" "}
+                  {new Date(activityData.createdAt).toLocaleDateString("id-ID")}
                 </div>
                 <div>
-                  Diupdate: {new Date(activityData.updatedAt).toLocaleDateString('id-ID')}
+                  Diupdate:{" "}
+                  {new Date(activityData.updatedAt).toLocaleDateString("id-ID")}
                 </div>
-                <div>
-                  Author: {activityData.author.name}
-                </div>
+                <div>Author: {activityData.author.name}</div>
               </div>
             </div>
           )}
@@ -634,28 +661,28 @@ export default function EditActivityPage() {
                 ✕
               </Button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-grow">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {medias
-                  .filter(m => m.type.startsWith('image'))
+                  .filter((m) => m.type.startsWith("image"))
                   .map((media) => (
                     <div
                       key={media.id}
                       className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
                         selectedMediaIds.includes(media.id)
-                          ? 'border-primary ring-2 ring-primary/20' 
-                          : 'border-gray-200 hover:border-gray-400'
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-gray-200 hover:border-gray-400"
                       }`}
                       onClick={() => handleSelectImages(media.id)}
                     >
                       <img
                         src={media.url}
-                        alt={media.alt || ''}
+                        alt={media.alt || ""}
                         className="w-full h-20 object-cover"
                       />
                       <div className="p-2 text-xs truncate">
-                        {media.title || 'Untitled'}
+                        {media.title || "Untitled"}
                       </div>
                     </div>
                   ))}

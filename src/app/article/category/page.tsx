@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
+import { getToken } from "@/lib/helpers";
 
 interface Category {
   id: number;
@@ -85,8 +86,7 @@ export default function ArticleCategoryPage() {
     totalPages: 1,
   });
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = getToken();
 
   // Fetch kategori dari API dengan pagination & search
   async function fetchDataCategory() {

@@ -23,6 +23,8 @@ import { MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
+import { getToken } from "@/lib/helpers";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface TableActivity {
   id: number;
@@ -49,8 +51,8 @@ const activityColumns: Column<TableActivity>[] = [
   { key: "longDesc", label: "Long Description", className: "min-w-[180px]" },
   {
     key: "date",
-    label: "Date",
-    className: "w-[120px]",
+    label: "Date & Time",
+    className: "w-[210px]",
   },
   {
     key: "showTitle",
@@ -75,9 +77,9 @@ const activityColumns: Column<TableActivity>[] = [
     label: "Instagram URL",
     className: "w-[180px] truncate",
     render: (row) => (
-      <a 
-        href={row.instaUrl} 
-        target="_blank" 
+      <a
+        href={row.instaUrl}
+        target="_blank"
         rel="noopener noreferrer"
         className="text-blue-500 hover:underline truncate block max-w-[150px]"
       >
@@ -109,34 +111,15 @@ const activityColumns: Column<TableActivity>[] = [
   },
 ];
 
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 export default function ActivityPage() {
-  const statusArr = ["All", "DRAFT", "PUBLISH", "ARCHIVE"];
   const showTitleArr = ["All", "Showing Title", "Not Showing Title"];
   const pageLength = ["10", "20", "100"];
-  
+
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activities, setActivities] = useState<TableActivity[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
   const [showTitleFilter, setShowTitleFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -145,91 +128,101 @@ export default function ActivityPage() {
 
   // Alert dialog state
   const [showAlertDelete, setShowAlertDelete] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<TableActivity | null>(null);
+  const [selectedActivity, setSelectedActivity] =
+    useState<TableActivity | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  const getToken = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem("token");
-    }
-    return null;
-  }, []);
+  const fetchActivities = useCallback(
+    async (
+      token: string,
+      page: number = 1,
+      limit: number = 10,
+      search: string = "",
+      showTitle: string = ""
+    ) => {
+      if (!token) {
+        toast.error("Token tidak ditemukan");
+        return;
+      }
+      setIsLoading(true);
 
-  const fetchActivities = useCallback(async (
-    token: string, 
-    page: number = 1, 
-    limit: number = 10, 
-    search: string = "", 
-    status: string = "", 
-    showTitle: string = ""
-  ) => {
-    if (!token) {
-      toast.error("Token tidak ditemukan");
-      return;
-    }
-    setIsLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          ...(search && { search }),
+        });
 
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(search && { search }),
-        ...(status && status !== "All" && { status }),
-        ...(showTitle === "Showing Title" && { showTitle: "true" }),
-        ...(showTitle === "Not Showing Title" && { showTitle: "false" }),
-      });
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/activity?${params}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        // Add showTitle filter based on selection
+        if (showTitle === "Showing Title") {
+          params.append("showTitle", "true");
+        } else if (showTitle === "Not Showing Title") {
+          params.append("showTitle", "false");
         }
-      );
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        // If showTitle is "All", don't add any showTitle filter
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/activity?${params}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          const transformedData = data.data.map((activity: any) => ({
+            ...activity,
+            medias: activity.medias.map(
+              (mediaItem: any) => mediaItem.media.url
+            ),
+          }));
+
+          setActivities(transformedData);
+          setTotal(data.pagination.total);
+          setTotalPages(data.pagination.totalPages);
+        } else {
+          toast.error(data.message || "Failed to fetch activities");
+        }
+      } catch (err) {
+        const errMsg =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        toast.error(errMsg);
+        console.error("Fetch activities error:", err);
+      } finally {
+        setIsLoading(false);
       }
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        const transformedData = data.data.map((activity: any) => ({
-          ...activity,
-          medias: activity.medias.map((mediaItem: any) => mediaItem.media.url),
-        }));
-        
-        setActivities(transformedData);
-        setTotal(data.pagination.total);
-        setTotalPages(data.pagination.totalPages);
-      } else {
-        toast.error(data.message || "Failed to fetch activities");
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
-      toast.error(errMsg);
-      console.error("Fetch activities error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     const token = getToken();
     if (token) {
       fetchActivities(
-        token, 
-        page, 
-        limit, 
-        debouncedSearchQuery, 
-        statusFilter !== "All" ? statusFilter : "",
-        showTitleFilter !== "All" ? showTitleFilter : ""
+        token,
+        page,
+        limit,
+        debouncedSearchQuery,
+        showTitleFilter
       );
     }
-  }, [page, limit, debouncedSearchQuery, statusFilter, showTitleFilter, fetchActivities, getToken]);
+  }, [
+    page,
+    limit,
+    debouncedSearchQuery,
+    showTitleFilter,
+    fetchActivities,
+    getToken,
+  ]);
 
   const handleSearchSubmit = () => {
     setSearchQuery(searchInput);
@@ -237,7 +230,7 @@ export default function ActivityPage() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSearchSubmit();
     }
   };
@@ -245,20 +238,8 @@ export default function ActivityPage() {
   const handleRefresh = () => {
     const token = getToken();
     if (token) {
-      fetchActivities(
-        token, 
-        page, 
-        limit, 
-        searchQuery, 
-        statusFilter !== "All" ? statusFilter : "",
-        showTitleFilter !== "All" ? showTitleFilter : ""
-      );
+      fetchActivities(token, page, limit, searchQuery, showTitleFilter);
     }
-  };
-
-  const handleStatusFilter = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
   };
 
   const handleShowTitleFilter = (value: string) => {
@@ -302,25 +283,27 @@ export default function ActivityPage() {
       const data = await res.json();
 
       if (data.success) {
-        toast.success(`Activity "${selectedActivity.title}" deleted successfully!`);
-        
+        toast.success(
+          `Activity "${selectedActivity.title}" deleted successfully!`
+        );
+
         // Refresh the activities list
         const token = getToken();
         if (token) {
           await fetchActivities(
-            token, 
-            page, 
-            limit, 
-            searchQuery, 
-            statusFilter !== "All" ? statusFilter : "",
-            showTitleFilter !== "All" ? showTitleFilter : ""
+            token,
+            page,
+            limit,
+            searchQuery,
+            showTitleFilter
           );
         }
       } else {
         toast.error(data.message || "Failed to delete activity");
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
+      const errMsg =
+        err instanceof Error ? err.message : "Unknown error occurred";
       toast.error(errMsg);
       console.error("Delete activity error:", err);
     } finally {
@@ -364,9 +347,9 @@ export default function ActivityPage() {
         <section className="flex items-center justify-between gap-0 w-full mb-4">
           <div className="flex items-center gap-4 w-full">
             <div className="flex items-center gap-2">
-              <Input 
-                className="w-100" 
-                placeholder="Cari judul atau deskripsi..." 
+              <Input
+                className="w-100"
+                placeholder="Cari judul atau deskripsi..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -380,11 +363,11 @@ export default function ActivityPage() {
             </div>
             <div>
               <SelectComponent
-                label="Filter By Status"
-                placeholder="Filter By Status"
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                options={statusArr.map((s) => ({ label: s, value: s }))}
+                label="Filter By"
+                placeholder="Filter By"
+                value={showTitleFilter}
+                onChange={handleShowTitleFilter}
+                options={showTitleArr.map((s) => ({ label: s, value: s }))}
               />
             </div>
             <Button onClick={handleRefresh} disabled={isLoading}>
@@ -404,7 +387,11 @@ export default function ActivityPage() {
         {/* TableList */}
         <section className="flex-1 min-h-0">
           {isLoading ? (
-            <TableSkeleton columns={activityColumns.length} rows={5} showActions={true} />
+            <TableSkeleton
+              columns={activityColumns.length}
+              rows={5}
+              showActions={true}
+            />
           ) : (
             <TableList
               columns={activityColumns}
@@ -437,16 +424,18 @@ export default function ActivityPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
-                    href="#" 
+                  <PaginationPrevious
+                    href="#"
                     onClick={(e) => {
                       e.preventDefault();
                       handlePageChange(page - 1);
                     }}
-                    className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                    className={
+                      page <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
                   />
                 </PaginationItem>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
                   if (totalPages <= 5) {
@@ -461,7 +450,7 @@ export default function ActivityPage() {
 
                   return (
                     <PaginationItem key={pageNum}>
-                      <PaginationLink 
+                      <PaginationLink
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
@@ -482,13 +471,15 @@ export default function ActivityPage() {
                 )}
 
                 <PaginationItem>
-                  <PaginationNext 
-                    href="#" 
+                  <PaginationNext
+                    href="#"
                     onClick={(e) => {
                       e.preventDefault();
                       handlePageChange(page + 1);
                     }}
-                    className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                    className={
+                      page >= totalPages ? "pointer-events-none opacity-50" : ""
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>

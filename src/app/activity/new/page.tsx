@@ -20,6 +20,7 @@ import { ChevronDownIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { combineDateAndTime, getToken } from "@/lib/helpers";
 
 const SHOW_TITLE = [
   { label: "active", value: "active", color: "green" as const },
@@ -42,23 +43,16 @@ export default function AddNewActivity() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
-  const [date, setDate] = useState<Date | undefined>(undefined);
   const [showTitle, setshowTitle] = useState("inActive");
   const [instaUrl, setInstaUrl] = useState("");
-  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]); // Changed to store media IDs instead of URLs
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState("00:00:00"); 
 
   // Media State
   const [medias, setMedias] = useState<Media[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  // Get token safely
-  const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
 
   // Fetch media
   async function getMedias() {
@@ -129,7 +123,19 @@ export default function AddNewActivity() {
     }
 
     if (!date) {
-      toast.error("Tanggal upload wajib dipilih!");
+      toast.error("Tanggal wajib dipilih!");
+      return;
+    }
+
+    if (!time) {
+      toast.error("Waktu wajib dipilih!");
+      return;
+    }
+
+    // Combine date and time
+    const combinedDateTime = combineDateAndTime(date, time);
+    if (!combinedDateTime) {
+      toast.error("Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!");
       return;
     }
 
@@ -147,7 +153,7 @@ export default function AddNewActivity() {
         title: title.trim(),
         desc: desc.trim(),
         longDesc: longDesc.trim(),
-        date: date.toISOString().split("T")[0], // Format YYYY-MM-DD
+        date: combinedDateTime, // Use combined date and time
         showTitle: showTitleBoolean,
         instaUrl: instaUrl.trim(),
         status: "DRAFT", // Default status as per endpoint
@@ -185,15 +191,17 @@ export default function AddNewActivity() {
 
   // Get selected media URLs for preview
   const getSelectedMediaUrls = () => {
-    return selectedMediaIds.map(mediaId => {
-      const media = medias.find(m => m.id === mediaId);
-      return media?.url || '';
-    }).filter(url => url !== '');
+    return selectedMediaIds
+      .map((mediaId) => {
+        const media = medias.find((m) => m.id === mediaId);
+        return media?.url || "";
+      })
+      .filter((url) => url !== "");
   };
 
   // Remove selected media
   const removeSelectedMedia = (mediaId: number) => {
-    setSelectedMediaIds(selectedMediaIds.filter(id => id !== mediaId));
+    setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
   };
 
   return (
@@ -314,37 +322,52 @@ export default function AddNewActivity() {
 
         {/* right column */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Date Picker */}
-          <div className="space-y-3">
-            <Label htmlFor="title" className="text-white">
-              Tanggal Upload*
-            </Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"glass"}
-                  id="date"
-                  className="w-full justify-between font-normal"
+          {/* Date and Time Picker */}
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="date-picker" className="px-1 text-white">
+                Date *
+              </Label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="glass"
+                    id="date-picker"
+                    className="w-32 justify-between font-normal"
+                  >
+                    {date ? date.toLocaleDateString() : "Select date"}
+                    <ChevronDownIcon />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
                 >
-                  {date ? date.toLocaleDateString() : "Select date"}
-                  <ChevronDownIcon />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-              >
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  captionLayout="dropdown"
-                  onSelect={(date) => {
-                    setDate(date);
-                    setOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    captionLayout="dropdown"
+                    onSelect={(date) => {
+                      setDate(date);
+                      setOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="time-picker" className="px-1 text-white">
+                Time *
+              </Label>
+              <Input
+                type="time"
+                id="time-picker"
+                step="1"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              />
+            </div>
           </div>
 
           {/* Show Title Status */}
@@ -357,22 +380,19 @@ export default function AddNewActivity() {
             disabled={isLoading}
           />
 
-          {/* Instagram URL (conditional) */}
-          {showTitle === "active" && (
-            <div className="space-y-3">
-              <Label htmlFor="instaUrl" className="text-white">
-                Instagram URL *
-              </Label>
-              <Input
-                id="instaUrl"
-                type="text"
-                placeholder="https://instagram.com/..."
-                value={instaUrl}
-                onChange={(e) => setInstaUrl(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-          )}
+          <div className="space-y-3">
+            <Label htmlFor="instaUrl" className="text-white">
+              Instagram URL {showTitle === "active" && "*"}
+            </Label>
+            <Input
+              id="instaUrl"
+              type="text"
+              placeholder="https://instagram.com/..."
+              value={instaUrl}
+              onChange={(e) => setInstaUrl(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
 
           {/* Image Picker */}
           <div className="space-y-3">
