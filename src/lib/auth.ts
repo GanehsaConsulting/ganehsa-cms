@@ -20,6 +20,8 @@ export function verifyAuth(req: Request): DecodedUser | null {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     return decoded as DecodedUser;
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : "unknown error"
+    console.log(errMsg);
     return null;
   }
 }

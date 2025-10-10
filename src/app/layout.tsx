@@ -7,7 +7,6 @@ import { BackgroundImage } from "@/components/background-image";
 import { SidebarProvider } from "./contexts/sidebar-context";
 import { Header } from "@/components/header";
 import { Toaster } from "sonner";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ProtectedRoutes from "@/components/protected-layout";
 
 const geistSans = Geist({

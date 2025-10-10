@@ -1,6 +1,6 @@
 import { Category, PaginationData } from "@/app/article/category/page";
 import { getToken } from "@/lib/helpers";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 
 export function useCategory() {
@@ -18,7 +18,7 @@ export function useCategory() {
 
   const token = getToken();
 
-  async function fetchDataCategory() {
+  const fetchDataCategory = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
 
@@ -52,11 +52,11 @@ export function useCategory() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [token, currentPage, limit, searchQuery]);
 
   useEffect(() => {
     fetchDataCategory();
-  }, [currentPage, limit, searchQuery]);
+  }, [fetchDataCategory]);
 
   return {
     isLoading,
@@ -69,5 +69,5 @@ export function useCategory() {
     setLimit,
     setSearchQuery,
     dataCategories,
-  }
+  };
 }

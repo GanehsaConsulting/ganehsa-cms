@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { formatDate, getToken } from "@/lib/helpers";
+import { getToken } from "@/lib/helpers";
 import { TableArticle } from "@/app/article/page";
 import { Article } from "@prisma/client";
 
@@ -9,7 +9,7 @@ export const useArticles = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const mapStatus = (status: string): "draft" | "archive" | "publish" => {
+  const mapStatus = useCallback((status: string): "draft" | "archive" | "publish" => {
     switch (status) {
       case "DRAFT":
         return "draft";
@@ -20,9 +20,9 @@ export const useArticles = () => {
       default:
         return "draft";
     }
-  };
+  }, []);
 
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     const token = getToken();
     if (!token) {
       toast.error("Token tidak ditemukan");
@@ -68,11 +68,11 @@ export const useArticles = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm, mapStatus]);
 
   useEffect(() => {
     fetchArticles();
-  }, [searchTerm]);
+  }, [fetchArticles]);
 
   return {
     articles,

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
+import { Prisma, Status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // GET SINGLE ARTICLE BY ID
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -19,7 +20,8 @@ export async function GET(
       );
     }
 
-    const articleId = Number(params.id);
+    const { id } = await params;
+    const articleId = Number(id);
 
     const article = await prisma.article.findUnique({
       where: { id: articleId },
@@ -51,10 +53,9 @@ export async function GET(
   }
 }
 
-// EDIT ARTIKEL
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -66,17 +67,19 @@ export async function PATCH(
       );
     }
 
-    const articleId = Number(params.id);
+    const { id } = await params;
+    const articleId = Number(id);
+
     const body = await req.json();
-    const { 
-      title, 
-      content, 
-      slug, 
-      excerpt, 
-      categoryId, 
+    const {
+      title,
+      content,
+      slug,
+      excerpt,
+      categoryId,
       thumbnailId,
       status,
-      highlight 
+      highlight,
     } = body;
 
     // Check if article exists
@@ -91,8 +94,8 @@ export async function PATCH(
       );
     }
 
-    // Prepare update data
-    const updateData: any = {
+    // Prepare update data with proper Prisma type
+    const updateData: Prisma.ArticleUpdateInput = {
       updatedAt: new Date(),
     };
 
@@ -101,15 +104,28 @@ export async function PATCH(
     if (content !== undefined) updateData.content = content;
     if (slug !== undefined) updateData.slug = slug;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (categoryId !== undefined) updateData.categoryId = Number(categoryId);
+    if (categoryId !== undefined) {
+      updateData.category = {
+        connect: { id: Number(categoryId) },
+      };
+    }
     if (thumbnailId !== undefined) {
       if (thumbnailId === null || thumbnailId === "") {
-        updateData.thumbnailId = null;
+        updateData.thumbnail = {
+          disconnect: true,
+        };
       } else {
-        updateData.thumbnailId = Number(thumbnailId);
+        updateData.thumbnail = {
+          connect: { id: Number(thumbnailId) },
+        };
       }
     }
-    if (status !== undefined) updateData.status = status;
+    if (
+      status !== undefined &&
+      Object.values(Status).includes(status as Status)
+    ) {
+      updateData.status = status as Status;
+    }
     if (highlight !== undefined) updateData.highlight = Boolean(highlight);
 
     const updatedArticle = await prisma.article.update({
@@ -127,23 +143,26 @@ export async function PATCH(
       message: "Article updated successfully",
       data: updatedArticle,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error updating article:", err);
 
-    // Handle unique constraint violation (duplicate slug)
-    if (err.code === "P2002") {
-      return NextResponse.json(
-        { success: false, message: "Slug already exists" },
-        { status: 400 }
-      );
-    }
+    // Handle Prisma errors with proper type checking
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      // Handle unique constraint violation (duplicate slug)
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { success: false, message: "Slug already exists" },
+          { status: 400 }
+        );
+      }
 
-    // Handle not found error
-    if (err.code === "P2025") {
-      return NextResponse.json(
-        { success: false, message: "Article not found" },
-        { status: 404 }
-      );
+      // Handle not found error
+      if (err.code === "P2025") {
+        return NextResponse.json(
+          { success: false, message: "Article not found" },
+          { status: 404 }
+        );
+      }
     }
 
     return NextResponse.json(
@@ -156,7 +175,7 @@ export async function PATCH(
 // DELETE ARTIKEL
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -168,7 +187,8 @@ export async function DELETE(
       );
     }
 
-    const articleId = Number(params.id);
+    const { id } = await params;
+    const articleId = Number(id);
 
     // Check if article exists
     const existingArticle = await prisma.article.findUnique({
@@ -190,16 +210,8 @@ export async function DELETE(
       success: true,
       message: "Article deleted successfully",
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error deleting article:", err);
-
-    // Handle not found error
-    if (err.code === "P2025") {
-      return NextResponse.json(
-        { success: false, message: "Article not found" },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },

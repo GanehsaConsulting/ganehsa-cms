@@ -16,25 +16,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import JoditEditor from "jodit-react";
-import { ChevronDownIcon, Plus, Save } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ChevronDownIcon, Save } from "lucide-react";
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
+import Image from "next/image"; // Added Image import
 
 const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
   { label: "Inactive", value: "inactive", color: "gray" as const },
 ];
-
-interface Media {
-  id: number;
-  url: string;
-  type: string;
-  title: string | null;
-  alt: string | null;
-}
 
 interface Activity {
   id: number;
@@ -85,7 +78,7 @@ export default function EditActivityPage() {
   // Media State
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [open, setOpen] = useState(false);
-  const { medias, getMedias } = useMedias()
+  const { medias, getMedias } = useMedias();
 
   // Activity data state
   const [activityData, setActivityData] = useState<Activity | null>(null);
@@ -110,15 +103,8 @@ export default function EditActivityPage() {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  // Fetch activity data
-  useEffect(() => {
-    if (activityId) {
-      fetchActivity();
-    }
-  }, [activityId]);
-
-  // Fetch activity by ID
-  async function fetchActivity() {
+  // Fetch activity by ID - wrapped in useCallback to fix dependency warning
+  const fetchActivity = useCallback(async () => {
     const token = getToken();
     if (!token) {
       toast.error("Token tidak ditemukan");
@@ -160,8 +146,8 @@ export default function EditActivityPage() {
         setShowTitle(activity.showTitle ? "active" : "inactive");
         setInstaUrl(activity.instaUrl || "");
 
-        // Set selected media IDs from existing medias
-        const mediaIds = activity.medias.map((mediaItem) => mediaItem.media.id);
+        // Set selected media IDs from existing medias - with null check
+        const mediaIds = activity?.medias?.map((mediaItem) => mediaItem.media.id) || [];
         setSelectedMediaIds(mediaIds);
       } else {
         toast.error(data.message || "Gagal mengambil data activity");
@@ -174,8 +160,14 @@ export default function EditActivityPage() {
     } finally {
       setIsFetching(false);
     }
-  }
+  }, [activityId, router]); // Added dependencies
 
+  // Fetch activity data
+  useEffect(() => {
+    if (activityId) {
+      fetchActivity();
+    }
+  }, [activityId, fetchActivity]); // Added fetchActivity to dependencies
 
   // Handle select images - using media IDs
   const handleSelectImages = (mediaId: number) => {
@@ -245,7 +237,7 @@ export default function EditActivityPage() {
         title: title.trim(),
         desc: desc.trim(),
         longDesc: longDesc.trim(),
-        date: combinedDateTime, // Use combined date and time
+        date: combinedDateTime,
         showTitle: showTitleBoolean,
         instaUrl: instaUrl.trim(),
         mediaIds: selectedMediaIds,
@@ -319,11 +311,15 @@ export default function EditActivityPage() {
     }
   };
 
-  // Get selected media URLs for preview
-  const getSelectedMediaUrls = () => {
+  // Get selected media URLs for preview - with proper null checks
+  const getSelectedMediaUrls = (): string[] => {
+    if (!selectedMediaIds || selectedMediaIds.length === 0) {
+      return [];
+    }
+
     return selectedMediaIds
       .map((mediaId) => {
-        const media = medias.find((m) => m.id === mediaId);
+        const media = medias?.find((m) => m.id === mediaId);
         return media?.url || "";
       })
       .filter((url) => url !== "");
@@ -559,11 +555,19 @@ export default function EditActivityPage() {
                     const mediaId = selectedMediaIds[index];
                     return (
                       <div key={mediaId} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Selected ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-lg"
-                        />
+                        <div className="w-full h-20 relative rounded-lg overflow-hidden">
+                          <Image
+                            src={url}
+                            alt={`Selected ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeSelectedMedia(mediaId)}
@@ -604,16 +608,16 @@ export default function EditActivityPage() {
                 Informasi Activity
               </h3>
               <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <div>ID: {activityData.id}</div>
+                <div>ID: {activityData?.id}</div>
                 <div>
                   Dibuat:{" "}
-                  {new Date(activityData.createdAt).toLocaleDateString("id-ID")}
+                  {new Date(activityData?.createdAt).toLocaleDateString("id-ID")}
                 </div>
                 <div>
                   Diupdate:{" "}
-                  {new Date(activityData.updatedAt).toLocaleDateString("id-ID")}
+                  {new Date(activityData?.updatedAt).toLocaleDateString("id-ID")}
                 </div>
-                <div>Author: {activityData.author.name}</div>
+                <div>Author: {activityData?.author?.name}</div>
               </div>
             </div>
           )}
@@ -637,28 +641,42 @@ export default function EditActivityPage() {
 
             <div className="p-6 overflow-y-auto flex-grow">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {medias
-                  .filter((m) => m.type.startsWith("image"))
-                  .map((media) => (
-                    <div
-                      key={media.id}
-                      className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                        selectedMediaIds.includes(media.id)
-                          ? "border-primary ring-2 ring-primary/20"
-                          : "border-gray-200 hover:border-gray-400"
-                      }`}
-                      onClick={() => handleSelectImages(media.id)}
-                    >
-                      <img
-                        src={media.url}
-                        alt={media.alt || ""}
-                        className="w-full h-20 object-cover"
-                      />
-                      <div className="p-2 text-xs truncate">
-                        {media.title || "Untitled"}
+                {medias && medias.length > 0 ? (
+                  medias
+                    .filter((m) => m.type.startsWith("image"))
+                    .map((media) => (
+                      <div
+                        key={media.id}
+                        className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
+                          selectedMediaIds.includes(media.id)
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-gray-200 hover:border-gray-400"
+                        }`}
+                        onClick={() => handleSelectImages(media.id)}
+                      >
+                        <div className="w-full h-20 relative">
+                          <Image
+                            src={media.url}
+                            alt={media.alt || ""}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        <div className="p-2 text-xs truncate">
+                          {media.title || "Untitled"}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-8">
+                    Tidak ada media tersedia
+                  </div>
+                )}
               </div>
             </div>
 

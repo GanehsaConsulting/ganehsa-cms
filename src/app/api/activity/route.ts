@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, Status } from "@prisma/client";
+import { Prisma, PrismaClient, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
@@ -22,11 +22,10 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search");
     const showTitleParam = searchParams.get("showTitle");
     const statusParam = searchParams.get("status");
-
     const skip = (page - 1) * limit;
 
-    // Build filter conditions dynamically
-    const where: any = {};
+    // Build filter conditions dynamically with proper Prisma type
+    const where: Prisma.ActivityWhereInput = {};
 
     // Search condition
     if (search) {
@@ -41,9 +40,9 @@ export async function GET(req: NextRequest) {
       where.showTitle = showTitleParam === "true";
     }
 
-    // Status filter
-    if (statusParam && ["DRAFT", "PUBLISH", "ARCHIVE"].includes(statusParam)) {
-      where.status = statusParam;
+    // Status filter - validate it's a valid Status enum value
+    if (statusParam && Object.values(Status).includes(statusParam as Status)) {
+      where.status = statusParam as Status;
     }
 
     const [activities, total] = await Promise.all([
@@ -129,8 +128,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare data
-    const activityData: any = {
+    // Prepare data with proper Prisma type
+    const activityData: Prisma.ActivityCreateInput = {
       title,
       desc,
       longDesc,
@@ -138,7 +137,7 @@ export async function POST(req: NextRequest) {
       showTitle: showTitle ?? false,
       status: status ?? "DRAFT",
       author: {
-        connect: { id: user.id },
+        connect: { id: Number(user.id) },
       },
     };
 

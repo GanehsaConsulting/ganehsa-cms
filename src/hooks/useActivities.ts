@@ -4,6 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "./useDebounce";
 
+// Define proper types for the media item structure
+interface ActivityMediaItem {
+  media: {
+    url: string;
+    id: number;
+    type: string;
+    title: string | null;
+    alt: string | null;
+    size: number;
+  };
+}
+
 export function useActivities() {
   const showTitleArr = ["All", "Showing Title", "Not Showing Title"];
   const pageLength = ["10", "20", "100"];
@@ -66,10 +78,11 @@ export function useActivities() {
         const data = await res.json();
 
         if (data.success) {
-          const transformedData = data.data.map((activity: any) => ({
+          // Use proper typing instead of 'any'
+          const transformedData = data.data.map((activity: TableActivity & { medias: ActivityMediaItem[] }) => ({
             ...activity,
             medias: activity.medias.map(
-              (mediaItem: any) => mediaItem.media.url
+              (mediaItem: ActivityMediaItem) => mediaItem.media.url
             ),
           }));
 
@@ -107,7 +120,7 @@ export function useActivities() {
     debouncedSearchQuery,
     showTitleFilter,
     fetchActivities,
-    getToken,
+    token, // Added token to dependencies
   ]);
 
   return {

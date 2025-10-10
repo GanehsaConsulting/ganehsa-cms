@@ -25,27 +25,27 @@ interface Field {
   options?: { label: string; value: string }[]
 }
 
-interface ActionsDialogProps {
+interface ActionsDialogProps<T extends Record<string, unknown>> {
   trigger: ReactNode
   title?: string
   description?: string
   fields: Field[]
-  defaultValues?: Record<string, any>
-  onSubmit?: (values: Record<string, any>) => void
+  defaultValues?: Partial<T>
+  onSubmit?: (values: T) => void
 }
 
-export function ActionsDialog({
+export function ActionsDialog<T extends Record<string, unknown>>({
   trigger,
   title = "Tambah / Edit Data",
   description = "Lengkapi form di bawah ini.",
   fields,
   defaultValues = {},
   onSubmit,
-}: ActionsDialogProps) {
+}: ActionsDialogProps<T>) {
   const handleSubmit = (formData: FormData) => {
-    const values: Record<string, any> = {}
+    const values = {} as T
     fields.forEach((f) => {
-      values[f.key] = formData.get(f.key)
+      values[f.key as keyof T] = formData.get(f.key) as T[keyof T]
     })
     onSubmit?.(values)
   }
@@ -68,7 +68,7 @@ export function ActionsDialog({
                   name={field.key}
                   type="text"
                   placeholder={field.placeholder}
-                  defaultValue={defaultValues[field.key] ?? ""}
+                  defaultValue={(defaultValues?.[field.key as keyof T] as string) ?? ""}
                 />
               )}
               {field.type === "textarea" && (
@@ -76,7 +76,7 @@ export function ActionsDialog({
                   id={field.key}
                   name={field.key}
                   placeholder={field.placeholder}
-                  defaultValue={defaultValues[field.key] ?? ""}
+                  defaultValue={(defaultValues?.[field.key as keyof T] as string) ?? ""}
                 />
               )}
               {field.type === "select" && field.options && (

@@ -1,37 +1,39 @@
+// File: app/api/activity/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, Status } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
-
-// GET DETAIL ACTIVITY WITH SPECIFIC ID
+// GET SINGLE ACTIVITY BY ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized", data: null },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const activityId = Number(params.id);
+    const { id } = await params
+    const activityId = Number(id);
 
     if (isNaN(activityId)) {
       return NextResponse.json(
         {
           success: false,
           message: "Invalid activity ID",
-          data: null,
         },
         { status: 400 }
       );
     }
 
+    // Get single activity with all relations
     const activity = await prisma.activity.findUnique({
       where: { id: activityId },
       include: {
@@ -65,7 +67,6 @@ export async function GET(
         {
           success: false,
           message: "Activity not found",
-          data: null,
         },
         { status: 404 }
       );
@@ -73,12 +74,12 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      message: "Success get activity detail",
+      message: "Success get activity data",
       data: activity,
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "unknown error";
-    console.log(errMsg);
+    console.error(errMsg);
     return NextResponse.json(
       {
         success: false,
@@ -89,10 +90,10 @@ export async function GET(
   }
 }
 
-// EDIT ACTIVITY (PATCH - Partial Update)
+// PATCH - Update Activity (Partial Update)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -104,7 +105,9 @@ export async function PATCH(
       );
     }
 
-    const activityId = Number(params.id);
+    // const activityId = await params.id;
+    const { id } = await params
+    const activityId = Number(id)
 
     if (isNaN(activityId)) {
       return NextResponse.json(
@@ -143,8 +146,8 @@ export async function PATCH(
       mediaIds,
     } = body;
 
-    // Build update data dynamically (only include fields that are provided)
-    const updateData: any = {};
+    // Build update data dynamically
+    const updateData: Prisma.ActivityUpdateInput = {};
 
     if (title !== undefined) updateData.title = title;
     if (desc !== undefined) updateData.desc = desc;
@@ -153,7 +156,6 @@ export async function PATCH(
     if (showTitle !== undefined) updateData.showTitle = showTitle;
     if (instaUrl !== undefined) updateData.instaUrl = instaUrl;
     if (status !== undefined) {
-      // Validate status
       if (!["DRAFT", "PUBLISH", "ARCHIVE"].includes(status)) {
         return NextResponse.json(
           {
@@ -178,7 +180,6 @@ export async function PATCH(
         );
       }
 
-      // Delete existing relations and create new ones
       updateData.medias = {
         deleteMany: {},
         create: mediaIds.map((mediaId: number) => ({
@@ -221,7 +222,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: `Activity with id ${params.id} updated successfully!`,
+      message: `Activity with id ${activityId} updated successfully!`,
       data: updatedActivity,
     });
   } catch (err) {
@@ -240,7 +241,7 @@ export async function PATCH(
 // DELETE ACTIVITY
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -252,7 +253,8 @@ export async function DELETE(
       );
     }
 
-    const activityId = Number(params.id);
+    const { id } = await params
+    const activityId = Number(id);
 
     if (isNaN(activityId)) {
       return NextResponse.json(
@@ -264,7 +266,7 @@ export async function DELETE(
       );
     }
 
-    // Check if activity exists before deleting
+    // Check if activity exists
     const existingActivity = await prisma.activity.findUnique({
       where: { id: activityId },
     });
@@ -279,14 +281,14 @@ export async function DELETE(
       );
     }
 
-    // Delete activity (cascade will handle ActivityMedia relations)
+    // Delete activity
     await prisma.activity.delete({
       where: { id: activityId },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Activity with id ${params.id} deleted successfully!`,
+      message: `Activity with id ${activityId} deleted successfully!`,
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "unknown error";

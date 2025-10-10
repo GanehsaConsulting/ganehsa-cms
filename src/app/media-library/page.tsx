@@ -1,3 +1,4 @@
+// app/media/page.tsx
 "use client";
 import { HeaderActions } from "@/components/header-actions";
 import { SearchInput } from "@/components/input-search";
@@ -22,7 +23,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { HiViewGrid } from "react-icons/hi";
 import { HiMiniListBullet } from "react-icons/hi2";
 import { toast } from "sonner";
@@ -64,8 +65,8 @@ const TYPE_OPTIONS = [
 
 export default function MediaPage() {
   const [status, setStatus] = useState("grid");
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
-  const [dialogPreview, setdialogPreview] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<Medias | null>(null);
+  const [dialogPreview, setDialogPreview] = useState(false);
   const [dialogNew, setDialogNew] = useState(false);
   const [formValues, setFormValues] = useState({
     file: null as File | null,
@@ -86,18 +87,25 @@ export default function MediaPage() {
       color: "pink" as const,
     },
   ];
+
   const {
     token,
     pagination,
-    fetchFunction,
+    getMedias,
     isLoading,
     setIsLoading,
     medias,
     setMedias,
-  } = useMedias()
+  } = useMedias();
 
-  // Upload media baru
-  async function handleNewMedia(e: React.FormEvent<HTMLFormElement>) {
+  // Handle search form submission
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    getMedias(search, 1);
+  };
+
+  // Upload new media
+  const handleNewMedia = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token) return toast.error("Token tidak ditemukan");
 
@@ -122,20 +130,22 @@ export default function MediaPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Upload gagal");
 
-      setMedias((prev) => [data.data, ...prev]);
+      // Refresh the media list to include the new upload
+      getMedias(search, 1);
       toast.success("Media berhasil diupload!");
       setDialogNew(false);
+      setFormValues({ file: null, title: "", type: "" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error(msg);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  const handleMediaClick = (media: MediaItem) => {
+  const handleMediaClick = (media: Medias) => {
     setSelectedMedia(media);
-    setdialogPreview(true);
+    setDialogPreview(true);
   };
 
   const handleDownload = () => {
@@ -158,15 +168,26 @@ export default function MediaPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Gagal menghapus media");
 
-      setMedias((prev) => prev.filter((m) => m.id !== selectedMedia.id));
+      // Refresh the media list after deletion
+      getMedias(search, pagination.currentPage);
       toast.success("Media berhasil dihapus");
-      setdialogPreview(false);
+      setDialogPreview(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error(msg);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -186,20 +207,17 @@ export default function MediaPage() {
       <Wrapper
         header={
           <div className="sticky top-0 z-20 flex items-center justify-between px-5 pt-5 pb-2">
-            <div className="flex items-center gap-2">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
               <SearchInput
                 className="max-w-sm"
                 placeholder="Search media..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button
-                variant="secondary"
-                onClick={() => fetchFunction && fetchFunction(search, 1)}
-              >
+              <Button type="submit" variant="secondary">
                 Cari
               </Button>
-            </div>
+            </form>
 
             <RadioGroupField
               id="status"
@@ -214,21 +232,35 @@ export default function MediaPage() {
         <div className="z-10 -mt-2">
           {isLoading ? (
             <MediaSkeleton variant={status === "grid" ? "grid" : "list"} />
+          ) : medias.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-6 mb-4">
+                <Flower className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">No media found</h3>
+              <p className="text-gray-400 mb-6">
+                {search ? "No results match your search criteria." : "Get started by uploading your first media file."}
+              </p>
+              <Button onClick={() => setDialogNew(true)}>
+                <Plus className="w-4 h-4 mr-2" /> Upload Media
+              </Button>
+            </div>
           ) : status === "grid" ? (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {medias.map((media) => (
                 <div
                   key={media.id}
-                  onClick={() => handleMediaClick(media as any)}
+                  onClick={() => handleMediaClick(media)}
                   className="relative border border-lightColor/10 dark:border-darkColor/10 rounded-third overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all duration-200 group"
                 >
-                  <Image
-                    width={500}
-                    height={500}
-                    src={media.url}
-                    alt={media.alt}
-                    className="aspect-square object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
+                  <div className="aspect-square relative">
+                    <Image
+                      fill
+                      src={media.url}
+                      alt={media.alt}
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  </div>
                   <div className="absolute bottom-0 gradient-blur-to-t h-30 bg-gradient-to-t from-darkColor/70 to-transparent rounded-b-third" />
                   <div className="absolute bottom-0 p-4">
                     <h2 className="text-sm font-medium text-white">
@@ -266,25 +298,26 @@ export default function MediaPage() {
                 {medias.map((media) => (
                   <tr
                     key={media.id}
-                    onClick={() => handleMediaClick(media as any)}
+                    onClick={() => handleMediaClick(media)}
                     className="border-b border-lightColor/10 dark:border-darkColor/10 hover:bg-lightColor/10 dark:hover:bg-darkColor/10 cursor-pointer"
                   >
                     <td className="p-2">
-                      <Image
-                        width={200}
-                        height={200}
-                        src={media.url}
-                        alt={media.alt}
-                        className="w-16 h-16 object-cover rounded-md"
-                      />
+                      <div className="w-16 h-16 relative">
+                        <Image
+                          fill
+                          src={media.url}
+                          alt={media.alt}
+                          className="object-cover rounded-md"
+                        />
+                      </div>
                     </td>
                     <td className="p-2 text-sm text-white">{media.title}</td>
-                    <td className="p-2 text-sm text-white">{media.type}</td>
+                    <td className="p-2 text-sm text-white capitalize">{media.type}</td>
                     <td className="p-2 text-sm text-white">
                       {(media.size / 1024).toFixed(2)} KB
                     </td>
                     <td className="p-2 text-sm text-white">
-                      {media.createdAt}
+                      {formatDate(media.createdAt)}
                     </td>
                   </tr>
                 ))}
@@ -298,10 +331,7 @@ export default function MediaPage() {
               size="sm"
               variant="outline"
               disabled={pagination.currentPage === 1}
-              onClick={() =>
-                fetchFunction &&
-                fetchFunction(search, pagination.currentPage - 1)
-              }
+              onClick={() => getMedias(search, pagination.currentPage - 1)}
             >
               Previous
             </Button>
@@ -312,10 +342,7 @@ export default function MediaPage() {
               size="sm"
               variant="outline"
               disabled={pagination.currentPage === pagination.totalPages}
-              onClick={() =>
-                fetchFunction &&
-                fetchFunction(search, pagination.currentPage + 1)
-              }
+              onClick={() => getMedias(search, pagination.currentPage + 1)}
             >
               Next
             </Button>
@@ -343,6 +370,19 @@ export default function MediaPage() {
                   type="file"
                   accept="image/*,video/*"
                   required
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormValues(prev => ({ ...prev, file }));
+                      // Set title from filename if empty
+                      if (!formValues.title) {
+                        setFormValues(prev => ({ 
+                          ...prev, 
+                          title: file.name.replace(/\.[^/.]+$/, "")
+                        }));
+                      }
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-2">
@@ -351,6 +391,8 @@ export default function MediaPage() {
                   id="title"
                   name="title"
                   placeholder="Nama file"
+                  value={formValues.title}
+                  onChange={(e) => setFormValues(prev => ({ ...prev, title: e.target.value }))}
                   required
                 />
               </div>
@@ -368,14 +410,13 @@ export default function MediaPage() {
                   }
                   className="w-full"
                 />
-                {/* hidden input supaya ikut ke FormData */}
                 <input type="hidden" name="type" value={formValues.type} />
               </div>
             </div>
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button type="button" variant="outline">Cancel</Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Uploading..." : "Upload"}
@@ -386,8 +427,8 @@ export default function MediaPage() {
       </Dialog>
 
       {/* Dialog Preview */}
-      <Dialog open={dialogPreview} onOpenChange={setdialogPreview}>
-        <DialogContent>
+      <Dialog open={dialogPreview} onOpenChange={setDialogPreview}>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               {selectedMedia?.title}
@@ -397,20 +438,21 @@ export default function MediaPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selectedMedia && (
-              <Image
-                width={800}
-                height={800}
-                src={selectedMedia.url}
-                alt={selectedMedia.alt}
-                className="rounded-lg object-contain w-full"
-              />
+              <div className="relative aspect-square">
+                <Image
+                  fill
+                  src={selectedMedia.url}
+                  alt={selectedMedia.alt}
+                  className="rounded-lg object-contain"
+                />
+              </div>
             )}
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <FileType className="w-5 h-5 text-neutral-400 mt-0.5" />
                 <div>
                   <p className="text-sm text-neutral-300">Type</p>
-                  <p className="dark:text-white">{selectedMedia?.type}</p>
+                  <p className="dark:text-white capitalize">{selectedMedia?.type}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -427,7 +469,7 @@ export default function MediaPage() {
                 <div>
                   <p className="text-sm text-neutral-300">Uploaded</p>
                   <p className="dark:text-white">
-                    {selectedMedia?.createdAt.toLocaleString?.()}
+                    {selectedMedia && formatDate(selectedMedia.createdAt)}
                   </p>
                 </div>
               </div>
@@ -439,8 +481,10 @@ export default function MediaPage() {
                   onClick={handleDelete}
                   className="w-full"
                   variant="destructive"
+                  disabled={isLoading}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  <Trash2 className="w-4 h-4 mr-2" /> 
+                  {isLoading ? "Deleting..." : "Delete"}
                 </Button>
               </div>
             </div>

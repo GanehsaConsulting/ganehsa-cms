@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // ✏️ UPDATE CATEGORY by ID
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -19,24 +19,29 @@ export async function PATCH(
       );
     }
 
+    const { id } = await params
+    const categoryId = Number(id)
     const body = await req.json();
     const { name, slug } = body;
 
     // kalau semua kosong, error
     if (!name && !slug) {
       return NextResponse.json(
-        { success: false, message: "At least one field (name or slug) is required" },
+        {
+          success: false,
+          message: "At least one field (name or slug) is required",
+        },
         { status: 400 }
       );
     }
 
     // build data update secara dinamis
-    const data: any = {};
+    const data: Prisma.CategoryArticleUpdateInput = {};
     if (name) data.name = name;
     if (slug) data.slug = slug;
 
     const updatedCategory = await prisma.categoryArticle.update({
-      where: { id: Number(params.id) },
+      where: { id: categoryId },
       data,
     });
 
@@ -60,7 +65,7 @@ export async function PATCH(
 // 🗑️ DELETE CATEGORY by ID
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -72,8 +77,11 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params
+    const categoryId = Number(id)
+
     await prisma.categoryArticle.delete({
-      where: { id: Number(params.id) },
+      where: { id: categoryId },
     });
 
     return NextResponse.json(

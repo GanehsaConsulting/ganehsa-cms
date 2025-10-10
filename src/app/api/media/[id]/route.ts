@@ -4,7 +4,7 @@ import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await verifyAuth(req);
 
@@ -15,7 +15,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       );
     }
 
-    const mediaID = await Number(params.id)
+    const { id } = await params
+    const mediaID = await Number(id)
 
     const deletedMedia = await prisma.media.delete({
       where: {

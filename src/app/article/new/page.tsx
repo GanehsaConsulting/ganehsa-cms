@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
+import Image from "next/image"; // Added Image import
 
 // Components
 import { Wrapper } from "@/components/wrapper";
@@ -44,12 +45,6 @@ interface Media {
   type: string;
   title: string | null;
   alt: string | null;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
 }
 
 export default function NewArticlePage() {
@@ -289,11 +284,17 @@ export default function NewArticlePage() {
               onClick={() => setShowMediaModal(true)}
             >
               {thumbnailId ? (
-                <div className="relative">
-                  <img
-                    src={medias.find(m => m.id === thumbnailId)?.url}
+                <div className="relative w-full h-40">
+                  <Image
+                    src={medias.find(m => m.id === thumbnailId)?.url || '/placeholder.png'}
                     alt="Thumbnail"
-                    className="w-full h-40 object-cover"
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
                     Klik untuk mengganti
@@ -408,11 +409,19 @@ export default function NewArticlePage() {
                       }`}
                       onClick={() => handleSelectThumbnail(media.id)}
                     >
-                      <img
-                        src={media.url}
-                        alt={media.alt || ''}
-                        className="w-full h-20 object-cover"
-                      />
+                      <div className="w-full h-20 relative">
+                        <Image
+                          src={media.url}
+                          alt={media.alt || ''}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      </div>
                       <div className="p-2 text-xs truncate">
                         {media.title || 'Untitled'}
                       </div>

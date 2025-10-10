@@ -1,171 +1,120 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import dynamic from "next/dynamic";
-import { Save } from "lucide-react";
-import { toast } from "sonner";
-
-// Components
-import { Wrapper } from "@/components/wrapper";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectComponent } from "@/components/ui/select";
-import { AlertDialogComponent } from "@/components/ui/alert-dialog";
-import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { HeaderActions } from "@/components/header-actions";
 import { RadioGroupField } from "@/components/radio-group-field";
+import { AlertDialogComponent } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { Wrapper } from "@/components/wrapper";
+import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import JoditEditor from "jodit-react";
+import { ChevronDownIcon, Save } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
+import { useMedias } from "@/hooks/useMedias";
+import Image from "next/image";
 
-// Dynamic Import - Jodit Editor
-const JoditEditor = dynamic(() => import("jodit-react"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-  ),
-});
-
-// Constants
-const STATUS_OPTIONS = [
-  { label: "Draft", value: "DRAFT", color: "yellow" as const },
-  { label: "Publish", value: "PUBLISH", color: "green" as const },
-  { label: "Archive", value: "ARCHIVE", color: "gray" as const },
-];
-
-const HIGHLIGHT_OPTIONS = [
+const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
   { label: "Inactive", value: "inactive", color: "gray" as const },
 ];
 
-interface Media {
-  id: number;
-  url: string;
-  type: string;
-  title: string | null;
-  alt: string | null;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-interface ArticleData {
+interface Activity {
   id: number;
   title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  status: "DRAFT" | "PUBLISH" | "ARCHIVE";
-  highlight: boolean;
-  category: {
+  desc: string;
+  longDesc: string;
+  date: string;
+  showTitle: boolean;
+  instaUrl: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
     id: number;
     name: string;
-    slug: string;
+    email: string;
   };
-  thumbnail?: {
-    id: number;
-    url: string;
-    title: string;
-    alt: string;
-  };
+  medias: {
+    media: {
+      id: number;
+      url: string;
+      type: string;
+      title: string | null;
+      alt: string | null;
+      size: number;
+    };
+  }[];
 }
 
-export default function EditArticlePage() {
+export default function EditActivityPage() {
   const router = useRouter();
   const params = useParams();
-  const articleId = params.id as string;
+  const activityId = params.id as string;
 
-  // Form State
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [category, setCategory] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState("DRAFT");
-  const [highlight, setHighlight] = useState("inactive");
-  const [excerpt, setExcerpt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
+  // Form State
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [longDesc, setLongDesc] = useState("");
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState("00:00:00");
+  const [showTitle, setShowTitle] = useState("inactive");
+  const [instaUrl, setInstaUrl] = useState("");
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
+
   // Media State
-  const [medias, setMedias] = useState<Media[]>([]);
-  const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [dataCategories, setDataCategories] = useState<Category[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [open, setOpen] = useState(false);
+  const { medias, getMedias } = useMedias();
 
-  // Fetch article data
-  const fetchArticleData = async () => {
-    const token = getToken();
-    if (!token) {
-      toast.error("Token tidak ditemukan");
-      setIsFetching(false);
-      return;
-    }
+  // Activity data state
+  const [activityData, setActivityData] = useState<Activity | null>(null);
 
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${articleId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  // Function to combine date and time into ISO string
+  const combineDateAndTime = (selectedDate: Date, selectedTime: string) => {
+    if (!selectedDate) return undefined;
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
+    const [hours, minutes, seconds] = selectedTime.split(":").map(Number);
+    const combinedDate = new Date(selectedDate);
+    combinedDate.setHours(hours, minutes, seconds || 0, 0);
 
-      const data = await res.json();
-      
-      if (data.success && data.data) {
-        const article: ArticleData = data.data;
-        fillForm(article);
-      } else {
-        toast.error(data.message || "Gagal mengambil data artikel");
-      }
-    } catch (err) {
-      console.error("Error fetching article:", err);
-      toast.error("Gagal mengambil data artikel");
-    } finally {
-      setIsFetching(false);
-    }
+    return combinedDate.toISOString();
   };
 
-  // Fill form with article data
-  const fillForm = (article: ArticleData) => {
-    setTitle(article.title || "");
-    setSlug(article.slug || "");
-    setExcerpt(article.excerpt || "");
-    setCategory(String(article.category.id) || "");
-    setContent(article.content || "");
-    setStatus(article.status || "DRAFT");
-    setHighlight(article.highlight ? "active" : "inactive");
-    
-    if (article.thumbnail) {
-      setThumbnailId(article.thumbnail.id);
-    }
+  // Function to extract time from ISO string
+  const extractTimeFromISO = (isoString: string) => {
+    const date = new Date(isoString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
   };
 
-  // Fetch categories
-  const fetchDataCategory = async () => {
+  // Fetch activity by ID - wrapped in useCallback to fix the dependency warning
+  const fetchActivity = useCallback(async () => {
     const token = getToken();
     if (!token) {
       toast.error("Token tidak ditemukan");
       return;
     }
 
+    setIsFetching(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
         {
           method: "GET",
           headers: {
@@ -181,176 +130,238 @@ export default function EditArticlePage() {
 
       const data = await res.json();
       if (data.success) {
-        setDataCategories(data.data);
+        const activity: Activity = data.data;
+        setActivityData(activity);
+
+        // Populate form with existing data
+        setTitle(activity.title);
+        setDesc(activity.desc);
+        setLongDesc(activity.longDesc);
+
+        // Set date and time from existing activity date
+        const activityDate = new Date(activity.date);
+        setDate(activityDate);
+        setTime(extractTimeFromISO(activity.date));
+
+        setShowTitle(activity.showTitle ? "active" : "inactive");
+        setInstaUrl(activity.instaUrl || "");
+
+        // Set selected media IDs from existing medias - with null check
+        const mediaIds = activity?.medias?.map((mediaItem) => mediaItem.media.id) || [];
+        setSelectedMediaIds(mediaIds);
       } else {
-        toast.error(data.message || "Gagal mengambil kategori");
+        toast.error(data.message || "Gagal mengambil data activity");
+        router.push("/activity");
       }
     } catch (err) {
-      console.error("Error fetching categories:", err);
-      toast.error("Gagal mengambil data kategori");
-    }
-  };
-
-  // Fetch media (for thumbnail)
-  const getMedias = async (currentSearch = "", currentPage = 1) => {
-    const token = getToken();
-    if (!token) return;
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/media?search=${currentSearch}&page=${currentPage}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-      const data = await res.json();
-      if (data.success) {
-        setMedias(data.data);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        toast.error(data.message || "Gagal mengambil data media");
-      }
-    } catch (err) {
-      console.error("Error fetching media:", err);
-      toast.error("Gagal mengambil data media");
+      console.error("Error fetching activity:", err);
+      toast.error("Gagal mengambil data activity");
+      router.push("/activity");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
-  };
+  }, [activityId, router]);
 
+  // Fetch activity data
   useEffect(() => {
-    if (articleId) {
-      fetchArticleData();
-      fetchDataCategory();
-      getMedias();
+    if (activityId) {
+      fetchActivity();
     }
-  }, [articleId]);
+  }, [activityId, fetchActivity]);
 
-  // Auto generate slug from title
-  const handleTitleChange = (value: string) => {
-    setTitle(value);
-    const generatedSlug = value
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .trim();
-    setSlug(generatedSlug);
+  // Handle select images - using media IDs
+  const handleSelectImages = (mediaId: number) => {
+    if (selectedMediaIds.includes(mediaId)) {
+      // Remove if already selected
+      setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
+      toast.success("Gambar dihapus dari pilihan!");
+    } else {
+      // Add if not selected
+      setSelectedMediaIds([...selectedMediaIds, mediaId]);
+      toast.success("Gambar dipilih!");
+    }
   };
 
-  // Handle submit
-  const handleSubmit = async () => {
+  // Handle update using PATCH method
+  const handleUpdate = async () => {
     const token = getToken();
     if (!token) {
       toast.error("Anda belum login!");
       return;
     }
 
-    // Validation
+    // Validasi
     if (!title.trim()) {
-      toast.error("Judul artikel wajib diisi!");
+      toast.error("Judul activity wajib diisi!");
       return;
     }
 
-    if (!slug.trim()) {
-      toast.error("Slug wajib diisi!");
+    if (!desc.trim()) {
+      toast.error("Description wajib diisi!");
       return;
     }
 
-    if (!category) {
-      toast.error("Kategori wajib dipilih!");
+    if (!longDesc.trim()) {
+      toast.error("Long description wajib diisi!");
       return;
     }
 
-    if (!content.trim()) {
-      toast.error("Konten artikel wajib diisi!");
+    if (!date) {
+      toast.error("Tanggal wajib dipilih!");
+      return;
+    }
+
+    if (!time) {
+      toast.error("Waktu wajib dipilih!");
+      return;
+    }
+
+    // Combine date and time
+    const combinedDateTime = combineDateAndTime(date, time);
+    if (!combinedDateTime) {
+      toast.error(
+        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!"
+      );
+      return;
+    }
+
+    const showTitleBoolean = showTitle === "active";
+    if (showTitleBoolean && !instaUrl.trim()) {
+      toast.error("Instagram URL wajib diisi ketika Show Title aktif!");
       return;
     }
 
     setIsLoading(true);
     try {
+      const requestBody = {
+        title: title.trim(),
+        desc: desc.trim(),
+        longDesc: longDesc.trim(),
+        date: combinedDateTime,
+        showTitle: showTitleBoolean,
+        instaUrl: instaUrl.trim(),
+        mediaIds: selectedMediaIds,
+      };
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${articleId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            title: title.trim(),
-            slug: slug.trim(),
-            excerpt: excerpt.trim(),
-            content: content.trim(),
-            categoryId: Number(category),
-            status: status,
-            highlight: highlight === "active",
-            thumbnailId: thumbnailId,
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        toast.success("Artikel berhasil diperbarui!");
-        router.push("/article");
+        toast.success("Activity berhasil diupdate!");
+        router.push("/activity");
       } else {
-        toast.error(data.message || "Gagal memperbarui artikel");
+        toast.error(data.message || "Gagal mengupdate activity");
       }
     } catch (err) {
-      console.error("Error updating article:", err);
-      toast.error("Terjadi kesalahan saat memperbarui artikel");
+      console.error("Error updating activity:", err);
+      toast.error("Terjadi kesalahan saat mengupdate activity");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    router.push("/article");
+    router.push("/activity");
   };
 
-  // Handler untuk memilih thumbnail
-  const handleSelectThumbnail = (mediaId: number) => {
-    setThumbnailId(mediaId);
-    setShowMediaModal(false);
-    toast.success("Thumbnail dipilih!");
+  // Handle delete
+  const handleDelete = async () => {
+    const token = getToken();
+    if (!token) {
+      toast.error("Anda belum login!");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("Activity berhasil dihapus!");
+        router.push("/activity");
+      } else {
+        toast.error(data.message || "Gagal menghapus activity");
+      }
+    } catch (err) {
+      console.error("Error deleting activity:", err);
+      toast.error("Terjadi kesalahan saat menghapus activity");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handler untuk menghapus thumbnail
-  const handleRemoveThumbnail = () => {
-    setThumbnailId(null);
-    toast.success("Thumbnail dihapus!");
+  // Get selected media URLs for preview - with proper null checks
+  const getSelectedMediaUrls = (): string[] => {
+    if (!selectedMediaIds || selectedMediaIds.length === 0) {
+      return [];
+    }
+
+    return selectedMediaIds
+      .map((mediaId) => {
+        const media = medias?.find((m) => m.id === mediaId);
+        return media?.url || "";
+      })
+      .filter((url) => url !== "");
+  };
+
+  // Remove selected media
+  const removeSelectedMedia = (mediaId: number) => {
+    setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
   };
 
   if (isFetching) {
     return (
-      <Wrapper>
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading article data...</p>
-          </div>
-        </div>
-      </Wrapper>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Memuat data activity...</div>
+      </div>
     );
   }
 
   return (
     <>
-      {/* Header Actions */}
       <HeaderActions position="left">
         <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
-          Edit Article #{articleId}
+          Edit Activity
         </h1>
       </HeaderActions>
 
       <HeaderActions position="right">
         <div className="flex items-center gap-2">
+          {/* Delete Button */}
+          <AlertDialogComponent
+            header="Hapus Activity?"
+            desc="Activity yang dihapus tidak dapat dikembalikan."
+            continueAction={handleDelete}
+          >
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={isLoading}>
+                Hapus
+              </Button>
+            </AlertDialogTrigger>
+          </AlertDialogComponent>
+
+          {/* Cancel Button */}
           <AlertDialogComponent
             header="Batalkan Perubahan?"
             desc="Semua perubahan yang belum disimpan akan hilang."
@@ -363,51 +374,65 @@ export default function EditArticlePage() {
             </AlertDialogTrigger>
           </AlertDialogComponent>
 
+          {/* Update Button */}
           <AlertDialogComponent
-            header="Update Artikel?"
-            desc={`Artikel akan diperbarui dengan status: ${status.toLowerCase()}`}
-            continueAction={handleSubmit}
+            header="Update Activity?"
+            desc="Activity akan diperbarui dengan data yang baru."
+            continueAction={handleUpdate}
           >
             <AlertDialogTrigger asChild>
               <Button size="sm" className="w-30" disabled={isLoading}>
                 <Save className="w-4 h-4 mr-1" />
-                {isLoading ? "Menyimpan..." : "Update"}
+                {isLoading ? "Mengupdate..." : "Update"}
               </Button>
             </AlertDialogTrigger>
           </AlertDialogComponent>
         </div>
       </HeaderActions>
 
-      {/* Main Content */}
       <Wrapper className="grid grid-cols-1 lg:grid-cols-10 gap-5">
-        {/* Left Column - Main Content */}
+        {/* left column */}
         <div className="lg:col-span-7 space-y-5">
           {/* Title */}
           <div className="space-y-3">
             <Label htmlFor="title" className="text-white">
-              Judul Artikel *
+              Judul Activity *
             </Label>
             <Input
               id="title"
               type="text"
-              placeholder="Masukkan judul artikel..."
+              placeholder="Masukkan judul activity..."
               value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-3">
+            <Label htmlFor="desc" className="text-white">
+              Description *
+            </Label>
+            <Textarea
+              id="desc"
+              placeholder="Masukkan description activity..."
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
               disabled={isLoading}
             />
           </div>
 
           {/* Content Editor */}
           <div className="space-y-3">
-            <Label className="text-white">Konten Artikel *</Label>
+            <Label className="text-white">Long Description *</Label>
             <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
               <JoditEditor
-                value={content}
-                onBlur={(newContent) => setContent(newContent)}
+                value={longDesc}
+                onBlur={(newContent) => setLongDesc(newContent)}
                 onChange={() => {}}
                 config={{
                   minHeight: 400,
-                  placeholder: "Tulis konten artikel di sini...",
+                  placeholder: "Tulis konten activity di sini...",
                   readonly: isLoading,
                   toolbarAdaptive: false,
                   buttons: [
@@ -444,227 +469,213 @@ export default function EditArticlePage() {
           </div>
         </div>
 
-        {/* Right Column - Settings */}
+        {/* right column */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Thumbnail Picker */}
-          <div className="space-y-3">
-            <Label className="text-white">Thumbnail</Label>
-            <div
-              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
-              onClick={() => setShowMediaModal(true)}
-            >
-              {thumbnailId ? (
-                <div className="relative">
-                  <img
-                    src={medias.find((m) => m.id === thumbnailId)?.url}
-                    alt="Thumbnail"
-                    className="w-full h-40 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-all flex items-center justify-center">
-                    <div className="text-white text-sm opacity-0 hover:opacity-100 transition-opacity">
-                      Klik untuk mengganti
-                    </div>
-                  </div>
+          {/* Date and Time Picker */}
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="date-picker" className="px-1 text-white">
+                Date *
+              </Label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
                   <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2 opacity-80"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveThumbnail();
-                    }}
+                    variant="glass"
+                    id="date-picker"
+                    className="w-32 justify-between font-normal"
                   >
-                    ✕
+                    {date ? date.toLocaleDateString("id-ID") : "Select date"}
+                    <ChevronDownIcon />
                   </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-sm text-gray-400">
-                  <div className="text-lg mb-2">📷</div>
-                  <div>Klik untuk memilih thumbnail</div>
-                </div>
-              )}
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    captionLayout="dropdown"
+                    onSelect={(date) => {
+                      setDate(date);
+                      setOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="time-picker" className="px-1 text-white">
+                Time *
+              </Label>
+              <Input
+                type="time"
+                id="time-picker"
+                step="1"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              />
             </div>
           </div>
 
-          {/* Slug */}
+          {/* Show Title Status */}
+          <RadioGroupField
+            id="showTitle"
+            label="Show Title"
+            value={showTitle}
+            onChange={setShowTitle}
+            options={SHOW_TITLE}
+            disabled={isLoading}
+          />
+
+          {/* Instagram URL */}
           <div className="space-y-3">
-            <Label htmlFor="slug" className="text-white">
-              Slug *
+            <Label htmlFor="instaUrl" className="text-white">
+              Instagram URL *
             </Label>
             <Input
-              id="slug"
+              id="instaUrl"
               type="text"
-              placeholder="slug-artikel"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              disabled={isLoading}
-            />
-            <p className="text-xs text-gray-400">
-              URL-friendly version of the title
-            </p>
-          </div>
-
-          {/* Excerpt */}
-          <div className="space-y-3">
-            <Label htmlFor="excerpt" className="text-white">
-              Ringkasan
-            </Label>
-            <Textarea
-              id="excerpt"
-              className="resize-none h-24"
-              placeholder="Ringkasan singkat tentang artikel ini..."
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
+              placeholder="https://instagram.com/..."
+              value={instaUrl}
+              onChange={(e) => setInstaUrl(e.target.value)}
               disabled={isLoading}
             />
           </div>
 
-          {/* Category */}
+          {/* Image Picker */}
           <div className="space-y-3">
-            <Label className="text-white">Kategori *</Label>
-            {dataCategories.length === 0 ? (
-              <div className="text-sm text-gray-400 italic">
-                {isLoading
-                  ? "Memuat kategori..."
-                  : "Tidak ada kategori tersedia"}
+            <Label className="text-white">Gambar Activity</Label>
+            <div className="space-y-3">
+              {/* Selected Images Preview */}
+              {getSelectedMediaUrls().length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {getSelectedMediaUrls().map((url, index) => {
+                    const mediaId = selectedMediaIds[index];
+                    return (
+                      <div key={mediaId} className="relative group">
+                        <Image
+                          src={url}
+                          alt={`Selected ${index + 1}`}
+                          width={80}
+                          height={80}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedMedia(mediaId)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          disabled={isLoading}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Image Picker Button */}
+              <div
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                onClick={() => {
+                  getMedias();
+                  setShowMediaModal(true);
+                }}
+              >
+                <div className="flex flex-col items-center justify-center h-24 text-sm text-gray-400">
+                  <div className="text-lg mb-2">📷</div>
+                  <div>Klik untuk memilih gambar</div>
+                  <div className="text-xs mt-1">
+                    {selectedMediaIds.length} gambar dipilih
+                  </div>
+                </div>
               </div>
-            ) : (
-              <SelectComponent
-                placeholder="Pilih Kategori"
-                options={dataCategories.map((cat) => ({
-                  label: cat.name,
-                  value: String(cat.id),
-                }))}
-                value={category}
-                onChange={setCategory}
-                disabled={isLoading}
-              />
-            )}
+            </div>
           </div>
 
-          {/* Status */}
-          <RadioGroupField
-            id="status"
-            label="Status"
-            value={status}
-            onChange={setStatus}
-            options={STATUS_OPTIONS}
-            disabled={isLoading}
-          />
-
-          {/* Highlight */}
-          <RadioGroupField
-            id="highlight"
-            label="Highlight"
-            value={highlight}
-            onChange={setHighlight}
-            options={HIGHLIGHT_OPTIONS}
-            disabled={isLoading}
-          />
+          {/* Activity Info */}
+          {activityData && (
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg space-y-2">
+              <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">
+                Informasi Activity
+              </h3>
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <div>ID: {activityData?.id}</div>
+                <div>
+                  Dibuat:{" "}
+                  {new Date(activityData?.createdAt).toLocaleDateString("id-ID")}
+                </div>
+                <div>
+                  Diupdate:{" "}
+                  {new Date(activityData?.updatedAt).toLocaleDateString("id-ID")}
+                </div>
+                <div>Author: {activityData?.author?.name}</div>
+              </div>
+            </div>
+          )}
         </div>
       </Wrapper>
 
-      {/* Media Selection Modal - Untuk thumbnail */}
+      {/* Media Selection Modal */}
       {showMediaModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-            {/* Header */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-lg font-semibold">Pilih Thumbnail</h2>
-              <Button variant="ghost" onClick={() => setShowMediaModal(false)}>
+              <h2 className="text-lg font-semibold">Pilih Gambar</h2>
+              <Button
+                variant="ghost"
+                onClick={() => setShowMediaModal(false)}
+                disabled={isLoading}
+              >
                 ✕
               </Button>
             </div>
 
-            {/* Search bar */}
-            <div className="flex items-center gap-3 p-4 border-b">
-              <Input
-                placeholder="Cari media berdasarkan judul..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="flex-1"
-              />
-              <Button
-                variant="secondary"
-                onClick={() => getMedias(search, 1)}
-                disabled={isLoading}
-              >
-                Cari
-              </Button>
-            </div>
-
-            {/* Media grid */}
             <div className="p-6 overflow-y-auto flex-grow">
-              {isLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-full h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
-                    ></div>
-                  ))}
-                </div>
-              ) : medias.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {medias
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {medias && medias.length > 0 ? (
+                  medias
                     .filter((m) => m.type.startsWith("image"))
                     .map((media) => (
                       <div
                         key={media.id}
                         className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                          media.id === thumbnailId
+                          selectedMediaIds.includes(media.id)
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-gray-200 hover:border-gray-400"
                         }`}
-                        onClick={() => handleSelectThumbnail(media.id)}
+                        onClick={() => handleSelectImages(media.id)}
                       >
-                        <img
+                        <Image
                           src={media.url}
                           alt={media.alt || ""}
+                          width={80}
+                          height={80}
                           className="w-full h-20 object-cover"
                         />
                         <div className="p-2 text-xs truncate">
                           {media.title || "Untitled"}
                         </div>
                       </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-400 italic">
-                  Tidak ada media ditemukan.
-                </p>
-              )}
+                    ))
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-8">
+                    Tidak ada media tersedia
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Pagination */}
-            <div className="flex justify-between items-center p-6 border-t">
-              <p className="text-sm text-gray-500">
-                Halaman {page} dari {totalPages}
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={page === 1 || isLoading}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={page === totalPages || isLoading}
-                >
-                  Next
-                </Button>
-              </div>
+            <div className="flex justify-end gap-3 p-6 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowMediaModal(false)}
+                disabled={isLoading}
+              >
+                Tutup
+              </Button>
             </div>
           </div>
         </div>

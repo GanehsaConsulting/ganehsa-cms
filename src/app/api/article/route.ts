@@ -135,15 +135,15 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error creating article:", err);
 
-    if (err.code === "P2002") {
-      return NextResponse.json(
-        { success: false, message: "Slug already exists" },
-        { status: 400 }
-      );
-    }
+    // if (err.code === "P2002") {
+    //   return NextResponse.json(
+    //     { success: false, message: "Slug already exists" },
+    //     { status: 400 }
+    //   );
+    // }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },

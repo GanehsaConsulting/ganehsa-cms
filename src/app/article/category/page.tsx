@@ -15,13 +15,12 @@ import {
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IoLink } from "react-icons/io5";
 import { toast } from "sonner";
 import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
-import { getToken } from "@/lib/helpers";
 import { useCategory } from "@/hooks/useCategory";
 
 export interface Category {
@@ -116,7 +115,7 @@ export default function ArticleCategoryPage() {
     const pages = [];
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(pagination.totalPages, start + maxVisible - 1);
+    const end = Math.min(pagination.totalPages, start + maxVisible - 1);
 
     if (end - start < maxVisible - 1) {
       start = Math.max(1, end - maxVisible + 1);
@@ -320,7 +319,7 @@ export default function ArticleCategoryPage() {
 
       {/* Edit Modal */}
       {editModal && selectedRow && (
-        <DialogInput
+        <DialogInput<Category>
           title={`Edit kategori: ${selectedRow.name}`}
           desc="Ini akan merubah informasi kategori saat ini"
           open={editModal}
@@ -333,7 +332,7 @@ export default function ArticleCategoryPage() {
 
       {/* Add Modal */}
       {newArtikelModal && (
-        <DialogInput
+        <DialogInput<Category>
           title={`Tambah Kategori`}
           desc="Tambahkan kategori baru ke dalam list"
           open={newArtikelModal}

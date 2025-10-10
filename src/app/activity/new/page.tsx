@@ -20,21 +20,14 @@ import { ChevronDownIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { combineDateAndTime, getToken } from "@/lib/helpers";
+import { combineDateAndTime } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
+import Image from "next/image";
 
 const SHOW_TITLE = [
   { label: "active", value: "active", color: "green" as const },
   { label: "in active", value: "inActive", color: "gray" as const },
 ];
-
-interface Media {
-  id: number;
-  url: string;
-  type: string;
-  title: string | null;
-  alt: string | null;
-}
 
 export default function AddNewActivity() {
   const router = useRouter();
@@ -372,9 +365,11 @@ export default function AddNewActivity() {
                     const mediaId = selectedMediaIds[index];
                     return (
                       <div key={mediaId} className="relative group">
-                        <img
+                        <Image
                           src={url}
                           alt={`Selected ${index + 1}`}
+                          width={80}
+                          height={80}
                           className="w-full h-20 object-cover rounded-lg"
                         />
                         <button
@@ -436,9 +431,11 @@ export default function AddNewActivity() {
                       }`}
                       onClick={() => handleSelectImages(media.id)}
                     >
-                      <img
+                      <Image
                         src={media.url}
                         alt={media.alt || ""}
+                        width={80}
+                        height={80}
                         className="w-full h-20 object-cover"
                       />
                       <div className="p-2 text-xs truncate">

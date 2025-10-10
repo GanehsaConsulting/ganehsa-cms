@@ -18,13 +18,13 @@ import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { IoSearch } from "react-icons/io5";
 import { MdOutlineLoop } from "react-icons/md";
-import { formatDate, getToken } from "@/lib/helpers";
+import { getToken } from "@/lib/helpers";
 import { useArticles } from "@/hooks/useArticles";
 
 export interface Article {
@@ -65,7 +65,7 @@ export interface TableArticle {
   date: string;
   status: "draft" | "archive" | "publish";
   highlight: boolean;
-  originalId: any;
+  originalId: number;
 }
 
 const statusStyles = {
@@ -237,7 +237,7 @@ export default function ArticlePage() {
     const pages = [];
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages, start + maxVisible - 1);
+    const end = Math.min(totalPages, start + maxVisible - 1);
 
     if (end - start < maxVisible - 1) {
       start = Math.max(1, end - maxVisible + 1);

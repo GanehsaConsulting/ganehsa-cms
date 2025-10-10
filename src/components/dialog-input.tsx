@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
-import { FaPlus } from "react-icons/fa6";
 
 interface DialogInputProps<T> {
   title: string;
@@ -13,12 +12,11 @@ interface DialogInputProps<T> {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   columns: Column<T>[];
-  rowData?: T | null; // ✅ bisa null kalau tambah baru
+  rowData?: T | null;
   onSubmit?: (values: Partial<T>) => void;
 }
 
-
-export function DialogInput<T extends { id: number | string }>({
+export function DialogInput<T>({
   title,
   desc,
   trigger,
@@ -32,15 +30,16 @@ export function DialogInput<T extends { id: number | string }>({
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
-    const values: Partial<T> = {} as Partial<T>;
+    const values: Partial<T> = {};
 
     columns.forEach((col) => {
+      const key = col.key as keyof T;
       const value = formData.get(col.key as string);
 
       if (col.key === "highlight") {
-        (values as any)[col.key] = value === "true";
+        values[key] = (value === "true") as T[keyof T];
       } else {
-        (values as any)[col.key] = value || "";
+        values[key] = (value || "") as T[keyof T];
       }
     });
 
@@ -60,37 +59,45 @@ export function DialogInput<T extends { id: number | string }>({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
-          {columns.map((col) => (
-            <div className="grid gap-3" key={col.key as string}>
-              <Label htmlFor={col.key as string}>{col.label}</Label>
+          {columns.map((col) => {
+            const key = col.key as keyof T;
+            
+            return (
+              <div className="grid gap-3" key={col.key as string}>
+                <Label htmlFor={col.key as string}>{col.label}</Label>
 
-              {col.key === "highlight" ? (
-                <Select
-                  defaultValue={
-                    isEdit ? (rowData?.[col.key] ? "true" : "false") : undefined
-                  }
-                  name={col.key as string}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">True</SelectItem>
-                    <SelectItem value="false">False</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id={col.key as string}
-                  name={col.key as string}
-                  defaultValue={
-                    isEdit ? String(rowData?.[col.key] ?? "") : undefined
-                  }
-                  placeholder={!isEdit ? `Masukkan ${col.label}` : undefined}
-                />
-              )}
-            </div>
-          ))}
+                {col.key === "highlight" ? (
+                  <Select
+                    defaultValue={
+                      isEdit && rowData 
+                        ? (rowData[key] ? "true" : "false") 
+                        : undefined
+                    }
+                    name={col.key as string}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">True</SelectItem>
+                      <SelectItem value="false">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id={col.key as string}
+                    name={col.key as string}
+                    defaultValue={
+                      isEdit && rowData 
+                        ? String(rowData[key] ?? "") 
+                        : undefined
+                    }
+                    placeholder={!isEdit ? `Masukkan ${col.label}` : undefined}
+                  />
+                )}
+              </div>
+            );
+          })}
 
           <div className="flex justify-end gap-2 mt-4">
             <Button

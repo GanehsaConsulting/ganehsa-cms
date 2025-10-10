@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { TbDotsVertical } from "react-icons/tb";

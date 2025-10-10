@@ -16,7 +16,7 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken } from "@/lib/helpers";
 import { useActivities } from "@/hooks/useActivities";
+import Image from "next/image"; // Import Next.js Image component
 
 export interface TableActivity {
   id: number;
@@ -94,12 +95,20 @@ const activityColumns: Column<TableActivity>[] = [
     render: (row) => (
       <div className="flex gap-1">
         {row.medias.slice(0, 3).map((media, index) => (
-          <img
-            key={index}
-            src={media}
-            alt={`Media ${index + 1}`}
-            className="w-8 h-8 rounded object-cover"
-          />
+          <div key={index} className="w-8 h-8 rounded overflow-hidden">
+            <Image
+              src={media}
+              alt={`Media ${index + 1}`}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          </div>
         ))}
         {row.medias.length > 3 && (
           <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs">

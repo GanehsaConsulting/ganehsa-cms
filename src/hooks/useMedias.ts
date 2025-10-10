@@ -1,67 +1,94 @@
-import { Medias } from "@/app/media-library/page";
-import { getToken } from "@/lib/helpers";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+// hooks/useMedias.ts
+import { Medias } from '@/app/media-library/page';
+import { useState, useEffect, useCallback } from 'react';
 
-export function useMedias() {
+interface PaginationData {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+}
+
+interface UseMediasReturn {
+  token: string | null;
+  pagination: PaginationData;
+  getMedias: (search?: string, page?: number) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  medias: Medias[];
+  setMedias: (medias: Medias[] | ((prev: Medias[]) => Medias[])) => void;
+}
+
+export function useMedias(): UseMediasReturn {
+  const [token, setToken] = useState<string | null>(null);
   const [medias, setMedias] = useState<Medias[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
-    totalPages: 1,
+    totalPages: 0,
     currentPage: 1,
+    limit: 10,
   });
-  const [fetchFunction, setFetchFunction] = useState<
-    ((search?: string, page?: number) => void) | null
-  >(null);
 
-  async function getMedias(search: string = "", page: number = 1) {
+  // Get token from localStorage or your auth context
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    setToken(storedToken);
+  }, []);
+
+  const getMedias = useCallback(async (search: string = '', page: number = 1) => {
+    if (!token) return;
+    
     setIsLoading(true);
     try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        ...(search && { search }),
+      });
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/media?search=${encodeURIComponent(
-          search
-        )}&page=${page}&limit=12`,
+        `${process.env.NEXT_PUBLIC_API_URL}/media?${params}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
+      if (!res.ok) throw new Error('Failed to fetch medias');
+
       const data = await res.json();
-      if (res.ok) {
+      
+      if (data.success) {
         setMedias(data.data);
-        setPagination({
-          total: data.pagination.total,
-          totalPages: data.pagination.totalPages,
-          currentPage: data.pagination.currentPage,
-        });
+        setPagination(data.pagination);
       } else {
-        toast.error(data.message || "Gagal mengambil data media");
+        throw new Error(data.message || 'Failed to fetch medias');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error(msg);
+      console.error('Error fetching medias:', err);
     } finally {
       setIsLoading(false);
     }
-  }
-
-  const token = getToken();
-  useEffect(() => {
-    if (!token) return;
-    // initial fetch
-    getMedias();
-    setFetchFunction(() => getMedias);
   }, [token]);
+
+  // Load medias on initial mount
+  useEffect(() => {
+    if (token) {
+      getMedias();
+    }
+  }, [token, getMedias]);
 
   return {
     token,
     pagination,
-    fetchFunction,
+    getMedias,
     isLoading,
     setIsLoading,
     medias,
     setMedias,
-    getMedias
   };
 }
