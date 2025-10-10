@@ -11,6 +11,7 @@ import { ThemeSwitch } from "./theme-switch";
 import { useSidebar } from "@/app/contexts/sidebar-context";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
+import { useRouter } from "next/navigation";
 
 interface UserLoggedIn {
   id: number;
@@ -73,6 +74,15 @@ export const Sidebar = () => {
 
     fetchUserLoggedIn();
   }, []);
+
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // atau sesuaikan key token kamu (misalnya "accessToken")
+    localStorage.removeItem("openSubmenus");
+    toast.success("Berhasil logout");
+    router.push("/login");
+  };
 
   // Function to check if a menu item should be active
   type NavigationSubItem = {
@@ -252,34 +262,52 @@ export const Sidebar = () => {
                   >
                     <div className="flex flex-col">
                       {!item.subs?.length ? (
-                        // Simple menu item without submenu
-                        <Link
-                          href={item.path}
-                          className={`text-lightColor capitalize font-medium text-xs rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
-                                                                ${
-                                                                  isMenuItemActive(
-                                                                    item
-                                                                  )
-                                                                    ? "bg-mainColor/50 dark:bg-secondaryColor/50"
-                                                                    : ""
-                                                                } 
-                                                                ${
-                                                                  !isExpanded
-                                                                    ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2"
-                                                                    : "justify-start py-2 px-3"
-                                                                }`}
-                        >
-                          <span className={`${!isExpanded && "text-lg"}`}>
-                            {item.icon}
-                          </span>
-                          <span
-                            className={`${
-                              isExpanded ? "block" : "hidden"
-                            } capitalize`}
+                        item.label === "Logout" ? (
+                          <button
+                            onClick={handleLogout}
+                            className={`text-red-400 capitalize font-medium text-xs rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
+        ${
+          !isExpanded
+            ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2"
+            : "justify-start py-2 px-3"
+        }
+      `}
                           >
-                            {item.label}
-                          </span>
-                        </Link>
+                            <span className={`${!isExpanded && "text-lg"}`}>
+                              {item.icon}
+                            </span>
+                            <span
+                              className={`${isExpanded ? "block" : "hidden"}`}
+                            >
+                              {item.label}
+                            </span>
+                          </button>
+                        ) : (
+                          <Link
+                            href={item.path}
+                            className={`text-lightColor capitalize font-medium text-xs rounded-third hover:bg-mainColor/25 duration-150 flex items-center gap-2 w-full 
+        ${
+          isMenuItemActive(item)
+            ? "bg-mainColor/50 dark:bg-secondaryColor/50"
+            : ""
+        } 
+        ${
+          !isExpanded
+            ? "justify-center w-10 h-10 p-5 mx-auto aspect-square py-2 px-2"
+            : "justify-start py-2 px-3"
+        }
+      `}
+                          >
+                            <span className={`${!isExpanded && "text-lg"}`}>
+                              {item.icon}
+                            </span>
+                            <span
+                              className={`${isExpanded ? "block" : "hidden"}`}
+                            >
+                              {item.label}
+                            </span>
+                          </Link>
+                        )
                       ) : (
                         // Menu item with submenu
                         <>
@@ -424,8 +452,10 @@ export const Sidebar = () => {
                 src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Profile Photo"
               /> */}
-              <div className="h-11 w-15 rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center" >
-                <span className="font-bold uppercase" >{currentUser?.name.split("").slice(0, 2).join("")}</span>
+              <div className="h-11 w-15 rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center">
+                <span className="font-bold uppercase">
+                  {currentUser?.name.split("").slice(0, 2).join("")}
+                </span>
               </div>
               {isExpanded && (
                 <div className="flex items-center justify-between w-full">
@@ -433,7 +463,9 @@ export const Sidebar = () => {
                     <h2 className="text-white font-semibold text-sm">
                       {loading ? "memuat..." : currentUser?.name}
                     </h2>
-                    <p className="text-white/70 text-xs">{loading ? "memuat..." : currentUser?.role}</p>
+                    <p className="text-white/70 text-xs">
+                      {loading ? "memuat..." : currentUser?.role}
+                    </p>
                   </div>
                   <div className="text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300">
                     <TbDotsVertical />

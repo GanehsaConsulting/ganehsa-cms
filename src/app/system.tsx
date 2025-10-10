@@ -7,6 +7,7 @@ import {
   HiCog,
   HiBell,
 } from "react-icons/hi";
+import { LuLogOut } from "react-icons/lu";
 import { HiPhoto } from "react-icons/hi2";
 
 export const navigationItems = {
@@ -82,6 +83,12 @@ export const navigationItems = {
         label: "Media Library",
         path: "/media-library",
         icon: <HiPhoto />,
+        subs: []
+      },
+      {
+        label: "Logout",
+        path: "/login",
+        icon: <LuLogOut />,
         subs: []
       }
     ]
