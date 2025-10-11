@@ -80,7 +80,7 @@ const articleColumns: Column<TableArticle>[] = [
   {
     key: "slug",
     label: "Slug",
-    className: "min-w-[190px]",
+    className: "min-w-[170px]",
     render: (row) => (
       <div className="bg-white/20 w-fit px-2 py-1 rounded-md font-semibold italic">
         /{row.slug}

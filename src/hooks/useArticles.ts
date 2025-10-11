@@ -2,7 +2,35 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { TableArticle } from "@/app/article/page";
-import { Article } from "@prisma/client";
+
+// Tambahkan interface untuk data API
+interface ArticleFromAPI {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  status: string;
+  highlight: boolean;
+  createdAt: string;
+  updatedAt: string;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  author: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  thumbnail?: {
+    id: number;
+    url: string;
+    title: string;
+    alt: string;
+  };
+}
 
 export const useArticles = () => {
   const [articles, setArticles] = useState<TableArticle[]>([]);
@@ -45,14 +73,21 @@ export const useArticles = () => {
 
       const data = await res.json();
       if (data.success && data.data) {
-        const transformed: TableArticle[] = data.data.map((article: Article) => ({
+        const transformed: TableArticle[] = data.data.map((article: ArticleFromAPI) => ({
           id: article.id,
           originalId: article.id,
           title: article.title,
           slug: article.slug,
           excerpt: article.excerpt || "-",
+          category: article.category?.name || "-", // ⬅️ TAMBAHKAN INI
           content: article.content,
-          date: article.createdAt,
+          date: new Date(article.createdAt).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
           status: mapStatus(article.status),
           highlight: article.highlight,
         }));
