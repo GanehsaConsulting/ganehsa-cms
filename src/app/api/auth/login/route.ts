@@ -58,10 +58,13 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const errMsg = error instanceof Error ? error.message : "unknown error"
+    
+    console.error(errMsg);
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: errMsg
+    });
   }
 }

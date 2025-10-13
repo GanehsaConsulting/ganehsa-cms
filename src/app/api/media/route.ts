@@ -13,13 +13,13 @@ const prisma = new PrismaClient();
 // ======================
 export async function GET(req: NextRequest) {
   try {
-    const user = await verifyAuth(req);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized", data: [] },
-        { status: 401 }
-      );
-    }
+    // const user = await verifyAuth(req);
+    // if (!user) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Unauthorized", data: [] },
+    //     { status: 401 }
+    //   );
+    // }
 
     // Parse query parameters from the URL
     const { searchParams } = new URL(req.url);

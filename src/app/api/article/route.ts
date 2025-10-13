@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
-    const user = await verifyAuth(req);
+    // const user = await verifyAuth(req);
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized", data: [] },
-        { status: 401 }
-      );
-    }
+    // if (!user) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Unauthorized", data: [] },
+    //     { status: 401 }
+    //   );
+    // }
 
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;

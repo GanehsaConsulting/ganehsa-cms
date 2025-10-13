@@ -311,8 +311,8 @@ export default function ArticlePage() {
                 }}
               />
             </div>
-            <Button onClick={() => fetchArticles()}>
-              <MdOutlineLoop />
+            <Button onClick={fetchArticles} disabled={isLoading}>
+              <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
               <span>Refresh</span>
             </Button>
           </div>

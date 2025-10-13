@@ -7,14 +7,14 @@ const prisma = new PrismaClient();
 // GET ALL CATEGORIES WITH PAGINATION & SEARCH
 export async function GET(req: Request) {
   try {
-    const user = verifyAuth(req);
+    // const user = verifyAuth(req);
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized", data: [] },
-        { status: 401 }
-      );
-    }
+    // if (!user) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Unauthorized", data: [] },
+    //     { status: 401 }
+    //   );
+    // }
 
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;

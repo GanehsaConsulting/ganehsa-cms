@@ -212,8 +212,8 @@ export default function ArticleCategoryPage() {
               onKeyPress={handleSearchKeyPress}
             />
             <Button onClick={handleSearch}>Cari</Button>
-            <Button onClick={() => fetchDataCategory()}>
-              <MdOutlineLoop />
+             <Button onClick={fetchDataCategory} disabled={isLoading}>
+              <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
               <span>Refresh</span>
             </Button>
           </div>
