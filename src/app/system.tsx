@@ -56,9 +56,10 @@ export const navigationItems = {
         path: "/business",
         icon: <HiCurrencyDollar />,
         subs: [
-          { name: "Price List", path: "/price-list" },
-          { name: "Testimonials & Rating", path: "/testimonials" },
-          { name: "Clients", path: "/clients" },
+          { name: "Packages", path: "/business/packages" },
+          { name: "Services", path: "/business/services" },
+          { name: "Testimonials & Rating", path: "/business/testimonials" },
+          { name: "Clients", path: "/business/clients" },
         ]
       },
     ]

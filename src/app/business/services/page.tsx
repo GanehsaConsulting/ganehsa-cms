@@ -1,5 +1,3 @@
-// buatkan seperti page ini :
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -23,14 +21,15 @@ import { toast } from "sonner";
 import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
-import { useCategory } from "@/hooks/useCategory";
+import { useServices } from "@/hooks/useServices";
 
-export interface Category {
+export interface Service {
   id: number;
   name: string;
-  articleCount: number;
   slug: string;
-  date: string;
+  description: string;
+  createdAt: string;
+  packages?: any[];
 }
 
 export interface PaginationData {
@@ -40,8 +39,8 @@ export interface PaginationData {
   totalPages: number;
 }
 
-const categoryColumns: Column<Category>[] = [
-  { key: "id", label: "ID", className: "font-medium w-[80]" },
+const serviceColumns: Column<Service>[] = [
+  { key: "id", label: "ID", className: "font-medium w-[80px]" },
   { key: "name", label: "Name", className: "font-medium" },
   {
     key: "slug",
@@ -55,41 +54,52 @@ const categoryColumns: Column<Category>[] = [
     ),
   },
   {
-    key: "articleCount",
-    label: "Articles Count",
-    className: "font-bold w-[190px]",
+    key: "description",
+    label: "Description",
+    className: "font-medium",
+    render: (row) => (
+      <span className="truncate max-w-[200px] block">
+        {row.description || "-"}
+      </span>
+    ),
   },
-  { key: "date", label: "Date created", className: "font-semibold" },
+  {
+    key: "createdAt",
+    label: "Date created",
+    className: "font-semibold",
+    render: (row) => new Date(row.createdAt).toLocaleDateString("id-ID"),
+  },
 ];
 
-export const formCategoryColumns: Column<Category>[] = [
+export const formServiceColumns: Column<Service>[] = [
   { key: "name", label: "Name" },
   { key: "slug", label: "Slug" },
+  { key: "description", label: "Description" },
 ];
 
-export default function ArticleCategoryPage() {
+export default function ServicesPage() {
   const pageLength = ["10", "20", "50"];
   const [editModal, setEditModal] = useState(false);
-  const [newArtikelModal, setNewArtikelModal] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<Category | null>(null);
+  const [createModal, setCreateModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Service | null>(null);
   const {
     isLoading,
     pagination,
     token,
-    fetchDataCategory,
+    fetchDataService,
     currentPage,
     setCurrentPage,
     limit,
     setLimit,
     setSearchQuery,
-    dataCategories,
-  } = useCategory();
+    dataServices,
+  } = useServices();
   const [searchInput, setSearchInput] = useState("");
 
   // Handle search
   const handleSearch = () => {
     setSearchQuery(searchInput);
-    setCurrentPage(1); // Reset ke halaman pertama saat search
+    setCurrentPage(1);
   };
 
   // Handle enter key di search
@@ -109,7 +119,7 @@ export default function ArticleCategoryPage() {
   // Handle limit change
   const handleLimitChange = (value: string) => {
     setLimit(Number(value));
-    setCurrentPage(1); // Reset ke halaman pertama saat ganti limit
+    setCurrentPage(1);
   };
 
   // Generate page numbers
@@ -130,35 +140,49 @@ export default function ArticleCategoryPage() {
     return pages;
   };
 
-  async function handleNewCategory(values: Partial<Category>) {
+  async function handleNewService(values: Partial<Service>) {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(values),
-        }
-      );
+      console.log("Creating service with token:", token); // Debug
 
-      if (!res.ok) throw new Error("Failed to add category");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-      toast.success("Kategori berhasil ditambahkan!");
-      fetchDataCategory();
+      console.log("Create response status:", res.status); // Debug
+
+      if (res.status === 401) {
+        throw new Error("Unauthorized - Please login again");
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Failed to add service: ${res.status}`
+        );
+      }
+
+      toast.success("Service berhasil ditambahkan!");
+      fetchDataService();
+      setCreateModal(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "unknown errors");
+      console.error("Create service error:", err);
+      toast.error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
-  async function handleUpdateCategory(values: Partial<Category>) {
+  async function handleUpdateService(values: Partial<Service>) {
     if (!selectedRow) return;
 
     try {
+      console.log("Updating service with token:", token); // Debug
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${selectedRow.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/services/${selectedRow.id}`,
         {
           method: "PATCH",
           headers: {
@@ -169,19 +193,34 @@ export default function ArticleCategoryPage() {
         }
       );
 
-      if (!res.ok) throw new Error("Failed to update category");
+      console.log("Update response status:", res.status); // Debug
 
-      toast.success("Kategori berhasil diupdate!");
-      fetchDataCategory();
+      if (res.status === 401) {
+        throw new Error("Unauthorized - Please login again");
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Failed to update service: ${res.status}`
+        );
+      }
+
+      toast.success("Service berhasil diupdate!");
+      fetchDataService();
+      setEditModal(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "unknown errors");
+      console.error("Update service error:", err);
+      toast.error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
-  async function handleDeleteCategory(row: Category) {
+  async function handleDeleteService(row: Service) {
     try {
+      console.log("Deleting service with token:", token); // Debug
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${row.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/services/${row.id}`,
         {
           method: "DELETE",
           headers: {
@@ -191,12 +230,24 @@ export default function ArticleCategoryPage() {
         }
       );
 
-      if (!res.ok) throw new Error("Failed to delete category");
+      console.log("Delete response status:", res.status); // Debug
 
-      toast.success("Kategori berhasil dihapus!");
-      fetchDataCategory();
+      if (res.status === 401) {
+        throw new Error("Unauthorized - Please login again");
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Failed to delete service: ${res.status}`
+        );
+      }
+
+      toast.success("Service berhasil dihapus!");
+      fetchDataService();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "unknown errors");
+      console.error("Delete service error:", err);
+      toast.error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -208,44 +259,44 @@ export default function ArticleCategoryPage() {
           <div className="flex items-center gap-2">
             <Input
               className="w-100"
-              placeholder="Cari kategori..."
+              placeholder="Cari service..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleSearchKeyPress}
             />
             <Button onClick={handleSearch}>Cari</Button>
-             <Button onClick={fetchDataCategory} disabled={isLoading}>
+            <Button onClick={fetchDataService} disabled={isLoading}>
               <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
               <span>Refresh</span>
             </Button>
           </div>
         </div>
         <div>
-          <Button onClick={() => setNewArtikelModal(true)}>
+          <Button onClick={() => setCreateModal(true)}>
             <Plus />
-            Kategori Baru
+            Service Baru
           </Button>
         </div>
       </section>
 
       {/* TableList */}
-      <section className="flex-1 min-h-0">
+      <section className="flex-1 min-h-0 mt-4">
         {isLoading ? (
-          <TableSkeleton columns={4} rows={4} showActions={true} />
+          <TableSkeleton columns={5} rows={5} showActions={true} />
         ) : (
           <>
             <TableList
-              columns={categoryColumns}
-              data={dataCategories}
+              columns={serviceColumns}
+              data={dataServices}
               onEdit={(row) => {
                 setSelectedRow(row);
                 setEditModal(true);
               }}
-              onDelete={handleDeleteCategory}
+              onDelete={handleDeleteService}
             />
-            {dataCategories.length === 0 && (
+            {dataServices.length === 0 && (
               <div className="text-center py-8 text-gray-400">
-                Tidak ada data kategori yang ditemukan
+                Tidak ada data service yang ditemukan
               </div>
             )}
           </>
@@ -253,7 +304,7 @@ export default function ArticleCategoryPage() {
       </section>
 
       {/* Pagination */}
-      <section className="flex items-center justify-between">
+      <section className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-4">
           <SelectComponent
             label="Data Per Halaman"
@@ -321,27 +372,27 @@ export default function ArticleCategoryPage() {
 
       {/* Edit Modal */}
       {editModal && selectedRow && (
-        <DialogInput<Category>
-          title={`Edit kategori: ${selectedRow.name}`}
-          desc="Ini akan merubah informasi kategori saat ini"
+        <DialogInput<Service>
+          title={`Edit service: ${selectedRow.name}`}
+          desc="Ini akan merubah informasi service saat ini"
           open={editModal}
           onOpenChange={setEditModal}
-          columns={formCategoryColumns}
+          columns={formServiceColumns}
           rowData={selectedRow}
-          onSubmit={handleUpdateCategory}
+          onSubmit={handleUpdateService}
         />
       )}
 
       {/* Add Modal */}
-      {newArtikelModal && (
-        <DialogInput<Category>
-          title={`Tambah Kategori`}
-          desc="Tambahkan kategori baru ke dalam list"
-          open={newArtikelModal}
-          onOpenChange={setNewArtikelModal}
-          columns={formCategoryColumns}
+      {createModal && (
+        <DialogInput<Service>
+          title={`Tambah Service`}
+          desc="Tambahkan service baru ke dalam list"
+          open={createModal}
+          onOpenChange={setCreateModal}
+          columns={formServiceColumns}
           rowData={null}
-          onSubmit={handleNewCategory}
+          onSubmit={handleNewService}
         />
       )}
     </Wrapper>
