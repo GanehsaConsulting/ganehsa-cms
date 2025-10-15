@@ -115,8 +115,20 @@ model ActivityMedia {
 // PACKAGE SYSTEM - SIMPLIFIED & BEST PRACTICE
 // ============================================
 
+model Service {
+  id          Int        @id @default(autoincrement())
+  name        String
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  packages    Package[]  
+}
+
 model Package {
   id             Int                  @id @default(autoincrement())
+  serviceId      Int                  // foreign key ke Service
   type           String
   highlight      Boolean              @default(false)
   price          Int
@@ -125,6 +137,7 @@ model Package {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
+  service        Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   features       PackageFeature[]
   requirements   PackageRequirement[]
 }
@@ -147,7 +160,6 @@ model Requirement {
   packages  PackageRequirement[]
 }
 
-// Pivot table untuk Package <-> Feature (many-to-many)
 model PackageFeature {
   packageId   Int
   featureId   Int
@@ -159,7 +171,6 @@ model PackageFeature {
   @@id([packageId, featureId])
 }
 
-// Pivot table untuk Package <-> Requirement (many-to-many)
 model PackageRequirement {
   packageId      Int
   requirementId  Int
