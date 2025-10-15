@@ -132,6 +132,7 @@ model Package {
   type           String
   highlight      Boolean              @default(false)
   price          Int
+  discount       Int
   priceOriginal  Int
   link           String
   createdAt      DateTime             @default(now())
