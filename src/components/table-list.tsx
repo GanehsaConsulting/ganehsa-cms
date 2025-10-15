@@ -166,7 +166,8 @@ export const TableList = <T extends { id: number | string }>({
                                 col.key === "excerpt" ||
                                 col.key === "longDesc" ||
                                 col.key === "desc" ||
-                                col.key === "instaUrl"
+                                col.key === "instaUrl" ||
+                                col.key === "type"
                                 // *truncate / line clamp manual
                                   ? typeof row[col.key] === "string"
                                     ? truncate(row[col.key] as string, 20)

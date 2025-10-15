@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wrapper } from "@/components/wrapper";
+import { SelectComponent } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useServices } from "@/hooks/useServices";
 
 interface Feature {
   feature: string;
@@ -19,6 +21,7 @@ interface Feature {
 
 interface PackageData {
   id: number;
+  serviceId: number;
   type: string;
   price: number;
   priceOriginal: number;
@@ -42,10 +45,14 @@ export default function EditPackagePage() {
   const [priceOriginal, setPriceOriginal] = useState("");
   const [link, setLink] = useState("");
   const [highlight, setHighlight] = useState(false);
+  const [serviceId, setServiceId] = useState("");
   const [features, setFeatures] = useState<Feature[]>([
     { feature: "", status: true },
   ]);
   const [requirements, setRequirements] = useState<string[]>([""]);
+
+  // Services hook
+  const { dataServices, isLoading: servicesLoading, fetchDataService } = useServices();
 
   // Fetch package data
   useEffect(() => {
@@ -53,12 +60,12 @@ export default function EditPackagePage() {
       const token = getToken();
       if (!token) {
         toast.error("Token tidak ditemukan");
-        router.push("/packages");
+        router.push("/business/packages");
         return;
       }
 
       try {
-        const response = await fetch(`/api/package/${packageId}`, {
+        const response = await fetch(`/api/packages/${packageId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -77,6 +84,7 @@ export default function EditPackagePage() {
           setPriceOriginal(data.priceOriginal.toString());
           setLink(data.link);
           setHighlight(data.highlight);
+          setServiceId(data.serviceId.toString());
           setFeatures(
             data.features.length > 0
               ? data.features
@@ -91,7 +99,7 @@ export default function EditPackagePage() {
         toast.error(
           error instanceof Error ? error.message : "Gagal memuat data package"
         );
-        router.push("/packages");
+        router.push("/business/packages");
       } finally {
         setIsFetching(false);
       }
@@ -149,6 +157,11 @@ export default function EditPackagePage() {
 
   // Validate form
   const validateForm = () => {
+    if (!serviceId) {
+      toast.error("Service harus dipilih");
+      return false;
+    }
+
     if (!type.trim()) {
       toast.error("Type package harus diisi");
       return false;
@@ -158,6 +171,7 @@ export default function EditPackagePage() {
       toast.error("Price harus diisi dengan nilai yang valid");
       return false;
     }
+    
 
     if (!priceOriginal || parseFloat(priceOriginal) <= 0) {
       toast.error("Original price harus diisi dengan nilai yang valid");
@@ -174,12 +188,6 @@ export default function EditPackagePage() {
       toast.error("Minimal harus ada 1 feature yang diisi");
       return false;
     }
-
-    // const validRequirements = requirements.filter((r) => r.trim() !== "");
-    // if (validRequirements.length === 0) {
-    //   toast.error("Minimal harus ada 1 requirement yang diisi");
-    //   return false;
-    // }
 
     return true;
   };
@@ -203,6 +211,7 @@ export default function EditPackagePage() {
       const validRequirements = requirements.filter((r) => r.trim() !== "");
 
       const payload = {
+        serviceId: parseInt(serviceId),
         type: type.trim(),
         price: parseFloat(price),
         priceOriginal: parseFloat(priceOriginal),
@@ -214,8 +223,8 @@ export default function EditPackagePage() {
 
       console.log("📦 Updating package with payload:", payload);
 
-      const response = await fetch(`/api/package/${packageId}`, {
-        method: "PUT",
+      const response = await fetch(`/api/packages/${packageId}`, {
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -232,7 +241,7 @@ export default function EditPackagePage() {
 
       if (data.success) {
         toast.success("Package berhasil diupdate!");
-        router.push("/packages");
+        router.push("/business/packages");
         router.refresh();
       } else {
         throw new Error(data.message || "Gagal mengupdate package");
@@ -247,7 +256,7 @@ export default function EditPackagePage() {
     }
   };
 
-  if (isFetching) {
+  if (isFetching || servicesLoading) {
     return (
       <Wrapper>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -280,204 +289,262 @@ export default function EditPackagePage() {
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-white mb-4">
-              Informasi Dasar
-            </h2>
-
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-white">
-                Type Package <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="type"
-                placeholder="e.g., Basic, Premium, Pro"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-white">
-                  Price (Rp) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="150000"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  min="0"
-                  step="1000"
-                />
+        {/* No Services Available */}
+        {dataServices.length === 0 && !servicesLoading && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-400">
+                  Tidak ada Services Tersedia
+                </h3>
+                <p className="text-yellow-300/80 mt-1">
+                  Anda perlu membuat service terlebih dahulu sebelum mengedit package.
+                </p>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priceOriginal" className="text-white">
-                  Original Price (Rp) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="priceOriginal"
-                  type="number"
-                  placeholder="200000"
-                  value={priceOriginal}
-                  onChange={(e) => setPriceOriginal(e.target.value)}
-                  required
-                  min="0"
-                  step="1000"
-                />
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchDataService}
+                  className="border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
+                >
+                  <Loader2 className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                <Link href="/business/services/new">
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                    Buat Service Baru
+                  </Button>
+                </Link>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="link" className="text-white">
-                Link <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="link"
-                type="url"
-                placeholder="https://example.com/order"
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="highlight"
-                checked={highlight}
-                onCheckedChange={(checked) =>
-                  setHighlight(checked as boolean)
-                }
-              />
-              <Label
-                htmlFor="highlight"
-                className="text-white cursor-pointer text-sm font-normal"
-              >
-                Highlight package (tampilkan sebagai rekomendasi)
-              </Label>
             </div>
           </div>
+        )}
 
-          {/* Features */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Features <span className="text-red-500">*</span>
+        {/* Form - Only show if services are available */}
+        {dataServices.length > 0 && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Informasi Dasar
               </h2>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddFeature}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Feature
-              </Button>
-            </div>
 
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    placeholder={`Feature ${index + 1}`}
-                    value={feature.feature}
-                    onChange={(e) =>
-                      handleFeatureChange(index, e.target.value)
-                    }
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <Checkbox
-                    id={`feature-status-${index}`}
-                    checked={feature.status}
-                    onCheckedChange={(checked) =>
-                      handleFeatureStatusChange(index, checked as boolean)
-                    }
-                  />
-                  <Label
-                    htmlFor={`feature-status-${index}`}
-                    className="text-white text-sm cursor-pointer"
-                  >
-                    Active
+              {/* Service Selection */}
+              <div className="space-y-2">
+                <Label className="text-white">
+                  Service <span className="text-red-500">*</span>
+                </Label>
+                <SelectComponent
+                  placeholder="Pilih Service"
+                  options={dataServices.map((service: any) => ({
+                    label: service.name,
+                    value: String(service.id),
+                  }))}
+                  value={serviceId}
+                  onChange={setServiceId}
+                  disabled={isLoading}
+                />
+                <p className="text-sm text-gray-400">
+                  Pilih service yang akan dikaitkan dengan package ini
+                </p>
+              </div>
+
+              {/* Type */}
+              <div className="space-y-2">
+                <Label htmlFor="type" className="text-white">
+                  Type Package <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="type"
+                  placeholder="e.g., Basic, Premium, Pro"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-white">
+                    Price (Rp) <span className="text-red-500">*</span>
                   </Label>
-                </div>
-                {features.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveFeature(index)}
-                    className="mt-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Requirements */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Requirements <span className="text-red-500">*</span>
-              </h2>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddRequirement}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Requirement
-              </Button>
-            </div>
-
-            {requirements.map((requirement, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className="flex-1">
                   <Input
-                    placeholder={`Requirement ${index + 1}`}
-                    value={requirement}
-                    onChange={(e) =>
-                      handleRequirementChange(index, e.target.value)
-                    }
+                    id="price"
+                    type="number"
+                    placeholder="150000"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    min="0"
+                    step="1000"
                   />
                 </div>
-                {requirements.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveRequirement(index)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <Link href="/packages">
-              <Button type="button" variant="outline" disabled={isLoading}>
-                Batal
+                <div className="space-y-2">
+                  <Label htmlFor="priceOriginal" className="text-white">
+                    Original Price (Rp) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="priceOriginal"
+                    type="number"
+                    placeholder="200000"
+                    value={priceOriginal}
+                    onChange={(e) => setPriceOriginal(e.target.value)}
+                    required
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+              </div>
+
+              {/* Link */}
+              <div className="space-y-2">
+                <Label htmlFor="link" className="text-white">
+                  Link <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="link"
+                  type="url"
+                  placeholder="https://example.com/order"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Highlight */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="highlight"
+                  checked={highlight}
+                  onCheckedChange={(checked) =>
+                    setHighlight(checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor="highlight"
+                  className="text-white cursor-pointer text-sm font-normal"
+                >
+                  Highlight package (tampilkan sebagai rekomendasi)
+                </Label>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  Features <span className="text-red-500">*</span>
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddFeature}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Feature
+                </Button>
+              </div>
+
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder={`Feature ${index + 1}`}
+                      value={feature.feature}
+                      onChange={(e) =>
+                        handleFeatureChange(index, e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Checkbox
+                      id={`feature-status-${index}`}
+                      checked={feature.status}
+                      onCheckedChange={(checked) =>
+                        handleFeatureStatusChange(index, checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor={`feature-status-${index}`}
+                      className="text-white text-sm cursor-pointer"
+                    >
+                      Active
+                    </Label>
+                  </div>
+                  {features.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveFeature(index)}
+                      className="mt-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Requirements */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  Requirements
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddRequirement}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Requirement
+                </Button>
+              </div>
+
+              {requirements.map((requirement, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder={`Requirement ${index + 1}`}
+                      value={requirement}
+                      onChange={(e) =>
+                        handleRequirementChange(index, e.target.value)
+                      }
+                    />
+                  </div>
+                  {requirements.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveRequirement(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-4">
+              <Link href="/business/packages">
+                <Button type="button" variant="outline" disabled={isLoading}>
+                  Batal
+                </Button>
+              </Link>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Menyimpan..." : "Update Package"}
               </Button>
-            </Link>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Menyimpan..." : "Update Package"}
-            </Button>
-          </div>
-        </form>
+            </div>
+          </form>
+        )}
       </div>
     </Wrapper>
   );

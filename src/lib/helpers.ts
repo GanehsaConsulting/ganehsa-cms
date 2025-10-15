@@ -1,5 +1,3 @@
-"use client"
-
 export const combineDateAndTime = (
   selectedDate: Date,
   selectedTime: string
@@ -29,3 +27,10 @@ export const formatDate = (dateString: string) => {
     });
   };
 
+export const calculateOriginalPrice = (discountedPrice: number, discountPercentage:number) => {
+  if (discountPercentage === 0 || discountedPrice === 0) return 0;
+
+  const originalPrice = discountedPrice / (1 - discountPercentage / 100);
+
+  return Math.round(originalPrice / 1000) * 1000;
+};

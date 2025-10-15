@@ -16,7 +16,7 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
@@ -25,10 +25,13 @@ import { useRouter } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
+import { IoLink } from "react-icons/io5";
+import { useServices } from "@/hooks/useServices";
 
 export interface TablePackages {
   id: number;
   type: string;
+  service: string;
   price: number;
   priceOriginal: number;
   link: string;
@@ -46,7 +49,7 @@ const packageColumns: Column<TablePackages>[] = [
   {
     key: "type",
     label: "Type",
-    className: "font-semibold min-w-[230px]",
+    className: "font-semibold min-w-[200px]",
     render: (row) => (
       <div className="flex items-center gap-2">
         <span>{row.type}</span>
@@ -58,6 +61,22 @@ const packageColumns: Column<TablePackages>[] = [
       </div>
     ),
   },
+  // {
+  //   key: "service",
+  //   label: "Service",
+  //   className: "min-w-[150px]",
+  //   render: (row) => {
+  //     const serviceName = dataServices.find(
+  //       (s) => s.slug === row.service
+  //     )?.name;
+
+  //     return (
+  //       <span className="font-medium">
+  //         {serviceName || row.service || "N/A"}
+  //       </span>
+  //     );
+  //   },
+  // },
   {
     key: "price",
     label: "Price",
@@ -67,27 +86,28 @@ const packageColumns: Column<TablePackages>[] = [
   {
     key: "priceOriginal",
     label: "Original Price",
-    className: "min-w-[120px]",
+    className: "min-w-[140px]",
     render: (row) => `Rp ${row.priceOriginal.toLocaleString()}`,
   },
   {
     key: "link",
     label: "Link",
-    className: "min-w-[150px] truncate",
+    className: "min-w-[210px] truncate",
     render: (row) => (
       <a
         href={row.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-500 hover:underline truncate block max-w-[150px]"
+        className="flex items-center gap-2 bg-white/20 px-2 py-1 rounded-md w-fit"
       >
-        {row.link}
+        <IoLink className="text-blue-900" />
+        <span className="font-medium">
+          {row.link && row.link.slice(0, 18) + "..."}
+        </span>
       </a>
     ),
   },
   {
     key: "highlight",
-    label: "Status",
+    label: "highlight",
     className: "w-[130px]",
     render: (row) => (
       <div className="flex items-center gap-2 bg-lightColor/20 px-2 py-1 rounded-md w-fit">
@@ -106,25 +126,25 @@ const packageColumns: Column<TablePackages>[] = [
   {
     key: "features",
     label: "Features",
-    className: "min-w-[200px]",
+    className: "max-w-[250px] flex-wrap",
     render: (row) => (
       <div className="flex flex-wrap gap-1">
-        {row.features.slice(0, 3).map((feature, index) => (
+        {row.features.slice(0, 2).map((feature, index) => (
           <span
             key={index}
             className={clsx(
-              "text-xs px-2 py-1 rounded-full border",
+              "text-xs px-2 py-1 rounded-full border font-semibold",
               feature.status
-                ? "bg-green-100 text-green-800 border-green-300"
-                : "bg-red-100 text-red-800 border-red-300"
+                ? "bg-green-100/40 text-green-800 border-green-300"
+                : "bg-red-100/40 text-red-800 border-red-300"
             )}
           >
-            {feature.feature}
+            {feature.feature.slice(0, 35) + "..."}
           </span>
         ))}
-        {row.features.length > 3 && (
+        {row.features.length > 2 && (
           <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-            +{row.features.length - 3}
+            +{row.features.length - 2}
           </span>
         )}
       </div>
@@ -133,7 +153,7 @@ const packageColumns: Column<TablePackages>[] = [
   {
     key: "requirements",
     label: "Requirements",
-    className: "min-w-[150px]",
+    className: "min-w-[170px]",
     render: (row) => (
       <div className="flex flex-wrap gap-1">
         {row.requirements.slice(0, 2).map((requirement, index) => (
@@ -141,7 +161,7 @@ const packageColumns: Column<TablePackages>[] = [
             key={index}
             className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full border border-blue-300"
           >
-            {requirement}
+            {requirement.slice(0, 20) + "..."}
           </span>
         ))}
         {row.requirements.length > 2 && (
@@ -157,6 +177,8 @@ const packageColumns: Column<TablePackages>[] = [
 export default function PriceList() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
+
+  // usePackages hook dengan semua state management
   const {
     token,
     setSearchQuery,
@@ -169,9 +191,8 @@ export default function PriceList() {
     highlightArr,
     highlightFilter,
     setHighlightFilter,
-    typeArr,
-    typeFilter,
-    setTypeFilter,
+    serviceFilter,
+    setServiceFilter,
     total,
     totalPages,
     pageLength,
@@ -184,41 +205,6 @@ export default function PriceList() {
   const [selectedPackage, setSelectedPackage] = useState<TablePackages | null>(
     null
   );
-
-  // Tambahkan di hooks/usePackages.ts untuk debugging
-  const testApiConnection = async () => {
-    try {
-      const testUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/package?page=1&limit=5`;
-      console.log("🧪 Testing API connection:", testUrl);
-
-      const response = await fetch(testUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log("🧪 API Response status:", response.status);
-      const data = await response.json();
-      console.log("🧪 API Response data:", data);
-
-      return data;
-    } catch (error) {
-      console.error("🧪 API Connection test failed:", error);
-      return null;
-    }
-  };
-
-  // Panggil di useEffect untuk debugging
-  useEffect(() => {
-    const initToken = getToken();
-    if (initToken) {
-      // setToken(initToken);
-      // Untuk debugging, test koneksi sekali saat load
-      if (process.env.NODE_ENV === "development") {
-        testApiConnection();
-      }
-    }
-  }, []);
 
   const handleSearchSubmit = () => {
     setSearchQuery(searchInput);
@@ -238,7 +224,7 @@ export default function PriceList() {
         page,
         limit,
         searchQuery,
-        typeFilter,
+        serviceFilter,
         highlightFilter
       );
     }
@@ -249,8 +235,10 @@ export default function PriceList() {
     setPage(1);
   };
 
-  const handleTypeFilter = (value: string) => {
-    setTypeFilter(value);
+  const { dataServices, isLoading: servicesLoading } = useServices();
+
+  const handleServiceFilter = (value: string) => {
+    setServiceFilter(value);
     setPage(1);
   };
 
@@ -273,10 +261,9 @@ export default function PriceList() {
     }
 
     try {
-      // PERBAIKAN: Gunakan /api/package (singular) bukan /api/packages (plural)
       const apiUrl = `${
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      }/api/package/${selectedPackage.id}`;
+      }/api/packages/${selectedPackage.id}`;
       console.log("🗑️ Deleting package from:", apiUrl);
 
       const res = await fetch(apiUrl, {
@@ -298,7 +285,6 @@ export default function PriceList() {
       if (data.success) {
         toast.success(`Package "${selectedPackage.type}" berhasil dihapus!`);
 
-        // Refresh the packages list
         const newToken = getToken();
         if (newToken) {
           await fetchPackages(
@@ -306,7 +292,7 @@ export default function PriceList() {
             1,
             limit,
             searchQuery,
-            typeFilter,
+            serviceFilter,
             highlightFilter
           );
         }
@@ -335,6 +321,12 @@ export default function PriceList() {
     setPage(1);
   };
 
+  const handleClearFilters = () => {
+    setServiceFilter("All");
+    setHighlightFilter("All");
+    setPage(1);
+  };
+
   return (
     <>
       {/* Alert Dialog for Delete Confirmation */}
@@ -354,9 +346,10 @@ export default function PriceList() {
       )}
 
       <Wrapper className="flex flex-col">
-        {/* Header Action*/}
+        {/* Header Action */}
         <section className="flex items-center justify-between gap-0 w-full mb-4">
           <div className="flex items-center gap-4 w-full">
+            {/* Search Input */}
             <div className="flex items-center gap-2">
               <Input
                 className="w-100"
@@ -372,32 +365,33 @@ export default function PriceList() {
                 </Button>
               )}
             </div>
+
+            {/* Filter by Service */}
             <div>
               <SelectComponent
-                label="Filter By Type"
-                placeholder="Filter By Type"
-                value={typeFilter}
-                onChange={handleTypeFilter}
-                options={typeArr.map((type: any) => ({
-                  label: type,
-                  value: type,
-                }))}
+                label="Filter By Service"
+                placeholder={servicesLoading ? "Loading..." : "All Services"}
+                value={serviceFilter}
+                onChange={handleServiceFilter}
+                options={[
+                  { label: "All Services", value: "All" },
+                  ...dataServices.map((service) => ({
+                    label: service.name,
+                    value: service.slug,
+                  })),
+                ]}
+                disabled={servicesLoading}
               />
             </div>
-            {/* <div>
-              <SelectComponent
-                label="Filter By Status"
-                placeholder="Filter By Status"
-                value={highlightFilter}
-                onChange={handleHighlightFilter}
-                options={highlightArr.map((status: any) => ({ label: status, value: status }))}
-              />
-            </div> */}
+
+            {/* Refresh Button */}
             <Button onClick={handleRefresh} disabled={isLoading}>
               <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
               <span>Refresh</span>
             </Button>
           </div>
+
+          {/* Add New Package Button */}
           <div>
             <Link href="/business/packages/new">
               <Button>
@@ -436,7 +430,7 @@ export default function PriceList() {
               placeholder="Data Per Halaman"
               value={limit.toString()}
               onChange={handleLimitChange}
-              options={pageLength.map((s: any) => ({ label: s, value: s }))}
+              options={pageLength.map((s: string) => ({ label: s, value: s }))}
             />
             <div className="text-sm text-gray-600">
               Menampilkan {packages.length} dari {total} data

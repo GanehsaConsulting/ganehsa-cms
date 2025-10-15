@@ -10,8 +10,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { useServices } from "@/hooks/useServices";
 
 interface Feature {
   feature: string;
@@ -21,17 +22,19 @@ interface Feature {
 export default function NewPackagePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { dataServices, isLoading: servicesLoading, fetchDataService } = useServices();
 
   // Form state
   const [type, setType] = useState("");
   const [price, setPrice] = useState("");
-  const [priceOriginal, setPriceOriginal] = useState("");
+  const [discount, setDiscount] = useState("")
   const [link, setLink] = useState("");
   const [highlight, setHighlight] = useState(false);
   const [features, setFeatures] = useState<Feature[]>([
     { feature: "", status: true },
   ]);
   const [requirements, setRequirements] = useState<string[]>([""]);
+  const [serviceId, setServiceId] = useState("");
 
   // Add new feature
   const handleAddFeature = () => {
@@ -78,8 +81,18 @@ export default function NewPackagePage() {
     setRequirements(updatedRequirements);
   };
 
+  // Refresh services
+  const handleRefreshServices = () => {
+    fetchDataService();
+  };
+
   // Validate form
   const validateForm = () => {
+    if (!serviceId) {
+      toast.error("Service harus dipilih");
+      return false;
+    }
+
     if (!type.trim()) {
       toast.error("Type package harus diisi");
       return false;
@@ -90,10 +103,6 @@ export default function NewPackagePage() {
       return false;
     }
 
-    if (!priceOriginal || parseFloat(priceOriginal) <= 0) {
-      toast.error("Original price harus diisi dengan nilai yang valid");
-      return false;
-    }
 
     if (!link.trim()) {
       toast.error("Link harus diisi");
@@ -106,13 +115,6 @@ export default function NewPackagePage() {
       toast.error("Minimal harus ada 1 feature yang diisi");
       return false;
     }
-
-    // Validate requirements
-    // const validRequirements = requirements.filter((r) => r.trim() !== "");
-    // if (validRequirements.length === 0) {
-    //   toast.error("Minimal harus ada 1 requirement yang diisi");
-    //   return false;
-    // }
 
     return true;
   };
@@ -137,9 +139,10 @@ export default function NewPackagePage() {
       const validRequirements = requirements.filter((r) => r.trim() !== "");
 
       const payload = {
+        serviceId: parseInt(serviceId),
         type: type.trim(),
         price: parseFloat(price),
-        priceOriginal: parseFloat(priceOriginal),
+        discount: parseFloat(discount),
         link: link.trim(),
         highlight,
         features: validFeatures,
@@ -148,7 +151,7 @@ export default function NewPackagePage() {
 
       console.log("📦 Creating package with payload:", payload);
 
-      const response = await fetch("/api/package", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/packages`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -181,6 +184,20 @@ export default function NewPackagePage() {
     }
   };
 
+  // If services are loading
+  if (servicesLoading) {
+    return (
+      <Wrapper>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-400">Memuat services...</p>
+          </div>
+        </div>
+      </Wrapper>
+    );
+  }
+
   return (
     <Wrapper>
       <div>
@@ -194,215 +211,262 @@ export default function NewPackagePage() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-white">Package Baru</h1>
-              <p className="text-sm text-gray-400">
-                Buat package pricing baru
-              </p>
+              <p className="text-sm text-gray-400">Buat package pricing baru</p>
             </div>
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-white mb-4">
-              Informasi Dasar
-            </h2>
-
-            {/* Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-white">
-                Type Package <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="type"
-                placeholder="e.g., Basic, Premium, Pro"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Price */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-white">
-                  Price (Rp) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="150000"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  min="0"
-                  step="1000"
-                />
+        {/* No Services Available */}
+        {dataServices.length === 0 && !servicesLoading && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-400">
+                  Tidak ada Services Tersedia
+                </h3>
+                <p className="text-yellow-300/80 mt-1">
+                  Anda perlu membuat service terlebih dahulu sebelum membuat package.
+                </p>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priceOriginal" className="text-white">
-                  Original Price (Rp) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="priceOriginal"
-                  type="number"
-                  placeholder="200000"
-                  value={priceOriginal}
-                  onChange={(e) => setPriceOriginal(e.target.value)}
-                  required
-                  min="0"
-                  step="1000"
-                />
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRefreshServices}
+                  className="border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                <Link href="/business/services/new">
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                    Buat Service Baru
+                  </Button>
+                </Link>
               </div>
-            </div>
-
-            {/* Link */}
-            <div className="space-y-2">
-              <Label htmlFor="link" className="text-white">
-                Link <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="link"
-                type="url"
-                placeholder="https://example.com/order"
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Highlight */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="highlight"
-                checked={highlight}
-                onCheckedChange={(checked: any) =>
-                  setHighlight(checked as boolean)
-                }
-              />
-              <Label
-                htmlFor="highlight"
-                className="text-white cursor-pointer text-sm font-normal"
-              >
-                Highlight package (tampilkan sebagai rekomendasi)
-              </Label>
             </div>
           </div>
+        )}
 
-          {/* Features */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Features <span className="text-red-500">*</span>
+        {/* Form - Only show if services are available */}
+        {dataServices.length > 0 && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Informasi Dasar
               </h2>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddFeature}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Feature
-              </Button>
-            </div>
 
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    placeholder={`Feature ${index + 1}`}
-                    value={feature.feature}
-                    onChange={(e) =>
-                      handleFeatureChange(index, e.target.value)
-                    }
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <Checkbox
-                    id={`feature-status-${index}`}
-                    checked={feature.status}
-                    onCheckedChange={(checked: any) =>
-                      handleFeatureStatusChange(index, checked as boolean)
-                    }
-                  />
-                  <Label
-                    htmlFor={`feature-status-${index}`}
-                    className="text-white text-sm cursor-pointer"
-                  >
-                    Active
+              {/* Service Selection */}
+              <div className="space-y-2">
+                <Label className="text-white">
+                  Service <span className="text-red-500">*</span>
+                </Label>
+                <SelectComponent
+                  placeholder="Pilih Service"
+                  options={dataServices.map((service) => ({
+                    label: service.name,
+                    value: String(service.id),
+                  }))}
+                  value={serviceId}
+                  onChange={setServiceId}
+                  disabled={isLoading}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Type */}
+              <div className="space-y-2">
+                <Label htmlFor="type" className="text-white">
+                  Type Package <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="type"
+                  placeholder="e.g., Basic, Premium, Pro"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-white">
+                    Price (Rp) <span className="text-red-500">*</span>
                   </Label>
-                </div>
-                {features.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveFeature(index)}
-                    className="mt-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Requirements */}
-          <div className="bg-white/5 rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Requirements <span className="text-red-500">*</span>
-              </h2>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddRequirement}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Requirement
-              </Button>
-            </div>
-
-            {requirements.map((requirement, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className="flex-1">
                   <Input
-                    placeholder={`Requirement ${index + 1}`}
-                    value={requirement}
-                    onChange={(e) =>
-                      handleRequirementChange(index, e.target.value)
-                    }
+                    id="price"
+                    type="number"
+                    placeholder="150000"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    min="0"
+                    step="1000"
                   />
                 </div>
-                {requirements.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveRequirement(index)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <Link href="/packages">
-              <Button type="button" variant="outline" disabled={isLoading}>
-                Batal
+                <div className="space-y-2">
+                  <Label htmlFor="discount" className="text-white">
+                    Discount (%) 
+                  </Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    placeholder="50"
+                    value={discount}
+                    onChange={(e) =>setDiscount(e.target.value)}
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              {/* Link */}
+              <div className="space-y-2">
+                <Label htmlFor="link" className="text-white">
+                  Link <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="link"
+                  type="url"
+                  placeholder="https://example.com/order"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Highlight */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="highlight"
+                  checked={highlight}
+                  onCheckedChange={(checked: any) =>
+                    setHighlight(checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor="highlight"
+                  className="text-white cursor-pointer text-sm font-normal"
+                >
+                  Highlight package (tampilkan sebagai rekomendasi)
+                </Label>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  Features <span className="text-red-500">*</span>
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddFeature}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Feature
+                </Button>
+              </div>
+
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder={`Feature ${index + 1}`}
+                      value={feature.feature}
+                      onChange={(e) => handleFeatureChange(index, e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Checkbox
+                      id={`feature-status-${index}`}
+                      checked={feature.status}
+                      onCheckedChange={(checked: any) =>
+                        handleFeatureStatusChange(index, checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor={`feature-status-${index}`}
+                      className="text-white text-sm cursor-pointer"
+                    >
+                      Active
+                    </Label>
+                  </div>
+                  {features.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveFeature(index)}
+                      className="mt-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Requirements */}
+            <div className="bg-white/5 rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  Requirements
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddRequirement}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Requirement
+                </Button>
+              </div>
+
+              {requirements.map((requirement, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder={`Requirement ${index + 1}`}
+                      value={requirement}
+                      onChange={(e) =>
+                        handleRequirementChange(index, e.target.value)
+                      }
+                    />
+                  </div>
+                  {requirements.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveRequirement(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-4">
+              <Link href="/business/packages">
+                <Button type="button" variant="outline" disabled={isLoading}>
+                  Batal
+                </Button>
+              </Link>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Menyimpan..." : "Simpan Package"}
               </Button>
-            </Link>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Menyimpan..." : "Simpan Package"}
-            </Button>
-          </div>
-        </form>
+            </div>
+          </form>
+        )}
       </div>
     </Wrapper>
   );

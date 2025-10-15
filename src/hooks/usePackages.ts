@@ -28,19 +28,18 @@ export const usePackages = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [typeFilter, setTypeFilter] = useState("All");
+  const [serviceFilter, setServiceFilter] = useState("All");
   const [highlightFilter, setHighlightFilter] = useState("All");
 
   const pageLength = ["10", "25", "50", "100"];
   const highlightArr = ["All", "Active", "Inactive"];
-  const typeArr = ["All", "Basic", "Premium", "Pro"];
 
   const fetchPackages = async (
     token: string,
     currentPage: number,
     currentLimit: number,
     search: string,
-    type: string,
+    serviceSlug: string,
     highlight: string
   ) => {
     setIsLoading(true);
@@ -54,8 +53,9 @@ export const usePackages = () => {
         params.append("search", search);
       }
 
-      if (type && type !== "All") {
-        params.append("type", type);
+      // Filter by service slug instead of type
+      if (serviceSlug && serviceSlug !== "All") {
+        params.append("serviceSlug", serviceSlug);
       }
 
       if (highlight === "Active") {
@@ -64,11 +64,9 @@ export const usePackages = () => {
         params.append("highlight", "false");
       }
 
-      // PERBAIKAN 1: Gunakan endpoint yang konsisten dengan Postman
-      const apiUrl = `/api/package?${params.toString()}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/packages?${params.toString()}`;
       
       console.log("🔍 Fetching packages from:", apiUrl);
-      console.log("🔑 Token:", token ? "Present" : "Missing");
 
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -79,13 +77,9 @@ export const usePackages = () => {
         cache: 'no-store',
       });
 
-      console.log("📡 Response status:", response.status);
-
-      // PERBAIKAN 2: Cek apakah response adalah HTML (404 page)
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('text/html')) {
-        console.error("❌ Received HTML instead of JSON");
-        throw new Error('Endpoint tidak ditemukan. Pastikan route /api/package sudah dibuat.');
+        throw new Error('Endpoint tidak ditemukan. Pastikan route /api/packages sudah dibuat.');
       }
 
       if (!response.ok) {
@@ -98,6 +92,7 @@ export const usePackages = () => {
       console.log("✅ Packages fetched:", data.data?.length || 0, "items");
 
       if (data.success) {
+        
         setPackages(data.data || []);
         setTotal(data.pagination?.totalItems || 0);
         setTotalPages(data.pagination?.totalPages || 0);
@@ -107,12 +102,11 @@ export const usePackages = () => {
     } catch (error) {
       console.error("💥 Error fetching packages:", error);
       
-      // PERBAIKAN 3: Error handling yang lebih spesifik
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         toast.error("Tidak dapat terhubung ke server. Periksa koneksi jaringan Anda.");
       } else if (error instanceof Error) {
         if (error.message.includes('Endpoint tidak ditemukan')) {
-          toast.error("Route /api/package tidak ditemukan. Hubungi developer.");
+          toast.error("Route /api/packages tidak ditemukan. Hubungi developer.");
         } else if (error.message.includes('401')) {
           toast.error("Token tidak valid. Silakan login kembali.");
         } else if (error.message.includes('403')) {
@@ -124,7 +118,6 @@ export const usePackages = () => {
         toast.error("Terjadi kesalahan tidak terduga.");
       }
       
-      // Set empty state on error
       setPackages([]);
       setTotal(0);
       setTotalPages(0);
@@ -145,10 +138,23 @@ export const usePackages = () => {
 
   useEffect(() => {
     if (token) {
-      console.log("🚀 Fetching packages with params:", { page, limit, searchQuery, typeFilter, highlightFilter });
-      fetchPackages(token, page, limit, searchQuery, typeFilter, highlightFilter);
+      console.log("🚀 Fetching packages with params:", { 
+        page, 
+        limit, 
+        searchQuery, 
+        serviceFilter, 
+        highlightFilter
+      });
+      fetchPackages(
+        token, 
+        page, 
+        limit, 
+        searchQuery, 
+        serviceFilter, 
+        highlightFilter
+      );
     }
-  }, [token, page, limit, searchQuery, typeFilter, highlightFilter]);
+  }, [token, page, limit, searchQuery, serviceFilter, highlightFilter]);
 
   return {
     token,
@@ -166,9 +172,8 @@ export const usePackages = () => {
     highlightArr,
     highlightFilter,
     setHighlightFilter,
-    typeArr,
-    typeFilter,
-    setTypeFilter,
+    serviceFilter,
+    setServiceFilter,
     fetchPackages,
   };
 };

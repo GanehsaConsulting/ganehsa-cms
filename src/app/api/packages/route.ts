@@ -22,6 +22,15 @@ interface CreatePackageRequest {
   requirements?: string[];
 }
 
+interface WhereClause {
+  type?: { contains: string; mode: "insensitive" } | string;
+  highlight?: boolean;
+  serviceId?: number;
+  service?: {
+    slug: string;
+  };
+}
+
 interface TransformedPackage {
   id: number;
   serviceId: number;
@@ -31,17 +40,11 @@ interface TransformedPackage {
   discount: number;
   priceOriginal: number;
   link: string;
-  features: PackageFeature[];
+  features: Array<{ feature: string; status: boolean }>;
   requirements: string[];
   createdAt: Date;
   updatedAt: Date;
 }
-
-type WhereClause = {
-  type?: string | { contains: string; mode: "insensitive" };
-  highlight?: boolean;
-  serviceId?: number;
-};
 
 // ===================== GET ALL =====================
 export async function GET(req: NextRequest) {
@@ -53,6 +56,7 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get("type") || "";
     const highlight = searchParams.get("highlight");
     const serviceId = searchParams.get("serviceId");
+    const serviceSlug = searchParams.get("serviceSlug"); // Tambahan untuk filter by slug
 
     if (page < 1 || limit < 1 || limit > 100) {
       return NextResponse.json(
@@ -62,10 +66,31 @@ export async function GET(req: NextRequest) {
     }
 
     const where: WhereClause = {};
-    if (search) where.type = { contains: search, mode: "insensitive" };
-    if (type) where.type = type;
-    if (highlight) where.highlight = highlight === "true";
-    if (serviceId && !isNaN(Number(serviceId))) where.serviceId = Number(serviceId);
+    
+    // Filter by search (type contains)
+    if (search) {
+      where.type = { contains: search, mode: "insensitive" };
+    }
+    
+    // Filter by exact type
+    if (type) {
+      where.type = type;
+    }
+    
+    // Filter by highlight status
+    if (highlight) {
+      where.highlight = highlight === "true";
+    }
+    
+    // Filter by serviceId (exact number)
+    if (serviceId && !isNaN(Number(serviceId))) {
+      where.serviceId = Number(serviceId);
+    }
+    
+    // Filter by serviceSlug (recommended untuk frontend)
+    if (serviceSlug && serviceSlug !== "All") {
+      where.service = { slug: serviceSlug };
+    }
 
     const totalItems = await prisma.package.count({ where });
     const skip = (page - 1) * limit;
@@ -75,9 +100,21 @@ export async function GET(req: NextRequest) {
       skip,
       take: limit,
       include: {
-        service: { select: { id: true, name: true, slug: true } },
-        features: { include: { feature: true }, orderBy: { feature: { name: "asc" } } },
-        requirements: { include: { requirement: true }, orderBy: { requirement: { name: "asc" } } },
+        service: { 
+          select: { 
+            id: true, 
+            name: true, 
+            slug: true 
+          } 
+        },
+        features: { 
+          include: { feature: true }, 
+          orderBy: { feature: { name: "asc" } } 
+        },
+        requirements: { 
+          include: { requirement: true }, 
+          orderBy: { requirement: { name: "asc" } } 
+        },
       },
       orderBy: [{ highlight: "desc" }, { createdAt: "desc" }],
     });
@@ -91,7 +128,10 @@ export async function GET(req: NextRequest) {
       discount: pkg.discount,
       priceOriginal: pkg.priceOriginal,
       link: pkg.link,
-      features: pkg.features.map((f) => ({ feature: f.feature.name, status: f.status })),
+      features: pkg.features.map((f) => ({ 
+        feature: f.feature.name, 
+        status: f.status 
+      })),
       requirements: pkg.requirements.map((r) => r.requirement.name),
       createdAt: pkg.createdAt,
       updatedAt: pkg.updatedAt,
@@ -107,11 +147,20 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(totalItems / limit),
         totalItems,
         itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
       },
     });
   } catch (err) {
     console.error("GET /api/packages error:", err);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: "Server error",
+        error: err instanceof Error ? err.message : "Unknown error"
+      }, 
+      { status: 500 }
+    );
   }
 }
 

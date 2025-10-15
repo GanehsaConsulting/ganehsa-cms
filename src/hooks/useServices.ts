@@ -70,6 +70,10 @@ export const useServices = () => {
     }
   };
 
+  useEffect(() => {
+    fetchDataService()
+  }, [])
+
   return {
     isLoading,
     pagination,
