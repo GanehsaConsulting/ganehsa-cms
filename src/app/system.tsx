@@ -58,7 +58,6 @@ export const navigationItems = {
         subs: [
           { name: "Packages", path: "/business/packages" },
           { name: "Services", path: "/business/services" },
-          { name: "Testimonials & Rating", path: "/business/testimonials" },
           { name: "Clients", path: "/business/clients" },
         ]
       },
