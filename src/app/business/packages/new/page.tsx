@@ -343,7 +343,7 @@ export default function NewPackagePage() {
                 <Checkbox
                   id="highlight"
                   checked={highlight}
-                  onCheckedChange={(checked: any) =>
+                  onCheckedChange={(checked: boolean) =>
                     setHighlight(checked as boolean)
                   }
                 />
@@ -386,7 +386,7 @@ export default function NewPackagePage() {
                     <Checkbox
                       id={`feature-status-${index}`}
                       checked={feature.status}
-                      onCheckedChange={(checked: any) =>
+                      onCheckedChange={(checked: boolean) =>
                         handleFeatureStatusChange(index, checked as boolean)
                       }
                     />

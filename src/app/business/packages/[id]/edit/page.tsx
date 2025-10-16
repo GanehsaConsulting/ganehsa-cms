@@ -337,7 +337,7 @@ export default function EditPackagePage() {
                 </Label>
                 <SelectComponent
                   placeholder="Pilih Service"
-                  options={dataServices.map((service: any) => ({
+                  options={dataServices.map((service) => ({
                     label: service.name,
                     value: String(service.id),
                   }))}

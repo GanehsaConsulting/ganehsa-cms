@@ -22,6 +22,7 @@ import { DialogInput } from "@/components/dialog-input";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
 import { useServices } from "@/hooks/useServices";
+import { Package } from "@prisma/client";
 
 export interface Service {
   id: number;
@@ -29,7 +30,7 @@ export interface Service {
   slug: string;
   description: string;
   createdAt: string;
-  packages?: any[];
+  packages?: Package[];
 }
 
 export interface PaginationData {

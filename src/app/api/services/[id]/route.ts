@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
@@ -7,13 +7,14 @@ const prisma = new PrismaClient();
 // ✅ GET DETAIL SERVICE
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await params;
+    const serviceIdInt = Number(id);
 
     const service = await prisma.service.findUnique({
-      where: { id },
+      where: { id: serviceIdInt },
       include: {
         packages: {
           include: {
@@ -44,11 +45,10 @@ export async function GET(
     );
   }
 }
-
 // ✅ PATCH (Partial Update) SERVICE
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -59,14 +59,17 @@ export async function PATCH(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
+    const serviceIdInt = Number(id);
     const body = await req.json();
 
-    // validasi input (biarkan kosong jika tidak diupdate)
-    const dataToUpdate: Record<string, any> = {};
-    if (body.name !== undefined) dataToUpdate.name = body.name;
-    if (body.slug !== undefined) dataToUpdate.slug = body.slug;
-    if (body.description !== undefined) dataToUpdate.description = body.description;
+    // validasi input berdasarkan field yang diizinkan
+    const dataToUpdate: Partial<Prisma.ServiceUpdateInput> = {};
+
+    if (typeof body.name === "string") dataToUpdate.name = body.name;
+    if (typeof body.slug === "string") dataToUpdate.slug = body.slug;
+    if (typeof body.description === "string")
+      dataToUpdate.description = body.description;
 
     if (Object.keys(dataToUpdate).length === 0) {
       return NextResponse.json(
@@ -76,7 +79,7 @@ export async function PATCH(
     }
 
     const updatedService = await prisma.service.update({
-      where: { id },
+      where: { id: serviceIdInt },
       data: dataToUpdate,
     });
 
@@ -97,7 +100,7 @@ export async function PATCH(
 // ✅ DELETE SERVICE
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -108,10 +111,11 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
+    const serviceIdInt = Number(id);
 
     const deleted = await prisma.service.delete({
-      where: { id },
+      where: { id: serviceIdInt },
     });
 
     return NextResponse.json({

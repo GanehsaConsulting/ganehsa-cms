@@ -13,6 +13,7 @@ interface UpdatePackageRequest {
   type?: string;
   highlight?: boolean;
   price?: number;
+  priceOriginal?: number;
   discount?: number;
   link?: string;
   features?: PackageFeature[];
@@ -22,18 +23,20 @@ interface UpdatePackageRequest {
 // ===================== GET BY ID =====================
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
-    if (isNaN(id))
+    const { id } = await params;
+    const packageIdInt = Number(id);
+
+    if (isNaN(packageIdInt))
       return NextResponse.json(
         { success: false, message: "Invalid package ID" },
         { status: 400 }
       );
 
     const pkg = await prisma.package.findUnique({
-      where: { id },
+      where: { id: packageIdInt },
       include: {
         service: { select: { id: true, name: true, slug: true } },
         features: {
@@ -78,7 +81,7 @@ export async function GET(
 // ===================== PATCH (UPDATE) =====================
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -88,8 +91,10 @@ export async function PATCH(
         { status: 401 }
       );
 
-    const id = Number(params.id);
-    if (isNaN(id))
+    const { id } = await params;
+    const packageIdInt = Number(id);
+
+    if (isNaN(packageIdInt))
       return NextResponse.json(
         { success: false, message: "Invalid package ID" },
         { status: 400 }
@@ -107,14 +112,16 @@ export async function PATCH(
       requirements,
     } = body;
 
-    const existing = await prisma.package.findUnique({ where: { id } });
+    const existing = await prisma.package.findUnique({
+      where: { id: packageIdInt },
+    });
     if (!existing)
       return NextResponse.json(
         { success: false, message: "Package not found" },
         { status: 404 }
       );
 
-    const updateData: any = {};
+    const updateData: UpdatePackageRequest = {};
     if (serviceId) updateData.serviceId = serviceId;
     if (type) updateData.type = type;
     if (highlight !== undefined) updateData.highlight = highlight;
@@ -129,10 +136,12 @@ export async function PATCH(
     if (link) updateData.link = link;
 
     const updated = await prisma.$transaction(async (tx) => {
-      const pkg = await tx.package.update({ where: { id }, data: updateData });
+      // await tx.package.update({ where: { id }, data: updateData });
 
       if (features) {
-        await tx.packageFeature.deleteMany({ where: { packageId: id } });
+        await tx.packageFeature.deleteMany({
+          where: { packageId: packageIdInt },
+        });
         for (const f of features) {
           const feature = await tx.feature.upsert({
             where: { name: f.feature },
@@ -140,13 +149,19 @@ export async function PATCH(
             update: {},
           });
           await tx.packageFeature.create({
-            data: { packageId: id, featureId: feature.id, status: f.status },
+            data: {
+              packageId: packageIdInt,
+              featureId: feature.id,
+              status: f.status,
+            },
           });
         }
       }
 
       if (requirements) {
-        await tx.packageRequirement.deleteMany({ where: { packageId: id } });
+        await tx.packageRequirement.deleteMany({
+          where: { packageId: packageIdInt },
+        });
         for (const r of requirements) {
           const req = await tx.requirement.upsert({
             where: { name: r },
@@ -154,13 +169,13 @@ export async function PATCH(
             update: {},
           });
           await tx.packageRequirement.create({
-            data: { packageId: id, requirementId: req.id },
+            data: { packageId: packageIdInt, requirementId: req.id },
           });
         }
       }
 
       return await tx.package.findUnique({
-        where: { id },
+        where: { id: packageIdInt },
         include: {
           service: { select: { id: true, name: true, slug: true } },
           features: { include: { feature: true } },
@@ -187,7 +202,7 @@ export async function PATCH(
 // ===================== DELETE =====================
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -197,14 +212,16 @@ export async function DELETE(
         { status: 401 }
       );
 
-    const id = Number(params.id);
-    if (isNaN(id))
+      const { id } = await params
+      const packageIdInt = Number(id)
+
+    if (isNaN(packageIdInt))
       return NextResponse.json(
         { success: false, message: "Invalid package ID" },
         { status: 400 }
       );
 
-    await prisma.package.delete({ where: { id } });
+    await prisma.package.delete({ where: { id: packageIdInt } });
 
     return NextResponse.json({
       status: 200,

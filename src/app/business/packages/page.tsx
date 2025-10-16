@@ -188,9 +188,7 @@ export default function PriceList() {
     limit,
     setLimit,
     searchQuery,
-    highlightArr,
     highlightFilter,
-    setHighlightFilter,
     serviceFilter,
     setServiceFilter,
     total,
@@ -228,11 +226,6 @@ export default function PriceList() {
         highlightFilter
       );
     }
-  };
-
-  const handleHighlightFilter = (value: string) => {
-    setHighlightFilter(value);
-    setPage(1);
   };
 
   const { dataServices, isLoading: servicesLoading } = useServices();
@@ -318,12 +311,6 @@ export default function PriceList() {
   const handleClearSearch = () => {
     setSearchInput("");
     setSearchQuery("");
-    setPage(1);
-  };
-
-  const handleClearFilters = () => {
-    setServiceFilter("All");
-    setHighlightFilter("All");
     setPage(1);
   };
 

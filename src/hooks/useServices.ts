@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 import { PaginationData, Service } from "@/app/business/services/page";
 import { getToken } from "@/lib/helpers";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
 export const useServices = () => {
@@ -17,10 +17,9 @@ export const useServices = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const token = getToken()
-  
-  const fetchDataService = async () => {
+  const token = getToken();
 
+  const fetchDataService = useCallback(async () => {
     setIsLoading(true);
     try {
       const queryParams = new URLSearchParams({
@@ -28,9 +27,6 @@ export const useServices = () => {
         limit: limit.toString(),
         ...(searchQuery && { search: searchQuery }),
       });
-
-      console.log('Making request with token:', token); // Debug
-      console.log('API URL:', `${process.env.NEXT_PUBLIC_API_URL}/services?${queryParams}`); // Debug
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/services?${queryParams}`,
@@ -42,17 +38,10 @@ export const useServices = () => {
         }
       );
 
-      console.log('Response status:', res.status); // Debug
-
-    //   if (res.status === 401) {
-    //     throw new Error('Unauthorized - Please check your token');
-    //   }
-
       if (!res.ok) throw new Error(`Failed to fetch services: ${res.status}`);
 
       const data = await res.json();
-      console.log('Response data:', data); // Debug
-      
+
       if (data.success) {
         setDataServices(data.data);
         setPagination({
@@ -68,11 +57,11 @@ export const useServices = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, limit, searchQuery, token]); // <-- dependencies penting
 
   useEffect(() => {
-    fetchDataService()
-  }, [])
+    fetchDataService();
+  }, [fetchDataService]); // eslint warning hilang ✅
 
   return {
     isLoading,

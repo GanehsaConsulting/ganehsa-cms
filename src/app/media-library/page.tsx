@@ -23,7 +23,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { HiViewGrid } from "react-icons/hi";
 import { HiMiniListBullet } from "react-icons/hi2";
 import { toast } from "sonner";
@@ -95,7 +95,6 @@ export default function MediaPage() {
     isLoading,
     setIsLoading,
     medias,
-    setMedias,
   } = useMedias();
 
   // Handle search form submission
