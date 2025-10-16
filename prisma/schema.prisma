@@ -124,6 +124,7 @@ model Service {
   updatedAt   DateTime   @updatedAt
 
   packages    Package[]  
+  testimonials Testimonial[]
 }
 
 model Package {
@@ -180,4 +181,19 @@ model PackageRequirement {
   requirement    Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
 
   @@id([packageId, requirementId])
+}
+
+model Testimonial {
+  id            Int       @id @default(autoincrement())
+  clientPhoto   String?   // foto wajah / profil klien
+  companyLogo   String?   // logo perusahaan (optional)
+  clientName    String
+  companyName   String?
+  clientReview  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi ke Service
+  serviceId     Int
+  service       Service   @relation(fields: [serviceId], references: [id])
 }
