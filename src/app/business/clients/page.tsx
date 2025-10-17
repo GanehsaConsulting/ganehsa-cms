@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
-import clsx from "clsx";
 import { useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
@@ -149,7 +148,6 @@ export default function ClientsPage() {
     pageLength,
     serviceFilterArr,
     fetchClients,
-    token,
   } = useClients();
 
   // Alert dialog state
@@ -170,7 +168,7 @@ export default function ClientsPage() {
   const handleRefresh = () => {
     const token = getToken();
     if (token) {
-      fetchClients(page, limit, searchQuery);
+      fetchClients(token, page, limit, searchQuery);
     }
   };
 
@@ -217,7 +215,7 @@ export default function ClientsPage() {
         // Refresh the clients list
         const token = getToken();
         if (token) {
-          await fetchClients(page, limit, searchQuery);
+          await fetchClients(token, page, limit, searchQuery);
         }
       } else {
         toast.error(data.message || "Failed to delete client");
@@ -249,7 +247,7 @@ export default function ClientsPage() {
   useState(() => {
     const token = getToken();
     if (token) {
-      fetchClients(page, limit, searchQuery);
+      fetchClients(token, page, limit, searchQuery);
     }
   });
 

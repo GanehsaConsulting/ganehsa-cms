@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { TableClient } from "@/app/business/clients/page";
@@ -16,60 +16,62 @@ export function useClients() {
   const serviceFilterArr = ["All Services"];
   const token = getToken();
 
-  const fetchClients = async (
-    page: number = 1,
-    limit: number = 10,
-    search: string = "",
-    serviceFilter: string = "All Services"
-  ) => {
-    setIsLoading(true);
-    try {
-      if (!token) {
-        toast.error("Token tidak ditemukan");
-        return;
-      }
+  const fetchClients = useCallback(
+    async (
+      token: string,
+      page: number = 1,
+      limit: number = 10,
+      search: string = ""
+      // serviceFilter: string = "All Services"
+    ) => {
+      setIsLoading(true);
+      try {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          ...(search && { search }),
+        });
 
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(search && { search }),
-      });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/clients?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
-      );
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setClients(data.data || []);
+          setTotal(data.total || 0);
+          setTotalPages(data.totalPages || 1);
+        } else {
+          toast.error(data.message || "Failed to fetch clients");
+        }
+      } catch (err) {
+        const errMsg =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        toast.error(errMsg);
+        console.error("Fetch clients error:", err);
+      } finally {
+        setIsLoading(false);
       }
-
-      const data = await res.json();
-
-      if (data.success) {
-        setClients(data.data || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        toast.error(data.message || "Failed to fetch clients");
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
-      toast.error(errMsg);
-      console.error("Fetch clients error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    []
+  );
 
   // Auto fetch on mount and when dependencies change
   useEffect(() => {
-    fetchClients(page, limit, searchQuery);
-  }, [page, limit, searchQuery]);
+    if (token) {
+      fetchClients(token as string, page, limit, searchQuery);
+    }
+  }, [page, limit, searchQuery, token, fetchClients]);
 
   return {
     clients,
@@ -85,6 +87,6 @@ export function useClients() {
     pageLength,
     serviceFilterArr,
     fetchClients,
-    token
+    token,
   };
 }
