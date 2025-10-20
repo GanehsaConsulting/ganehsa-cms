@@ -1,7 +1,17 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { TableClient } from "@/app/business/clients/page";
+import { useServices } from "./useServices";
+import { setDate } from "date-fns";
+
+interface FetchClientsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  serviceFilter?: string;
+}
 
 export function useClients() {
   const [clients, setClients] = useState<TableClient[]>([]);
@@ -11,65 +21,87 @@ export function useClients() {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [serviceFilter, setServiceFilter] = useState("All Services");
   const pageLength = ["5", "10", "20", "50"];
-  const serviceFilterArr = ["All Services"];
   const token = getToken();
 
-  const fetchClients = async (
-    page: number = 1,
-    limit: number = 10,
-    search: string = "",
-    serviceFilter: string = "All Services"
-  ) => {
-    setIsLoading(true);
-    try {
+  const fetchClients = useCallback(
+    async (params: FetchClientsParams = {}) => {
       if (!token) {
-        toast.error("Token tidak ditemukan");
+        console.warn("No token available");
         return;
       }
 
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(search && { search }),
-      });
+      setIsLoading(true);
+      try {
+        const queryParams = new URLSearchParams({
+          page: params.page?.toString() || page.toString(),
+          limit: params.limit?.toString() || limit.toString(),
+          ...(params.search !== undefined && { search: params.search }),
+          ...(params.serviceFilter !== undefined && { serviceFilter: params.serviceFilter }),
+        });
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/clients?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
-      );
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setClients(data.data || []);
+          setTotal(data.total || 0);
+          setTotalPages(data.totalPages || 1);
+          // Update state if new values were provided
+          if (params.page !== undefined) setPage(params.page);
+          if (params.limit !== undefined) setLimit(params.limit);
+          if (params.search !== undefined) setSearchQuery(params.search);
+          if (params.serviceFilter !== undefined) setServiceFilter(params.serviceFilter);
+        } else {
+          toast.error(data.message || "Failed to fetch clients");
+        }
+      } catch (err) {
+        const errMsg =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        toast.error(errMsg);
+        console.error("Fetch clients error:", err);
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [token, page, limit] // Added dependencies
+  );
 
-      const data = await res.json();
-
-      if (data.success) {
-        setClients(data.data || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        toast.error(data.message || "Failed to fetch clients");
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error occurred";
-      toast.error(errMsg);
-      console.error("Fetch clients error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Auto fetch on mount and when dependencies change
+  // Debounced search
   useEffect(() => {
-    fetchClients(page, limit, searchQuery);
-  }, [page, limit, searchQuery]);
+    if (token) {
+      const timeoutId = setTimeout(() => {
+        fetchClients({ search: searchQuery, page: 1 }); // Reset to page 1 when searching
+      }, 300); // 300ms debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery, token, fetchClients]);
+
+  // Fetch when page, limit, or service filter changes
+  useEffect(() => {
+    if (token) {
+      fetchClients();
+    }
+  }, [page, limit, serviceFilter, token, fetchClients]);
+
+  // Function to refresh clients
+  const refreshClients = useCallback(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   return {
     clients,
@@ -83,8 +115,10 @@ export function useClients() {
     total,
     totalPages,
     pageLength,
-    serviceFilterArr,
+    serviceFilter,
+    setServiceFilter,
     fetchClients,
-    token
+    refreshClients,
+    token,
   };
 }
