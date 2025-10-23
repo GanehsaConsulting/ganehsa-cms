@@ -1,5 +1,5 @@
-// app/media/page.tsx
 "use client";
+
 import { HeaderActions } from "@/components/header-actions";
 import { SearchInput } from "@/components/input-search";
 import { RadioGroupField } from "@/components/radio-group-field";
@@ -21,6 +21,7 @@ import {
   Calendar,
   FileType,
   HardDrive,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -37,6 +38,7 @@ import { useMedias } from "@/hooks/useMedias";
 export type MediaItem = {
   id: number;
   url: string;
+  publicId?: string;
   type: string;
   title: string;
   alt: string;
@@ -49,7 +51,8 @@ export type MediaItem = {
 export interface Medias {
   id: number;
   url: string;
-  type: "image" | "video";
+  publicId?: string;
+  type: "image" | "video" | "application" | string;
   title: string;
   alt: string;
   size: number;
@@ -61,7 +64,21 @@ export interface Medias {
 const TYPE_OPTIONS = [
   { label: "Image", value: "image" },
   { label: "Video", value: "video" },
+  { label: "Document", value: "application" },
 ];
+
+// Allowed file types and sizes
+const ALLOWED_FILE_TYPES = {
+  image: ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"],
+  video: ["video/mp4", "video/quicktime", "video/mpeg"],
+  application: ["application/pdf"],
+};
+
+const MAX_FILE_SIZES = {
+  image: 10 * 1024 * 1024, // 10MB
+  video: 50 * 1024 * 1024, // 50MB
+  application: 5 * 1024 * 1024, // 5MB
+};
 
 export default function MediaPage() {
   const [status, setStatus] = useState("grid");
@@ -72,8 +89,11 @@ export default function MediaPage() {
     file: null as File | null,
     title: "",
     type: "",
+    alt: "",
   });
   const [search, setSearch] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [altEdited, setAltEdited] = useState(false);
 
   const VIEW_OPTIONS = [
     {
@@ -88,14 +108,8 @@ export default function MediaPage() {
     },
   ];
 
-  const {
-    token,
-    pagination,
-    getMedias,
-    isLoading,
-    setIsLoading,
-    medias,
-  } = useMedias();
+  const { token, pagination, getMedias, isLoading, setIsLoading, medias } =
+    useMedias();
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -103,40 +117,98 @@ export default function MediaPage() {
     getMedias(search, 1);
   };
 
+  // Validate file before upload
+  const validateFile = (file: File, selectedType: string) => {
+    // Check file type
+    const allowedTypes =
+      ALLOWED_FILE_TYPES[selectedType as keyof typeof ALLOWED_FILE_TYPES] || [];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(
+        `Invalid file type for ${selectedType}. Allowed: ${allowedTypes.join(
+          ", "
+        )}`
+      );
+      return false;
+    }
+
+    // Check file size
+    const maxSize =
+      MAX_FILE_SIZES[selectedType as keyof typeof MAX_FILE_SIZES] ||
+      MAX_FILE_SIZES.image;
+    if (file.size > maxSize) {
+      const maxSizeMB = maxSize / (1024 * 1024);
+      toast.error(
+        `File too large. Maximum size for ${selectedType} is ${maxSizeMB}MB`
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   // Upload new media
   const handleNewMedia = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token) return toast.error("Token tidak ditemukan");
 
-    const formData = new FormData(e.currentTarget);
-    const file = formData.get("file") as File;
-    const title = formData.get("title") as string;
-    const type = formData.get("type") as string;
+    const formData = new FormData();
+    const file = formValues.file;
+    const title = formValues.title;
+    const type = formValues.type;
+    const alt = formValues.alt || title;
 
     if (!file || !title || !type) {
       toast.error("File, title, dan type wajib diisi");
       return;
     }
 
+    // Validate file
+    if (!validateFile(file, type)) {
+      return;
+    }
+
     setIsLoading(true);
+    setUploadProgress(0);
+
     try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      formData.append("file", file);
+      formData.append("title", title);
+      formData.append("type", type);
+      formData.append("alt", alt);
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Upload gagal");
 
       // Refresh the media list to include the new upload
       getMedias(search, 1);
-      toast.success("Media berhasil diupload!");
+      toast.success("Media berhasil diupload ke Cloudinary!");
       setDialogNew(false);
-      setFormValues({ file: null, title: "", type: "" });
+      setFormValues({ file: null, title: "", type: "", alt: "" });
+      setUploadProgress(0);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error(msg);
+      setUploadProgress(0);
     } finally {
       setIsLoading(false);
     }
@@ -165,11 +237,21 @@ export default function MediaPage() {
       );
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Gagal menghapus media");
+      if (!res.ok) {
+        // Handle specific error cases
+        if (data.message?.includes("currently used")) {
+          toast.error("Tidak dapat menghapus media yang sedang digunakan", {
+            description: data.message,
+            duration: 5000,
+          });
+          return;
+        }
+        throw new Error(data.message || "Gagal menghapus media");
+      }
 
       // Refresh the media list after deletion
       getMedias(search, pagination.currentPage);
-      toast.success("Media berhasil dihapus");
+      toast.success("Media berhasil dihapus dari Cloudinary dan database");
       setDialogPreview(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -180,20 +262,63 @@ export default function MediaPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const getFileTypeDisplay = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) return "Image";
+    if (mimeType.startsWith("video/")) return "Video";
+    if (mimeType.startsWith("application/")) return "Document";
+    return mimeType;
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormValues((prev) => ({
+        ...prev,
+        file,
+        // Set title from filename if empty
+        title: prev.title || file.name.replace(/\.[^/.]+$/, ""),
+        // Set alt from filename if empty
+        alt: prev.alt || file.name.replace(/\.[^/.]+$/, ""),
+      }));
+    }
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setFormValues((prev) => ({
+      ...prev,
+      title: newTitle,
+      alt: altEdited ? prev.alt : newTitle, // sinkron alt kalau belum diedit manual
+    }));
+  };
+
+  const handleAltChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAltEdited(true);
+    setFormValues((prev) => ({ ...prev, alt: e.target.value }));
   };
 
   return (
     <>
       <HeaderActions position="left" hideBreadcrumbs>
         <h1 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Flower /> Media Library
+          <Flower /> Media Library (Cloudinary)
         </h1>
       </HeaderActions>
 
@@ -229,23 +354,27 @@ export default function MediaPage() {
         }
       >
         <div className="z-10 -mt-2">
-          {isLoading ? (
+          {isLoading && !medias.length ? (
             <MediaSkeleton variant={status === "grid" ? "grid" : "list"} />
           ) : medias.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-6 mb-4">
                 <Flower className="w-12 h-12 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">No media found</h3>
+              <h3 className="text-lg font-medium text-white mb-2">
+                No media found
+              </h3>
               <p className="text-gray-400 mb-6">
-                {search ? "No results match your search criteria." : "Get started by uploading your first media file."}
+                {search
+                  ? "No results match your search criteria."
+                  : "Get started by uploading your first media file to Cloudinary."}
               </p>
               <Button onClick={() => setDialogNew(true)}>
                 <Plus className="w-4 h-4 mr-2" /> Upload Media
               </Button>
             </div>
           ) : status === "grid" ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {medias.map((media) => (
                 <div
                   key={media.id}
@@ -253,20 +382,36 @@ export default function MediaPage() {
                   className="relative border border-lightColor/10 dark:border-darkColor/10 rounded-third overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all duration-200 group"
                 >
                   <div className="aspect-square relative">
-                    <Image
-                      fill
-                      src={media.url}
-                      alt={media.alt}
-                      className="object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
+                    {media.type.startsWith("image/") ? (
+                      <Image
+                        fill
+                        src={media.url}
+                        alt={media.alt}
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    ) : media.type.startsWith("video/") ? (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                        <div className="text-center text-white">
+                          <FileType className="w-8 h-8 mx-auto mb-2" />
+                          <span className="text-xs">Video</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                        <div className="text-center text-white">
+                          <FileType className="w-8 h-8 mx-auto mb-2" />
+                          <span className="text-xs">Document</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="absolute bottom-0 gradient-blur-to-t h-30 bg-gradient-to-t from-darkColor/70 to-transparent rounded-b-third" />
                   <div className="absolute bottom-0 p-4">
-                    <h2 className="text-sm font-medium text-white">
+                    <h2 className="text-sm font-medium text-white line-clamp-1">
                       {media.title}
                     </h2>
                     <p className="text-xs text-neutral-300">
-                      {(media.size / 1024).toFixed(2)} KB
+                      {formatFileSize(media.size)}
                     </p>
                   </div>
                 </div>
@@ -302,18 +447,30 @@ export default function MediaPage() {
                   >
                     <td className="p-2">
                       <div className="w-16 h-16 relative">
-                        <Image
-                          fill
-                          src={media.url}
-                          alt={media.alt}
-                          className="object-cover rounded-md"
-                        />
+                        {media.type.startsWith("image/") ? (
+                          <Image
+                            fill
+                            src={media.url}
+                            alt={media.alt}
+                            className="object-cover rounded-md"
+                          />
+                        ) : media.type.startsWith("video/") ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-800 rounded-md">
+                            <FileType className="w-6 h-6 text-white" />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-800 rounded-md">
+                            <FileType className="w-6 h-6 text-white" />
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="p-2 text-sm text-white">{media.title}</td>
-                    <td className="p-2 text-sm text-white capitalize">{media.type}</td>
+                    <td className="p-2 text-sm text-white capitalize">
+                      {getFileTypeDisplay(media.type)}
+                    </td>
                     <td className="p-2 text-sm text-white">
-                      {(media.size / 1024).toFixed(2)} KB
+                      {formatFileSize(media.size)}
                     </td>
                     <td className="p-2 text-sm text-white">
                       {formatDate(media.createdAt)}
@@ -354,9 +511,9 @@ export default function MediaPage() {
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleNewMedia}>
             <DialogHeader>
-              <DialogTitle>Upload Media Baru</DialogTitle>
+              <DialogTitle>Upload Media Baru ke Cloudinary</DialogTitle>
               <DialogDescription>
-                Unggah file gambar atau video ke library Anda.
+                Unggah file gambar, video, atau dokumen ke Cloudinary storage.
               </DialogDescription>
             </DialogHeader>
 
@@ -367,22 +524,13 @@ export default function MediaPage() {
                   id="file"
                   name="file"
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,.pdf"
                   required
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setFormValues(prev => ({ ...prev, file }));
-                      // Set title from filename if empty
-                      if (!formValues.title) {
-                        setFormValues(prev => ({ 
-                          ...prev, 
-                          title: file.name.replace(/\.[^/.]+$/, "")
-                        }));
-                      }
-                    }
-                  }}
+                  onChange={handleFileSelect}
                 />
+                <p className="text-xs text-gray-500">
+                  Gambar: max 10MB, Video: max 50MB, PDF: max 5MB
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
@@ -391,9 +539,34 @@ export default function MediaPage() {
                   name="title"
                   placeholder="Nama file"
                   value={formValues.title}
-                  onChange={(e) => setFormValues(prev => ({ ...prev, title: e.target.value }))}
+                  // onChange={(e) =>
+                  //   setFormValues((prev) => ({
+                  //     ...prev,
+                  //     title: e.target.value,
+                  //   }))
+                  // }
+                  onChange={handleTitleChange}
                   required
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="alt">Alt Text</Label>
+                <Input
+                  id="alt"
+                  name="alt"
+                  placeholder="Teks alternatif untuk aksesibilitas"
+                  value={formValues.alt}
+                  onChange={handleAltChange}
+                />
+                {/* <Input
+                  id="alt"
+                  name="alt"
+                  placeholder="Teks alternatif untuk aksesibilitas"
+                  value={formValues.alt}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({ ...prev, alt: e.target.value }))
+                  }
+                /> */}
               </div>
               <div className="space-y-3">
                 <Label className="text-white">Type</Label>
@@ -409,16 +582,38 @@ export default function MediaPage() {
                   }
                   className="w-full"
                 />
-                <input type="hidden" name="type" value={formValues.type} />
               </div>
+
+              {/* Upload Progress */}
+              {uploadProgress > 0 && (
+                <div className="space-y-2">
+                  <Label>Upload Progress: {uploadProgress}%</Label>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" disabled={isLoading}>
+                  Cancel
+                </Button>
               </DialogClose>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Uploading..." : "Upload"}
+              <Button
+                type="submit"
+                disabled={
+                  isLoading ||
+                  !formValues.file ||
+                  !formValues.title ||
+                  !formValues.type
+                }
+              >
+                {isLoading ? "Uploading to Cloudinary..." : "Upload"}
               </Button>
             </DialogFooter>
           </form>
@@ -438,12 +633,34 @@ export default function MediaPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selectedMedia && (
               <div className="relative aspect-square">
-                <Image
-                  fill
-                  src={selectedMedia.url}
-                  alt={selectedMedia.alt}
-                  className="rounded-lg object-contain"
-                />
+                {selectedMedia.type.startsWith("image/") ? (
+                  <Image
+                    fill
+                    src={selectedMedia.url}
+                    alt={selectedMedia.alt}
+                    className="rounded-lg object-contain"
+                  />
+                ) : selectedMedia.type.startsWith("video/") ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800 rounded-lg">
+                    <div className="text-center text-white">
+                      <FileType className="w-16 h-16 mx-auto mb-4" />
+                      <p className="text-lg">Video File</p>
+                      <p className="text-sm text-gray-400">
+                        Preview not available
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800 rounded-lg">
+                    <div className="text-center text-white">
+                      <FileType className="w-16 h-16 mx-auto mb-4" />
+                      <p className="text-lg">Document File</p>
+                      <p className="text-sm text-gray-400">
+                        Preview not available
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="space-y-4">
@@ -451,7 +668,9 @@ export default function MediaPage() {
                 <FileType className="w-5 h-5 text-neutral-400 mt-0.5" />
                 <div>
                   <p className="text-sm text-neutral-300">Type</p>
-                  <p className="dark:text-white capitalize">{selectedMedia?.type}</p>
+                  <p className="dark:text-white capitalize">
+                    {selectedMedia && getFileTypeDisplay(selectedMedia.type)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -459,7 +678,7 @@ export default function MediaPage() {
                 <div>
                   <p className="text-sm text-neutral-300">Size</p>
                   <p className="dark:text-white">
-                    {selectedMedia && (selectedMedia.size / 1024).toFixed(2)} KB
+                    {selectedMedia && formatFileSize(selectedMedia.size)}
                   </p>
                 </div>
               </div>
@@ -472,9 +691,20 @@ export default function MediaPage() {
                   </p>
                 </div>
               </div>
+              {selectedMedia?.publicId && (
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-neutral-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-neutral-300">Cloudinary ID</p>
+                    <p className="dark:text-white text-xs font-mono break-all">
+                      {selectedMedia.publicId}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="pt-4 space-y-2">
                 <Button onClick={handleDownload} className="w-full">
-                  <Download className="w-4 h-4 mr-2" /> Download
+                  <Download className="w-4 h-4 mr-2" /> Download from Cloudinary
                 </Button>
                 <Button
                   onClick={handleDelete}
@@ -482,8 +712,10 @@ export default function MediaPage() {
                   variant="destructive"
                   disabled={isLoading}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> 
-                  {isLoading ? "Deleting..." : "Delete"}
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isLoading
+                    ? "Deleting from Cloudinary..."
+                    : "Delete from Cloudinary"}
                 </Button>
               </div>
             </div>

@@ -25,6 +25,7 @@ import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken } from "@/lib/helpers";
 import Image from "next/image";
 import { useClients } from "@/hooks/useClients";
+import { useServices } from "@/hooks/useServices"; // Import the useServices hook
 
 export interface TableClient {
   id: number;
@@ -122,9 +123,7 @@ const clientColumns: Column<TableClient>[] = [
             />
           </div>
         ) : (
-          <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-            No Logo
-          </div>
+          <p>(-) Logo</p>
         )}
       </div>
     ),
@@ -134,6 +133,10 @@ const clientColumns: Column<TableClient>[] = [
 export default function ClientsPage() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
+  
+  // Use the services hook to get service data
+  const { dataServices, isLoading: isLoadingServices } = useServices();
+  
   const {
     clients,
     isLoading,
@@ -146,9 +149,20 @@ export default function ClientsPage() {
     total,
     totalPages,
     pageLength,
-    serviceFilterArr,
-    fetchClients,
+    serviceFilter,
+    setServiceFilter,
+    // fetchClients,
+    refreshClients,
   } = useClients();
+
+  // Generate service filter options from services data
+  const serviceFilterOptions = [
+    { label: "All Services", value: "All Services" },
+    ...(dataServices?.map(service => ({
+      label: service.name,
+      value: service.id.toString(),
+    })) || [])
+  ];
 
   // Alert dialog state
   const [showAlertDelete, setShowAlertDelete] = useState(false);
@@ -166,14 +180,16 @@ export default function ClientsPage() {
   };
 
   const handleRefresh = () => {
-    const token = getToken();
-    if (token) {
-      fetchClients(token, page, limit, searchQuery);
-    }
+    refreshClients();
   };
 
   const handleLimitChange = (value: string) => {
     setLimit(parseInt(value));
+    setPage(1);
+  };
+
+  const handleServiceFilterChange = (value: string) => {
+    setServiceFilter(value);
     setPage(1);
   };
 
@@ -211,12 +227,7 @@ export default function ClientsPage() {
         toast.success(
           `Client "${selectedClient.clientName}" deleted successfully!`
         );
-
-        // Refresh the clients list
-        const token = getToken();
-        if (token) {
-          await fetchClients(token, page, limit, searchQuery);
-        }
+        refreshClients();
       } else {
         toast.error(data.message || "Failed to delete client");
       }
@@ -243,13 +254,15 @@ export default function ClientsPage() {
     setPage(1);
   };
 
-  // Load clients on component mount
-  useState(() => {
-    const token = getToken();
-    if (token) {
-      fetchClients(token, page, limit, searchQuery);
-    }
-  });
+  const handleClearFilters = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setServiceFilter("All Services");
+    setPage(1);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery || serviceFilter !== "All Services";
 
   return (
     <>
@@ -288,15 +301,26 @@ export default function ClientsPage() {
                 </Button>
               )}
             </div>
+            
+            {/* Service Filter */}
             <div>
               <SelectComponent
                 label="Filter By Service"
-                placeholder="Filter By Service"
-                value="All Services"
-                onChange={() => {}}
-                options={serviceFilterArr.map((s) => ({ label: s, value: s }))}
+                placeholder={isLoadingServices ? "Loading services..." : "Filter By Service"}
+                value={serviceFilter}
+                onChange={handleServiceFilterChange}
+                options={serviceFilterOptions}
+                disabled={isLoadingServices}
               />
             </div>
+
+            {/* Clear All Filters */}
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={handleClearFilters}>
+                Clear All Filters
+              </Button>
+            )}
+
             <Button onClick={handleRefresh} disabled={isLoading}>
               <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
               <span>Refresh</span>
@@ -310,6 +334,27 @@ export default function ClientsPage() {
             </Link>
           </div>
         </section>
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <section className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-blue-800">Active Filters:</span>
+              {searchQuery && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                  {`Search: "${searchQuery}"`}
+                </span>
+              )}
+              {serviceFilter !== "All Services" && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                  Service: {
+                    serviceFilterOptions.find(opt => opt.value === serviceFilter)?.label || serviceFilter
+                  }
+                </span>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* TableList */}
         <section className="flex-1 min-h-0">
@@ -345,6 +390,9 @@ export default function ClientsPage() {
             <div className="text-sm text-gray-600">
               Menampilkan {clients.length} dari {total} data
               {searchQuery && ` untuk "${searchQuery}"`}
+              {serviceFilter !== "All Services" && (
+                ` dalam service "${serviceFilterOptions.find(opt => opt.value === serviceFilter)?.label || serviceFilter}"`
+              )}
             </div>
           </div>
           <div className="text-white">

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Wrapper } from "@/components/wrapper";
 import { SelectComponent } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload} from "lucide-react";
 import Image from "next/image";
 import { getToken } from "@/lib/helpers";
 import { HeaderActions } from "@/components/header-actions";

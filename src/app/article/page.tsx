@@ -83,7 +83,7 @@ const articleColumns: Column<TableArticle>[] = [
     className: "min-w-[200px]",
     render: (row) => (
       <div className="bg-white/20 w-fit px-2 py-1 rounded-md font-semibold italic">
-        /{row.slug.slice(0, 17) + "..." }
+        /{row.slug.slice(0, 19) + "..."}
       </div>
     ),
   },
