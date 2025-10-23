@@ -21,6 +21,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "jodit": "^4.6.2",
