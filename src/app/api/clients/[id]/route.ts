@@ -1,5 +1,5 @@
 // app/api/testimonial/[id]/route.ts
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
@@ -137,7 +137,7 @@ export async function PATCH(
     ]);
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Prisma.TestimonialUpdateInput = {
       clientName: (formData.get("clientName") as string) || client.clientName,
       companyName: (formData.get("companyName") as string) || client.companyName,
       clientReview: (formData.get("clientReview") as string) || client.clientReview,

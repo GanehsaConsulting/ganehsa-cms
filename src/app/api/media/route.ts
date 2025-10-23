@@ -97,22 +97,6 @@ export async function POST(req: Request) {
 
   } catch (err) {
     console.error("UPLOAD ERROR:", err);
-    
-    // Handle Prisma errors
-    if (err instanceof Error && 'code' in err) {
-      const prismaError = err as any;
-      if (prismaError.code === 'P2022') {
-        return NextResponse.json(
-          { 
-            success: false, 
-            message: "Database schema mismatch. Please run database migrations.",
-            error: "Missing publicId column"
-          },
-          { status: 500 }
-        );
-      }
-    }
-
     return NextResponse.json(
       { 
         success: false, 

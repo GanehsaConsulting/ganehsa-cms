@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
@@ -342,7 +342,7 @@ export default function ClientsPage() {
               <span className="font-medium text-blue-800">Active Filters:</span>
               {searchQuery && (
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
-                  Search: "{searchQuery}"
+                  {`Search: "${searchQuery}"`}
                 </span>
               )}
               {serviceFilter !== "All Services" && (

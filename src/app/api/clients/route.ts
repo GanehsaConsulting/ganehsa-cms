@@ -1,5 +1,5 @@
 // app/api/testimonial/route.ts
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where condition
-    const where: any = {};
+    const where: Prisma.TestimonialWhereInput = {};
     
     if (search) {
       where.OR = [

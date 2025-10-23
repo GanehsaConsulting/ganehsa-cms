@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { TableClient } from "@/app/business/clients/page";
-import { useServices } from "./useServices";
-import { setDate } from "date-fns";
 
 interface FetchClientsParams {
   page?: number;
