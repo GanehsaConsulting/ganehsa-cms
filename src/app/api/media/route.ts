@@ -1,16 +1,129 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
-import fs from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
-import crypto from "crypto";
+import cloudinary from "@/lib/cloudinary";
 
 const prisma = new PrismaClient();
 
-// ======================
-// GET MEDIAS (with pagination + search)
-// ======================
+export async function POST(req: Request) {
+  try {
+    const user = await verifyAuth(req);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+    const title = formData.get("title") as string;
+    const type = formData.get("type") as string;
+    const alt = formData.get("alt") as string || title;
+
+    if (!file || !title || !type) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, message: "File type not allowed" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size
+    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { success: false, message: "File size too large" },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to base64
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+
+    // Determine resource type for Cloudinary
+    let resourceType: "image" | "video" | "raw" = "image";
+    if (file.type.startsWith('video/')) {
+      resourceType = "video";
+    } else if (file.type === 'application/pdf') {
+      resourceType = "raw";
+    }
+
+    // Upload to Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(base64, {
+      folder: "cms_media",
+      resource_type: resourceType,
+      quality: "auto",
+      fetch_format: "auto",
+      use_filename: true,
+      unique_filename: true,
+      overwrite: false,
+    });
+
+    // Save metadata in database
+    const media = await prisma.media.create({
+      data: {
+        title,
+        type: file.type,
+        alt,
+        url: uploadResponse.secure_url,
+        publicId: uploadResponse.public_id, // This will work after migration
+        size: file.size,
+        uploadedById: Number(user.id),
+      },
+    });
+
+    revalidatePath("/dashboard/media");
+    revalidatePath("/");
+
+    return NextResponse.json({
+      status: 201,
+      success: true,
+      message: "File uploaded to Cloudinary successfully",
+      data: media,
+    });
+
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    
+    // Handle Prisma errors
+    if (err instanceof Error && 'code' in err) {
+      const prismaError = err as any;
+      if (prismaError.code === 'P2022') {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: "Database schema mismatch. Please run database migrations.",
+            error: "Missing publicId column"
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: "Internal server error",
+        error: err instanceof Error ? err.message : "Unknown error"
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     // const user = await verifyAuth(req);
@@ -21,14 +134,12 @@ export async function GET(req: NextRequest) {
     //   );
     // }
 
-    // Parse query parameters from the URL
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
 
-    // Query database with search and pagination
     const [medias, total] = await Promise.all([
       prisma.media.findMany({
         where: search
@@ -72,81 +183,6 @@ export async function GET(req: NextRequest) {
     console.error(err);
     return NextResponse.json(
       { success: false, message: "Internal server error", data: [] },
-      { status: 500 }
-    );
-  }
-}
-
-// ======================
-// UPLOAD IMAGE
-// ======================
-export async function POST(req: Request) {
-  try {
-    const user = await verifyAuth(req);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const title = formData.get("title") as string;
-    const type = formData.get("type") as string;
-
-    // Validasi dasar
-    if (!file || !title || !type) {
-      return NextResponse.json(
-        { success: false, message: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Generate nama acak & path penyimpanan
-    const fileExt = path.extname(file.name);
-    const randomName = crypto.randomBytes(16).toString("hex") + fileExt;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filePath = path.join(uploadDir, randomName);
-
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    // Simpan file
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    await fs.writeFile(filePath, buffer);
-
-    // Generate metadata
-    const url = `/uploads/${randomName}`;
-    const alt = title;
-    const size = file.size;
-    const uploadedById = Number(user.id);
-
-    // Simpan ke database
-    const media = await prisma.media.create({
-      data: {
-        title,
-        type,
-        alt,
-        url,
-        size,
-        uploadedById,
-      },
-    });
-
-    revalidatePath("/");
-
-    return NextResponse.json({
-      status: 201,
-      success: true,
-      message: "Image uploaded successfully",
-      data: media,
-    });
-  } catch (err) {
-    console.error("UPLOAD ERROR:", err);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
