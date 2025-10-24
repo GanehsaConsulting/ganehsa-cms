@@ -8,25 +8,25 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "";
-    const sort = searchParams.get("sort") || "DESC";
-
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const sort = searchParams.get('sort') || 'DESC';
+    
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = {};
-
+    
     if (search) {
       where.title = {
         contains: search,
-        mode: "insensitive",
+        mode: 'insensitive'
       };
     }
-
-    if (status && status !== "all") {
+    
+    if (status && status !== 'all') {
       where.status = status.toUpperCase();
     }
 
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         thumbnail: { select: { id: true, url: true, title: true, alt: true } },
       },
       orderBy: {
-        createdAt: sort.toLowerCase() === "asc" ? "asc" : "desc",
+        createdAt: sort.toLowerCase() === 'asc' ? 'asc' : 'desc'
       },
       skip,
       take: limit,
@@ -55,13 +55,13 @@ export async function GET(request: Request) {
         currentPage: page,
         totalPages,
         totalItems,
-        itemsPerPage: limit,
-      },
+        itemsPerPage: limit
+      }
     });
   } catch (error) {
-    console.error("Error fetching articles:", error);
+    console.error('Error fetching articles:', error);
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     );
   }
