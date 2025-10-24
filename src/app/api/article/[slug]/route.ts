@@ -5,68 +5,52 @@ import { Prisma, Status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: Request) {
+//GET BY ID ( params by slug )
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
-    const { searchParams } = new URL(req.url);
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 10;
-    const search = searchParams.get("search")?.trim() || "";
-    const statusParam = searchParams.get("status")?.trim() || "";
+    const { slug } = await params;
+    const articleSlug = slug;
 
-    const skip = (page - 1) * limit;
+    console.log("Mencari artikel dengan slug:", articleSlug); // ← Tambahkan logging
 
-    // Build where condition with both search and status
-    const whereCondition: Prisma.ArticleWhereInput = {
-      ...(search && {
-        title: {
-          contains: search,
-          mode: Prisma.QueryMode.insensitive,
-        },
-      }),
-      ...(statusParam && statusParam !== "all" && {
-        status: statusParam.toUpperCase() as Status, // Cast to Status enum
-      }),
-    };
-
-    const totalItems = await prisma.article.count({
-      where: whereCondition,
-    });
-
-    const articles = await prisma.article.findMany({
-      where: whereCondition,
+    const article = await prisma.article.findFirst({
+      where: { slug: articleSlug },
       include: {
         author: { select: { id: true, name: true, email: true } },
         category: { select: { id: true, name: true, slug: true } },
         thumbnail: { select: { id: true, url: true, title: true, alt: true } },
       },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
     });
+
+    console.log("Artikel ditemukan:", article); // di artikel ditemukan udah ngaco apa karna slug di table article di prisma nya ga unique?
+
+    if (!article) {
+      return NextResponse.json(
+        { success: false, message: "Article not found" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Success get article data",
-      pagination: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / limit),
-        currentPage: page,
-        limit,
-      },
-      data: articles,
+      data: article,
     });
   } catch (err) {
-    console.error("❌ Error fetching articles:", err);
+    console.error("❌ Error fetching article:", err);
     return NextResponse.json(
-      { success: false, message: "Internal server error", data: [] },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
+// PATCH
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -78,14 +62,14 @@ export async function PATCH(
       );
     }
 
-    const { id } = await params;
-    const articleId = Number(id);
+    const { slug } = await params;
+    const articleSlug = slug;
 
     const body = await req.json();
     const {
       title,
       content,
-      slug,
+      slug: newSlug,
       excerpt,
       categoryId,
       thumbnailId,
@@ -94,8 +78,8 @@ export async function PATCH(
     } = body;
 
     // Check if article exists
-    const existingArticle = await prisma.article.findUnique({
-      where: { id: articleId },
+    const existingArticle = await prisma.article.findFirst({
+      where: { slug: articleSlug },
     });
 
     if (!existingArticle) {
@@ -105,6 +89,9 @@ export async function PATCH(
       );
     }
 
+    // Get the article ID to use for update
+    const articleId = existingArticle.id;
+
     // Prepare update data with proper Prisma type
     const updateData: Prisma.ArticleUpdateInput = {
       updatedAt: new Date(),
@@ -113,7 +100,7 @@ export async function PATCH(
     // Add fields only if they are provided
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
-    if (slug !== undefined) updateData.slug = slug;
+    if (newSlug !== undefined) updateData.slug = newSlug;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (categoryId !== undefined) {
       updateData.category = {
@@ -186,7 +173,7 @@ export async function PATCH(
 // DELETE ARTIKEL
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -198,12 +185,12 @@ export async function DELETE(
       );
     }
 
-    const { id } = await params;
-    const articleId = Number(id);
+    const { slug } = await params;
+    const articleSlug = slug;
 
     // Check if article exists
-    const existingArticle = await prisma.article.findUnique({
-      where: { id: articleId },
+    const existingArticle = await prisma.article.findFirst({
+      where: { slug: articleSlug },
     });
 
     if (!existingArticle) {
@@ -212,6 +199,9 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Get the article ID to use for delete
+    const articleId = existingArticle.id;
 
     await prisma.article.delete({
       where: { id: articleId },

@@ -1,9 +1,9 @@
+// hooks/useArticles.ts
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { TableArticle } from "@/app/article/page";
 
-// Tambahkan interface untuk data API
 interface ArticleFromAPI {
   id: number;
   title: string;
@@ -72,14 +72,14 @@ export const useArticles = () => {
       });
 
       const data = await res.json();
-      if (data.success && data.data) {
+      
+      if (res.ok && data.success && data.data) {
         const transformed: TableArticle[] = data.data.map((article: ArticleFromAPI) => ({
           id: article.id,
-          originalId: article.id,
           title: article.title,
           slug: article.slug,
           excerpt: article.excerpt || "-",
-          category: article.category?.name || "-", // ⬅️ TAMBAHKAN INI
+          category: article.category?.name || "-",
           content: article.content,
           date: new Date(article.createdAt).toLocaleDateString('id-ID', {
             year: 'numeric',

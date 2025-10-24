@@ -1,27 +1,32 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-// GET ARTICLES 
+// GET ALL
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 10;
     const search = searchParams.get("search")?.trim() || "";
+    const statusParam = searchParams.get("status")?.trim() || "";
 
     const skip = (page - 1) * limit;
 
-    const whereCondition: Prisma.ArticleWhereInput = search
-      ? {
-          title: {
-            contains: search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        }
-      : {};
+    // Build where condition with both search and status
+    const whereCondition: Prisma.ArticleWhereInput = {
+      ...(search && {
+        title: {
+          contains: search,
+          mode: Prisma.QueryMode.insensitive,
+        },
+      }),
+      ...(statusParam && statusParam !== "all" && {
+        status: statusParam.toUpperCase() as Status, // Cast to Status enum
+      }),
+    };
 
     const totalItems = await prisma.article.count({
       where: whereCondition,

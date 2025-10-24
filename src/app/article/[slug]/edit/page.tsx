@@ -1,3 +1,4 @@
+// app/article/[slug]/edit/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -42,14 +43,6 @@ const HIGHLIGHT_OPTIONS = [
   { label: "Inactive", value: "inactive", color: "gray" as const },
 ];
 
-// interface Media {
-//   id: number;
-//   url: string;
-//   type: string;
-//   title: string | null;
-//   alt: string | null;
-// }
-
 interface ArticleData {
   id: number;
   title: string;
@@ -81,7 +74,7 @@ interface ArticleData {
 export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
-  const articleId = params.id as string;
+  const articleSlug = params.slug as string;
 
   // Form State
   const [title, setTitle] = useState("");
@@ -93,6 +86,7 @@ export default function EditArticlePage() {
   const [excerpt, setExcerpt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [originalSlug, setOriginalSlug] = useState("");
 
   // Media State
   const [medias, setMedias] = useState<Medias[]>([]);
@@ -101,21 +95,27 @@ export default function EditArticlePage() {
   const { dataCategories } = useCategory();
 
   // Fetch article data
-  // Fetch article data
   useEffect(() => {
-    if (!articleId) return;
+    if (!articleSlug) {
+      toast.error("Slug artikel tidak ditemukan");
+      router.push("/article");
+      return;
+    }
 
     async function fetchArticleData() {
       const token = getToken();
       if (!token) {
         toast.error("Anda belum login!");
+        router.push("/article");
         return;
       }
 
       setIsFetching(true);
       try {
+        console.log("Fetching article dengan slug:", articleSlug);
+        
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/article/${articleId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/article/${articleSlug}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -128,17 +128,28 @@ export default function EditArticlePage() {
         }
 
         const data = await res.json();
-        if (data.success) {
+        console.log("Data artikel dari API:", data);
+
+        if (data.success && data.data) {
           const article: ArticleData = data.data;
-          // Populate form with existing data
+          // Populate form dengan data yang benar
           setTitle(article.title);
           setSlug(article.slug);
-          setCategory(String(article.categoryId));
+          setOriginalSlug(article.slug);
+          setCategory(String(article.category.id)); // Gunakan category.id
           setContent(article.content);
           setStatus(article.status);
           setHighlight(article.highlight ? "active" : "inactive");
           setExcerpt(article.excerpt || "");
           setThumbnailId(article.thumbnailId);
+          
+          console.log("Form diisi dengan data:", {
+            title: article.title,
+            slug: article.slug,
+            category: article.category.id,
+            status: article.status,
+            highlight: article.highlight
+          });
         } else {
           toast.error(data.message || "Gagal mengambil data artikel");
           router.push("/article");
@@ -153,14 +164,13 @@ export default function EditArticlePage() {
     }
 
     fetchArticleData();
-  }, [articleId, router]);
+  }, [articleSlug, router]);
 
-  // Fetch media for thumbnail selection
+  // Fetch media untuk thumbnail selection
   useEffect(() => {
     getMedias();
   }, []);
 
-  // Fetch media (for thumbnail selection)
   async function getMedias() {
     const token = getToken();
     if (!token) return;
@@ -188,7 +198,6 @@ export default function EditArticlePage() {
     }
   }
 
-  // Auto generate slug from title
   const handleTitleChange = (value: string) => {
     setTitle(value);
     const generatedSlug = value
@@ -200,7 +209,6 @@ export default function EditArticlePage() {
     setSlug(generatedSlug);
   };
 
-  // Handle submit for update
   const handleSubmit = async () => {
     const token = getToken();
     if (!token) {
@@ -231,8 +239,16 @@ export default function EditArticlePage() {
 
     setIsLoading(true);
     try {
+      console.log("Mengupdate artikel:", {
+        originalSlug,
+        newSlug: slug,
+        title,
+        category,
+        status
+      });
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${articleId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/article/${originalSlug}`,
         {
           method: "PATCH",
           headers: {
@@ -253,16 +269,14 @@ export default function EditArticlePage() {
       );
 
       const data = await res.json();
+      console.log("Response update:", data);
 
       if (res.ok && data.success) {
         toast.success("Artikel berhasil diperbarui!");
         router.push("/article");
       } else {
-        // Handle specific errors
         if (data.message === "Slug already exists") {
-          toast.error(
-            "Slug sudah digunakan. Silakan gunakan slug yang berbeda."
-          );
+          toast.error("Slug sudah digunakan. Silakan gunakan slug yang berbeda.");
         } else {
           toast.error(data.message || "Gagal memperbarui artikel");
         }
@@ -279,14 +293,12 @@ export default function EditArticlePage() {
     router.push("/article");
   };
 
-  // Handler untuk memilih thumbnail
   const handleSelectThumbnail = (mediaId: number) => {
     setThumbnailId(mediaId);
     setShowMediaModal(false);
     toast.success("Thumbnail dipilih!");
   };
 
-  // Handler untuk menghapus thumbnail
   const handleRemoveThumbnail = () => {
     setThumbnailId(null);
     toast.success("Thumbnail dihapus!");
@@ -297,7 +309,7 @@ export default function EditArticlePage() {
       <>
         <HeaderActions position="left">
           <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
-            Edit Article
+            Edit Article - {articleSlug}
           </h1>
         </HeaderActions>
         <Wrapper>
@@ -314,10 +326,9 @@ export default function EditArticlePage() {
 
   return (
     <>
-      {/* Header Actions */}
       <HeaderActions position="left">
         <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
-          Edit Article
+          Edit Article - {title || articleSlug}
         </h1>
       </HeaderActions>
 
@@ -350,7 +361,6 @@ export default function EditArticlePage() {
         </div>
       </HeaderActions>
 
-      {/* Main Content */}
       <Wrapper className="grid grid-cols-1 lg:grid-cols-10 gap-5">
         {/* Left Column - Main Content */}
         <div className="lg:col-span-7 space-y-5">
@@ -383,32 +393,12 @@ export default function EditArticlePage() {
                   readonly: isLoading,
                   toolbarAdaptive: false,
                   buttons: [
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "|",
-                    "ul",
-                    "ol",
-                    "|",
-                    "outdent",
-                    "indent",
-                    "|",
-                    "font",
-                    "fontsize",
-                    "brush",
-                    "|",
-                    "image",
-                    "video",
-                    "table",
-                    "link",
-                    "|",
-                    "align",
-                    "undo",
-                    "redo",
-                    "|",
-                    "preview",
-                    "fullscreen",
+                    "bold", "italic", "underline", "strikethrough", "|",
+                    "ul", "ol", "|", "outdent", "indent", "|",
+                    "font", "fontsize", "brush", "|",
+                    "image", "video", "table", "link", "|",
+                    "align", "undo", "redo", "|",
+                    "preview", "fullscreen",
                   ],
                 }}
               />
@@ -544,11 +534,10 @@ export default function EditArticlePage() {
         </div>
       </Wrapper>
 
-      {/* Media Selection Modal - Hanya untuk thumbnail */}
+      {/* Media Selection Modal */}
       {showMediaModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-            {/* Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-lg font-semibold">Pilih Thumbnail</h2>
               <Button variant="ghost" onClick={() => setShowMediaModal(false)}>
@@ -556,7 +545,6 @@ export default function EditArticlePage() {
               </Button>
             </div>
 
-            {/* Media grid */}
             <div className="p-6 overflow-y-auto flex-grow">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {medias

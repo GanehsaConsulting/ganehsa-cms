@@ -1,3 +1,4 @@
+// app/article/page.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,6 @@ export interface TableArticle {
   date: string;
   status: "draft" | "archive" | "publish";
   highlight: boolean;
-  originalId: number;
 }
 
 const statusStyles = {
@@ -83,7 +83,7 @@ const articleColumns: Column<TableArticle>[] = [
     className: "min-w-[200px]",
     render: (row) => (
       <div className="bg-white/20 w-fit px-2 py-1 rounded-md font-semibold italic">
-        /{row.slug.slice(0, 19) + "..."}
+        /{row.slug.length > 19 ? row.slug.slice(0, 19) + "..." : row.slug}
       </div>
     ),
   },
@@ -133,11 +133,8 @@ export default function ArticlePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showAlertDelete, setShowAlertDelete] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(
-    null
-  );
+  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(null);
 
-  // Custom Fetch Hooks yey
   const { articles, isLoading, setSearchTerm, fetchArticles } = useArticles();
 
   const handleDelete = async (row: TableArticle) => {
@@ -147,11 +144,11 @@ export default function ArticlePage() {
       return;
     }
 
-    const originalId = row.originalId || row.id;
+    const articleSlug = row.slug;
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${originalId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/article/${articleSlug}`,
         {
           method: "DELETE",
           headers: {
@@ -165,7 +162,7 @@ export default function ArticlePage() {
 
       if (res.ok && data.success) {
         toast.success("Artikel berhasil dihapus");
-        window.location.reload();
+        fetchArticles(); // Refresh data tanpa reload page
       } else {
         toast.error(data.message || "Gagal menghapus artikel");
       }
@@ -178,7 +175,6 @@ export default function ArticlePage() {
     }
   };
 
-  // Handle search
   const handleSearch = () => {
     setSearchTerm(searchInput);
     setCurrentPage(1);
@@ -190,37 +186,21 @@ export default function ArticlePage() {
     }
   };
 
-  // Handle limit change
   const handleLimitChange = (value: string) => {
     setLimit(Number(value));
     setCurrentPage(1);
   };
 
   const handleEdit = (row: TableArticle) => {
-    const original = articles.find((a) => a.id === row.id);
-    if (original) {
-      localStorage.setItem(
-        "editArticleData",
-        JSON.stringify({
-          id: original.originalId || row.id,
-          judul: row.title,
-          kategori: row.category,
-          konten: row.content,
-          status: row.status.toUpperCase(),
-          date: row.date,
-          slug: row.slug,
-          excerpt: row.excerpt,
-          highlight: row.highlight,
-        })
-      );
-      router.push(`/article/${original.originalId || row.id}/edit`);
-    }
+    // Langsung redirect ke edit page dengan slug yang benar
+    router.push(`/article/${row.slug}/edit`);
   };
 
   // Filter by status
   const filteredArticles = articles.filter((article) => {
     const matchesStatus =
-      statusFilter === "All" || article.status === statusFilter.toLowerCase();
+      statusFilter === "All" || 
+      article.status === statusFilter.toLowerCase();
     return matchesStatus;
   });
 
@@ -232,7 +212,6 @@ export default function ArticlePage() {
     startIndex + limit
   );
 
-  // Generate page numbers
   const generatePageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -250,7 +229,6 @@ export default function ArticlePage() {
     return pages;
   };
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -270,9 +248,7 @@ export default function ArticlePage() {
           }}
           header="Hapus Artikel"
           desc={`Apakah Anda yakin ingin menghapus artikel "${selectedArticle?.title}"?`}
-          continueAction={() =>
-            selectedArticle && handleDelete(selectedArticle)
-          }
+          continueAction={() => selectedArticle && handleDelete(selectedArticle)}
         />
       )}
 
