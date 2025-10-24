@@ -4,17 +4,9 @@ import { verifyAuth } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
+// GET ARTICLES 
 export async function GET(req: Request) {
   try {
-    // const user = await verifyAuth(req);
-
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Unauthorized", data: [] },
-    //     { status: 401 }
-    //   );
-    // }
-
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 10;

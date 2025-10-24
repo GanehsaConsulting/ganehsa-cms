@@ -5,49 +5,60 @@ import { Prisma, Status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET SINGLE ARTICLE BY ID
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request) {
   try {
-    const user = await verifyAuth(req);
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search")?.trim() || "";
+    const statusParam = searchParams.get("status")?.trim() || "";
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const skip = (page - 1) * limit;
 
-    const { id } = await params;
-    const articleId = Number(id);
+    // Build where condition with both search and status
+    const whereCondition: Prisma.ArticleWhereInput = {
+      ...(search && {
+        title: {
+          contains: search,
+          mode: Prisma.QueryMode.insensitive,
+        },
+      }),
+      ...(statusParam && statusParam !== "all" && {
+        status: statusParam.toUpperCase() as Status, // Cast to Status enum
+      }),
+    };
 
-    const article = await prisma.article.findUnique({
-      where: { id: articleId },
+    const totalItems = await prisma.article.count({
+      where: whereCondition,
+    });
+
+    const articles = await prisma.article.findMany({
+      where: whereCondition,
       include: {
         author: { select: { id: true, name: true, email: true } },
         category: { select: { id: true, name: true, slug: true } },
         thumbnail: { select: { id: true, url: true, title: true, alt: true } },
       },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     });
-
-    if (!article) {
-      return NextResponse.json(
-        { success: false, message: "Article not found" },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
       message: "Success get article data",
-      data: article,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        limit,
+      },
+      data: articles,
     });
   } catch (err) {
-    console.error("❌ Error fetching article:", err);
+    console.error("❌ Error fetching articles:", err);
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      { success: false, message: "Internal server error", data: [] },
       { status: 500 }
     );
   }
