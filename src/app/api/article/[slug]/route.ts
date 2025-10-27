@@ -5,7 +5,7 @@ import { Prisma, Status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-//GET BY ID ( params by slug )
+// GET BY SLUG
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -14,10 +14,26 @@ export async function GET(
     const { slug } = await params;
     const articleSlug = slug;
 
-    console.log("Mencari artikel dengan slug:", articleSlug); // ← Tambahkan logging
+    console.log("Mencari artikel dengan slug:", articleSlug);
 
-    const article = await prisma.article.findFirst({
+    // First, check if slug is unique in the database
+    const articleCount = await prisma.article.count({
       where: { slug: articleSlug },
+    });
+
+    console.log(`Jumlah artikel dengan slug ${articleSlug}:`, articleCount);
+
+    if (articleCount > 1) {
+      console.warn(`⚠️ Peringatan: Ada ${articleCount} artikel dengan slug yang sama: ${articleSlug}`);
+    }
+
+    // Use findFirst instead of findUnique since slug might not be unique
+    const article = await prisma.article.findFirst({
+      where: { 
+        slug: articleSlug,
+        // Add status filter if you only want published articles
+        // status: "PUBLISHED"
+      },
       include: {
         author: { select: { id: true, name: true, email: true } },
         category: { select: { id: true, name: true, slug: true } },
@@ -25,7 +41,7 @@ export async function GET(
       },
     });
 
-    console.log("Artikel ditemukan:", article); // di artikel ditemukan udah ngaco apa karna slug di table article di prisma nya ga unique?
+    console.log("Artikel ditemukan:", article);
 
     if (!article) {
       return NextResponse.json(
