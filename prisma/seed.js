@@ -4,30 +4,45 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  const hashedPassword = await bcrypt.hash("P4ssw0rd", 10)
-
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@cms.com" },
-    update: {},
-    create: {
+  const users = [
+    {
       name: "Admin",
       email: "admin@cms.com",
-      password: hashedPassword,
+      password: await bcrypt.hash("P4ssw0rd", 10),
       role: Role.SUPER_ADMIN,
     },
-  })
+    { 
+      name: "Gevira",
+      email: "gevira@cms.com",
+      password: await bcrypt.hash("ganesha2025!", 10),
+      role: Role.ADMIN
+    },
+    { 
+      name: "Guntur",
+      email: "guntur@cms.com",
+      password: await bcrypt.hash("ganesha2025!", 10),
+      role: Role.ADMIN
+    },
+  ]
 
-  // console.log("✅ Seeding selesai:", admin)
+  for (const user of users) {
+    const createdUser = await prisma.user.upsert({
+      where: { email: user.email },
+      update: {}, // tidak update kalau sudah ada
+      create: user, // buat kalau belum ada
+    })
+    console.log(`✅ User created or already exists: ${createdUser.email}`)
+  }
+
+  console.log("\n🎉 Seeding users selesai.")
 }
 
 main()
-  .then(() => prisma.$disconnect())
+  .then(async () => {
+    await prisma.$disconnect()
+  })
   .catch(async (e) => {
     console.error(e)
     await prisma.$disconnect()
     process.exit(1)
   })
-
-
-// npx prisma db push
-// npx prisma db seed

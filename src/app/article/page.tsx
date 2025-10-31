@@ -87,7 +87,10 @@ const articleColumns: Column<TableArticle>[] = [
       </div>
     ),
   },
-  { key: "category", label: "Category", className: "min-w-[120px]" },
+  { key: "category", 
+    label: "Category", 
+    className: "min-w-[190px]",
+  },
   {
     key: "status",
     label: "Status",
@@ -133,7 +136,9 @@ export default function ArticlePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showAlertDelete, setShowAlertDelete] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<TableArticle | null>(
+    null
+  );
 
   const { articles, isLoading, setSearchTerm, fetchArticles } = useArticles();
 
@@ -199,8 +204,7 @@ export default function ArticlePage() {
   // Filter by status
   const filteredArticles = articles.filter((article) => {
     const matchesStatus =
-      statusFilter === "All" || 
-      article.status === statusFilter.toLowerCase();
+      statusFilter === "All" || article.status === statusFilter.toLowerCase();
     return matchesStatus;
   });
 
@@ -248,7 +252,9 @@ export default function ArticlePage() {
           }}
           header="Hapus Artikel"
           desc={`Apakah Anda yakin ingin menghapus artikel "${selectedArticle?.title}"?`}
-          continueAction={() => selectedArticle && handleDelete(selectedArticle)}
+          continueAction={() =>
+            selectedArticle && handleDelete(selectedArticle)
+          }
         />
       )}
 
