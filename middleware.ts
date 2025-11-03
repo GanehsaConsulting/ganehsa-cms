@@ -8,6 +8,7 @@ export function middleware(req: NextRequest) {
   const allowedOrigins = [
     "http://localhost:3000",
     "https://ganesha-cms.vercel.app",
+    "https://www.ganeshaconsulting.co.id"
   ];
 
   // Jika origin diizinkan, tambahkan header CORS
