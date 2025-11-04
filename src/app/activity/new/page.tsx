@@ -72,10 +72,10 @@ export default function AddNewActivity() {
       return;
     }
 
-    if (!desc.trim()) {
-      toast.error("Description wajib diisi!");
-      return;
-    }
+    // if (!desc.trim()) {
+    //   toast.error("Description wajib diisi!");
+    //   return;
+    // }
 
     if (!longDesc.trim()) {
       toast.error("Long description wajib diisi!");
@@ -220,7 +220,7 @@ export default function AddNewActivity() {
           </div>
 
           {/* Description */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Label htmlFor="desc" className="text-white">
               Description *
             </Label>
@@ -231,11 +231,11 @@ export default function AddNewActivity() {
               onChange={(e) => setDesc(e.target.value)}
               disabled={isLoading}
             />
-          </div>
+          </div> */}
 
           {/* Content Editor */}
           <div className="space-y-3">
-            <Label className="text-white">Long Description *</Label>
+            <Label className="text-white">Description *</Label>
             <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
               <JoditEditor
                 value={longDesc}

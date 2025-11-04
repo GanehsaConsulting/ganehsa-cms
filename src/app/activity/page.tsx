@@ -30,7 +30,7 @@ import Image from "next/image"; // Import Next.js Image component
 export interface TableActivity {
   id: number;
   title: string;
-  desc: string;
+  // desc: string;
   longDesc: string;
   date: string;
   showTitle: boolean;
@@ -48,8 +48,8 @@ export interface TableActivity {
 const activityColumns: Column<TableActivity>[] = [
   { key: "id", label: "ID", className: "font-semibold w-[30]" },
   { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
-  { key: "desc", label: "Description", className: "min-w-[180px]" },
-  { key: "longDesc", label: "Long Description", className: "min-w-[180px]" },
+  // { key: "desc", label: "Description", className: "min-w-[180px]" },
+  { key: "longDesc", label: "Description", className: "min-w-[180px]" },
   {
     key: "date",
     label: "Date & Time",

@@ -196,10 +196,10 @@ export default function EditActivityPage() {
       return;
     }
 
-    if (!desc.trim()) {
-      toast.error("Description wajib diisi!");
-      return;
-    }
+    // if (!desc.trim()) {
+    //   toast.error("Description wajib diisi!");
+    //   return;
+    // }
 
     if (!longDesc.trim()) {
       toast.error("Long description wajib diisi!");
@@ -409,7 +409,7 @@ export default function EditActivityPage() {
           </div>
 
           {/* Description */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Label htmlFor="desc" className="text-white">
               Description *
             </Label>
@@ -420,7 +420,7 @@ export default function EditActivityPage() {
               onChange={(e) => setDesc(e.target.value)}
               disabled={isLoading}
             />
-          </div>
+          </div> */}
 
           {/* Content Editor */}
           <div className="space-y-3">

@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.activity.count({ where }),
     ]);
+    
 
     return NextResponse.json({
       success: true,
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validation
-    if (!title || !desc || !longDesc || !date) {
+    if (!title || !longDesc || !date) {
       return NextResponse.json(
         {
           success: false,
