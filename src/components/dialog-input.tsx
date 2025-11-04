@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Column } from "./table-list";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -26,28 +27,52 @@ export function DialogInput<T>({
   rowData,
   onSubmit,
 }: DialogInputProps<T>) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const isEdit = !!rowData;
 
-    const formData = new FormData(e.currentTarget);
-    const values: Partial<T> = {};
+  // Simpan value lokal form
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
 
-    columns.forEach((col) => {
-      const key = col.key as keyof T;
-      const value = formData.get(col.key as string);
+  // Saat edit, isi form dengan data awal
+  useEffect(() => {
+    if (rowData) {
+      const initial = Object.fromEntries(
+        Object.entries(rowData).map(([key, val]) => [key, String(val ?? "")])
+      );
+      setFormValues(initial);
+    } else {
+      setFormValues({});
+    }
+  }, [rowData]);
 
-      if (col.key === "highlight") {
-        values[key] = (value === "true") as T[keyof T];
-      } else {
-        values[key] = (value || "") as T[keyof T];
-      }
-    });
-
-    onSubmit?.(values);
-    onOpenChange?.(false);
+  // Fungsi generate slug dari name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "") // hapus karakter aneh
+      .replace(/\s+/g, "-") // ganti spasi dengan dash
+      .replace(/-+/g, "-"); // hapus dash ganda
   };
 
-  const isEdit = !!rowData;
+  // Otomatis buat slug dari name
+  useEffect(() => {
+    if ("name" in formValues && !isEdit) {
+      setFormValues((prev) => ({
+        ...prev,
+        slug: generateSlug(prev.name || ""),
+      }));
+    }
+  }, [formValues.name, isEdit]);
+
+  const handleChange = (key: string, value: string) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit?.(formValues as Partial<T>);
+    onOpenChange?.(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,20 +85,18 @@ export function DialogInput<T>({
 
         <form onSubmit={handleSubmit} className="grid gap-4">
           {columns.map((col) => {
-            const key = col.key as keyof T;
-            
+            const key = col.key as string;
+            const value = formValues[key] ?? "";
+
             return (
-              <div className="grid gap-3" key={col.key as string}>
-                <Label htmlFor={col.key as string}>{col.label}</Label>
+              <div className="grid gap-3" key={key}>
+                <Label htmlFor={key}>{col.label}</Label>
 
                 {col.key === "highlight" ? (
                   <Select
-                    defaultValue={
-                      isEdit && rowData 
-                        ? (rowData[key] ? "true" : "false") 
-                        : undefined
-                    }
-                    name={col.key as string}
+                    value={value || undefined}
+                    onValueChange={(val) => handleChange(key, val)}
+                    name={key}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih status" />
@@ -85,14 +108,12 @@ export function DialogInput<T>({
                   </Select>
                 ) : (
                   <Input
-                    id={col.key as string}
-                    name={col.key as string}
-                    defaultValue={
-                      isEdit && rowData 
-                        ? String(rowData[key] ?? "") 
-                        : undefined
-                    }
+                    id={key}
+                    name={key}
+                    value={value}
+                    onChange={(e) => handleChange(key, e.target.value)}
                     placeholder={!isEdit ? `Masukkan ${col.label}` : undefined}
+                    disabled={key === "slug"} // slug auto generate
                   />
                 )}
               </div>
