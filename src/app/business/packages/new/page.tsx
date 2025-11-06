@@ -451,7 +451,7 @@ export default function NewPackagePage() {
                     </Button>
                   )}
                 </div>
-              ))}
+              ))} 
             </div>
 
             {/* Actions */}

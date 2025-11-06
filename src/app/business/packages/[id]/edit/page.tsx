@@ -24,7 +24,7 @@ interface PackageData {
   serviceId: number;
   type: string;
   price: number;
-  priceOriginal: number;
+  discount: number;
   link: string;
   highlight: boolean;
   features: Feature[];
@@ -42,7 +42,7 @@ export default function EditPackagePage() {
   // Form state
   const [type, setType] = useState("");
   const [price, setPrice] = useState("");
-  const [priceOriginal, setPriceOriginal] = useState("");
+  const [discount, setDiscount] = useState("");
   const [link, setLink] = useState("");
   const [highlight, setHighlight] = useState(false);
   const [serviceId, setServiceId] = useState("");
@@ -81,7 +81,7 @@ export default function EditPackagePage() {
           const data: PackageData = result.data;
           setType(data.type);
           setPrice(data.price.toString());
-          setPriceOriginal(data.priceOriginal.toString());
+          setDiscount(data.discount.toString());
           setLink(data.link);
           setHighlight(data.highlight);
           setServiceId(data.serviceId.toString());
@@ -171,12 +171,6 @@ export default function EditPackagePage() {
       toast.error("Price harus diisi dengan nilai yang valid");
       return false;
     }
-    
-
-    if (!priceOriginal || parseFloat(priceOriginal) <= 0) {
-      toast.error("Original price harus diisi dengan nilai yang valid");
-      return false;
-    }
 
     if (!link.trim()) {
       toast.error("Link harus diisi");
@@ -214,7 +208,7 @@ export default function EditPackagePage() {
         serviceId: parseInt(serviceId),
         type: type.trim(),
         price: parseFloat(price),
-        priceOriginal: parseFloat(priceOriginal),
+        discount: parseFloat(discount),
         link: link.trim(),
         highlight,
         features: validFeatures,
@@ -383,18 +377,17 @@ export default function EditPackagePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="priceOriginal" className="text-white">
-                    Original Price (Rp) <span className="text-red-500">*</span>
+                  <Label htmlFor="discount" className="text-white">
+                    Discount (%)
                   </Label>
                   <Input
-                    id="priceOriginal"
+                    id="discount"
                     type="number"
-                    placeholder="200000"
-                    value={priceOriginal}
-                    onChange={(e) => setPriceOriginal(e.target.value)}
+                    placeholder="50"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
                     required
                     min="0"
-                    step="1000"
                   />
                 </div>
               </div>

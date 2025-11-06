@@ -33,6 +33,7 @@ export interface TablePackages {
   type: string;
   service: string;
   price: number;
+  discount: number;
   priceOriginal: number;
   link: string;
   highlight: boolean;
@@ -80,14 +81,24 @@ const packageColumns: Column<TablePackages>[] = [
   {
     key: "price",
     label: "Price",
-    className: "min-w-[120px]",
-    render: (row) => `Rp ${row.price.toLocaleString()}`,
+    className: "min-w-[130px]",
+    render: (row) => (
+      <div className="flex items-center gap-1" >
+        <span className="font-semibold">Rp</span>
+        <span className="font-medium" >{row.price.toLocaleString()}</span>
+      </div>
+    ),
   },
-  {
+  { //  1,928,571
     key: "priceOriginal",
     label: "Original Price",
-    className: "min-w-[140px]",
-    render: (row) => `Rp ${row.priceOriginal.toLocaleString()}`,
+    className: "min-w-[170px]",   
+    render: (row) => (
+      <div className="flex items-center gap-2">
+        <span className="italic text-red-900 " >{`Rp ${row.priceOriginal.toLocaleString()}`}</span>
+        <div className="bg-red-600/30 text-white p-1 rounded-md text-xs">{`${row?.discount}%`}</div>
+      </div>
+    ),
   },
   {
     key: "link",
@@ -256,7 +267,7 @@ export default function PriceList() {
     try {
       const apiUrl = `${
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      }/api/packages/${selectedPackage.id}`;
+      }/packages/${selectedPackage.id}`;
       console.log("🗑️ Deleting package from:", apiUrl);
 
       const res = await fetch(apiUrl, {

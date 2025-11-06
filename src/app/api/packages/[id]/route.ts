@@ -8,12 +8,11 @@ interface PackageFeature {
   status: boolean;
 }
 
-interface UpdatePackageRequest {
+interface UpdatePackageBody {
   serviceId?: number;
   type?: string;
   highlight?: boolean;
   price?: number;
-  priceOriginal?: number;
   discount?: number;
   link?: string;
   features?: PackageFeature[];
@@ -100,7 +99,7 @@ export async function PATCH(
         { status: 400 }
       );
 
-    const body: UpdatePackageRequest = await req.json();
+    const body: UpdatePackageBody = await req.json();
     const {
       serviceId,
       type,
@@ -121,9 +120,17 @@ export async function PATCH(
         { status: 404 }
       );
 
-    const updateData: UpdatePackageRequest = {};
-    if (serviceId) updateData.serviceId = serviceId;
-    if (type) updateData.type = type;
+    const updateData: {
+      serviceId?: number;
+      type?: string;
+      highlight?: boolean;
+      price?: number;
+      priceOriginal?: number;
+      discount?: number;
+      link?: string;
+    } = {};
+    if (serviceId !== undefined) updateData.serviceId = serviceId;
+    if (type !== undefined) updateData.type = type;
     if (highlight !== undefined) updateData.highlight = highlight;
     if (price !== undefined) updateData.price = price;
     if (discount !== undefined) {
@@ -133,11 +140,16 @@ export async function PATCH(
         discount
       );
     }
-    if (link) updateData.link = link;
+    if (link !== undefined) updateData.link = link;
 
     const updated = await prisma.$transaction(async (tx) => {
-      // await tx.package.update({ where: { id }, data: updateData });
+      // Update package basic info
+      await tx.package.update({ 
+        where: { id: packageIdInt }, 
+        data: updateData 
+      });
 
+      // Update features
       if (features) {
         await tx.packageFeature.deleteMany({
           where: { packageId: packageIdInt },
@@ -158,6 +170,7 @@ export async function PATCH(
         }
       }
 
+      // Update requirements
       if (requirements) {
         await tx.packageRequirement.deleteMany({
           where: { packageId: packageIdInt },
@@ -212,8 +225,8 @@ export async function DELETE(
         { status: 401 }
       );
 
-      const { id } = await params
-      const packageIdInt = Number(id)
+    const { id } = await params;
+    const packageIdInt = Number(id);
 
     if (isNaN(packageIdInt))
       return NextResponse.json(
