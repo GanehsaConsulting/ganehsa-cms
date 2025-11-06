@@ -215,10 +215,8 @@ export function SelectComponent({
       <SelectContent>
         <SelectGroup>
           {label && <SelectLabel>{label}</SelectLabel>}
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
+          {options && options.map((opt) => (
+            opt.value && <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
           ))}
         </SelectGroup>
       </SelectContent>

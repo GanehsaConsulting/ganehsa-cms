@@ -61,6 +61,17 @@ export const navigationItems = {
           { name: "Clients", path: "/business/clients" },
         ]
       },
+
+       {
+        label: "Projects",
+        path: "/projects",
+        icon: <HiCurrencyDollar />,
+        subs: [
+          { name: "Website Development", path: "/projects/website-development" },
+          { name: "Social Media Management", path: "/projects/socmed-management" },
+        ]
+      },
+
     ]
   },
 
