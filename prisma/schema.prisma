@@ -128,9 +128,10 @@ model Service {
   testimonials Testimonial[]
 }
 
+// Update model Package
 model Package {
   id             Int                  @id @default(autoincrement())
-  serviceId      Int                  // foreign key ke Service
+  serviceId      Int
   type           String
   highlight      Boolean              @default(false)
   price          Int
@@ -143,7 +144,9 @@ model Package {
   service        Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   features       PackageFeature[]
   requirements   PackageRequirement[]
+  projects       PackageProject[]     // Add this relation
 }
+
 
 model Feature {
   id        Int               @id @default(autoincrement())
@@ -198,4 +201,29 @@ model Testimonial {
 
   serviceId     Int
   service       Service  @relation(fields: [serviceId], references: [id])
+}
+
+// Update model Project (rename from projects)
+model Project {
+  id          Int              @id @default(autoincrement())
+  name        String
+  companyName String
+  link        String
+  preview     String
+  previewPublicId String?      // Add for Cloudinary
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  packages    PackageProject[] // Add this relation
+}
+
+// Add junction table
+model PackageProject {
+  packageId   Int
+  projectId   Int
+
+  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, projectId])
 }
