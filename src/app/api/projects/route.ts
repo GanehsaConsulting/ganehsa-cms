@@ -7,77 +7,6 @@ import cloudinary from "@/lib/cloudinary";
 
 const prisma = new PrismaClient();
 
-// GET all projects with pagination and search
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") || "";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
-    const packageId = searchParams.get("packageId");
-    const skip = (page - 1) * limit;
-
-    const whereClause: any = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { companyName: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {};
-
-    // Filter by packageId if provided
-    if (packageId) {
-      whereClause.packages = {
-        some: {
-          packageId: parseInt(packageId, 10),
-        },
-      };
-    }
-
-    const [projects, total] = await Promise.all([
-      prisma.project.findMany({
-        where: whereClause,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          packages: {
-            include: {
-              package: {
-                include: {
-                  service: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      prisma.project.count({ where: whereClause }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return NextResponse.json({
-      success: true,
-      message: "Get projects data successfully",
-      data: projects,
-      pagination: {
-        total,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    });
-  } catch (err) {
-    console.error("GET PROJECTS ERROR:", err);
-    return NextResponse.json(
-      { success: false, message: "Internal server error", data: [] },
-      { status: 500 }
-    );
-  }
-}
-
 // POST create new project
 export async function POST(req: Request) {
   try {
@@ -155,6 +84,7 @@ export async function POST(req: Request) {
         link,
         preview: previewUrl,
         previewPublicId,
+        // ✅ BENAR: packages relation akan membuat records di PackageProject
         packages: {
           create: parsedPackageIds.map((pkgId) => ({
             packageId: pkgId,
@@ -195,3 +125,75 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// GET all projects with pagination and search
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const packageId = searchParams.get("packageId");
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { companyName: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {};
+
+    // Filter by packageId if provided
+    if (packageId) {
+      whereClause.packages = {
+        some: {
+          packageId: parseInt(packageId, 10),
+        },
+      };
+    }
+
+    const [projects, total] = await Promise.all([
+      prisma.project.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          packages: {
+            include: {
+              package: {
+                include: {
+                  service: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.project.count({ where: whereClause }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      message: "Get projects data successfully",
+      data: projects,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error("GET PROJECTS ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Internal server error", data: [] },
+      { status: 500 }
+    );
+  }
+}
+

@@ -1,4 +1,3 @@
-// app/api/projects/[id]/route.ts
 import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -7,23 +6,14 @@ import cloudinary from "@/lib/cloudinary";
 
 const prisma = new PrismaClient();
 
-// GET single project by ID
+// GET single project
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const projectId = parseInt(params.id, 10);
-
-    if (isNaN(projectId)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid project ID" },
-        { status: 400 }
-      );
-    }
-
     const project = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { id: parseInt(params.id) },
       include: {
         packages: {
           include: {
@@ -46,7 +36,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      message: "Get project successfully",
+      message: "Get project data successfully",
       data: project,
     });
   } catch (err) {
@@ -60,7 +50,7 @@ export async function GET(
 
 // PATCH update project
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -73,17 +63,24 @@ export async function PATCH(
       );
     }
 
-    const projectId = parseInt(params.id, 10);
+    const formData = await req.formData();
+    const name = formData.get("name") as string;
+    const companyName = formData.get("companyName") as string;
+    const link = formData.get("link") as string;
+    const previewFile = formData.get("preview") as File | null;
+    const packageIds = formData.get("packageIds") as string;
 
-    if (isNaN(projectId)) {
+    if (!name || !companyName || !link) {
       return NextResponse.json(
-        { success: false, message: "Invalid project ID" },
+        { success: false, message: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    // Check if project exists
     const existingProject = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { id: parseInt(params.id) },
+      include: { packages: true },
     });
 
     if (!existingProject) {
@@ -93,20 +90,10 @@ export async function PATCH(
       );
     }
 
-    const formData = await req.formData();
-    const name = formData.get("name") as string;
-    const companyName = formData.get("companyName") as string;
-    const link = formData.get("link") as string;
-    const previewFile = formData.get("preview") as File | null;
-    const packageIds = formData.get("packageIds") as string;
+    let previewUrl = existingProject.preview;
+    let previewPublicId = existingProject.previewPublicId || "";
 
-    const updateData: any = {};
-
-    if (name) updateData.name = name;
-    if (companyName) updateData.companyName = companyName;
-    if (link) updateData.link = link;
-
-    // Handle preview image update
+    // Upload new preview image if provided
     if (previewFile && previewFile.size > 0) {
       const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       if (!allowedTypes.includes(previewFile.type)) {
@@ -132,7 +119,6 @@ export async function PATCH(
         }
       }
 
-      // Upload new image
       const arrayBuffer = await previewFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const base64 = `data:${previewFile.type};base64,${buffer.toString("base64")}`;
@@ -147,50 +133,64 @@ export async function PATCH(
         overwrite: false,
       });
 
-      updateData.preview = uploadResponse.secure_url;
-      updateData.previewPublicId = uploadResponse.public_id;
+      previewUrl = uploadResponse.secure_url;
+      previewPublicId = uploadResponse.public_id;
     }
 
-    // Update package relations if provided
-    if (packageIds) {
-      const parsedPackageIds: number[] = JSON.parse(packageIds);
+    // Parse package IDs
+    const parsedPackageIds: number[] = packageIds
+      ? JSON.parse(packageIds)
+      : [];
 
-      // Delete existing relations and create new ones
+    // Update project
+    try {
+      // ✅ PERBAIKAN: Gunakan PackageProject (bukan projectPackage)
+      // Delete existing package relations
       await prisma.packageProject.deleteMany({
-        where: { projectId },
+        where: { projectId: parseInt(params.id) },
       });
 
-      updateData.packages = {
-        create: parsedPackageIds.map((pkgId) => ({
-          packageId: pkgId,
-        })),
-      };
-    }
-
-    const updatedProject = await prisma.project.update({
-      where: { id: projectId },
-      data: updateData,
-      include: {
-        packages: {
-          include: {
-            package: {
-              include: {
-                service: true,
+      // Update project
+      const project = await prisma.project.update({
+        where: { id: parseInt(params.id) },
+        data: {
+          name,
+          companyName,
+          link,
+          preview: previewUrl,
+          previewPublicId,
+          packages: {
+            create: parsedPackageIds.map((pkgId) => ({
+              packageId: pkgId,
+            })),
+          },
+        },
+        include: {
+          packages: {
+            include: {
+              package: {
+                include: {
+                  service: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    revalidatePath("/dashboard/projects");
-    revalidatePath("/");
+      revalidatePath("/dashboard/projects");
+      revalidatePath("/");
 
-    return NextResponse.json({
-      success: true,
-      message: "Project updated successfully",
-      data: updatedProject,
-    });
+      return NextResponse.json({
+        status: 200,
+        success: true,
+        message: "Project updated successfully",
+        data: project,
+      });
+    } catch (error) {
+      console.error("Update error:", error);
+      throw error;
+    }
   } catch (err) {
     console.error("UPDATE PROJECT ERROR:", err);
     return NextResponse.json(
@@ -206,7 +206,7 @@ export async function PATCH(
 
 // DELETE project
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -219,17 +219,8 @@ export async function DELETE(
       );
     }
 
-    const projectId = parseInt(params.id, 10);
-
-    if (isNaN(projectId)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid project ID" },
-        { status: 400 }
-      );
-    }
-
     const project = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { id: parseInt(params.id) },
     });
 
     if (!project) {
@@ -239,7 +230,7 @@ export async function DELETE(
       );
     }
 
-    // Delete preview image from Cloudinary if exists
+    // Delete from Cloudinary if exists
     if (project.previewPublicId) {
       try {
         await cloudinary.uploader.destroy(project.previewPublicId);
@@ -248,9 +239,9 @@ export async function DELETE(
       }
     }
 
-    // Delete project (cascade will handle PackageProject relations)
+    // Delete project (cascade akan menghapus PackageProject records secara otomatis)
     await prisma.project.delete({
-      where: { id: projectId },
+      where: { id: parseInt(params.id) },
     });
 
     revalidatePath("/dashboard/projects");
