@@ -5,11 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectComponent } from "@/components/ui/select";
 import { Wrapper } from "@/components/wrapper";
-import { Plus, Calendar, Tag, Pencil, Trash2, Eye, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Calendar,
+  Tag,
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/helpers";
+import { usePackages } from "@/hooks/usePackages";
 
 interface Project {
   id: number;
@@ -41,7 +50,6 @@ interface Package {
 function WebProjectPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
@@ -53,27 +61,14 @@ function WebProjectPage() {
     limit: 10,
   });
 
-  // Fetch packages for filter
-  useEffect(() => {
-    fetchPackages();
-  }, []);
-
   // Fetch projects
   useEffect(() => {
     fetchProjects();
   }, [page, search, selectedPackage]);
 
-  const fetchPackages = async () => {
-    try {
-      const res = await fetch("/api/packages");
-      const data = await res.json();
-      if (data.success) {
-        setPackages(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching packages:", error);
-    }
-  };
+  // ✅ Ambil data packages
+  const { packages } = usePackages();
+  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -89,6 +84,8 @@ function WebProjectPage() {
       const data = await res.json();
 
       if (data.success) {
+        console.log("INI EGE", data.data);
+        
         setProjects(data.data);
         setPagination(data.pagination);
       }
@@ -182,7 +179,9 @@ function WebProjectPage() {
           </div>
         </div>
         <div>
-          <Button onClick={() => router.push("/projects/website-development/new")}>
+          <Button
+            onClick={() => router.push("/projects/website-development/new")}
+          >
             <Plus /> Tambah Website
           </Button>
         </div>
@@ -272,7 +271,7 @@ function WebProjectPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() =>
-                            router.push(`/dashboard/projects/${proj.id}/edit`)
+                            router.push(`/projects/website-development/${proj.id}/edit`)
                           }
                           title="Edit Project"
                         >

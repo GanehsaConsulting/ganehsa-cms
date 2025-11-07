@@ -5,22 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Wrapper } from "@/components/wrapper";
-import { Loader2, Upload, X, Plus } from "lucide-react";
+import { Upload, X, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { HeaderActions } from "@/components/header-actions";
-
-interface Package {
-  id: number;
-  type: string;
-  serviceId: number;
-  service: {
-    name: string;
-  };
-}
+import { usePackages } from "@/hooks/usePackages";
 
 interface ProjectFormProps {
   projectId?: string;
@@ -31,8 +23,6 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
   const isEdit = !!projectId;
 
   const [loading, setLoading] = useState(false);
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
@@ -42,31 +32,54 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
     link: "",
   });
 
+  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+
+  // ✅ Ambil data packages
+  const { packages } = usePackages();
+  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+
+  // ✅ Fungsi untuk mendapatkan token
+  const getToken = (): string | null => {
+    // Opsi 1: Dari localStorage
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token");
+    }
+
+    // Opsi 2: Dari cookie (jika menggunakan cookie-based auth)
+    // return document.cookie
+    //   .split("; ")
+    //   .find((row) => row.startsWith("token="))
+    //   ?.split("=")[1] || null;
+
+    return null;
+  };
+
+  // ✅ Fetch data project (edit mode)
   useEffect(() => {
-    fetchPackages();
     if (isEdit) fetchProject();
   }, [projectId]);
 
-  const fetchPackages = async () => {
-    try {
-      const res = await fetch("/api/packages");
-      const data = await res.json();
-
-      if (data.success) {
-        const websitePackages = data.data.filter(
-          (pkg: any) => pkg.service?.slug === "website-development"
-        );
-        setPackages(websitePackages);
-      }
-    } catch (error) {
-      console.error("Error fetching packages:", error);
-    }
-  };
-
   const fetchProject = async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}`);
+      const token = getToken();
+
+      const res = await fetch(`/api/projects/${projectId}`, {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error("Unauthorized. Please login again.");
+          router.push("/login");
+          return;
+        }
+        throw new Error(data.message || "Failed to fetch project");
+      }
+
       if (data.success) {
         const project = data.data;
         setFormData({
@@ -75,23 +88,28 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
           link: project.link,
         });
         setPreviewUrl(project.preview);
-        setSelectedPackages(project.packages.map((p: any) => p.package.id));
+        // Ambil hanya 1 package id
+        if (project.packages?.length > 0) {
+          setSelectedPackage(project.packages[0].package.id);
+        }
       }
-    } catch (error) {
-      toast.error("Failed to fetch project data");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch project data");
     }
   };
 
+  // ✅ Upload preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) return toast.error("Max size 10MB");
-      const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-      if (!allowed.includes(file.type))
-        return toast.error("Only JPG/PNG/WEBP allowed");
-      setPreviewFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) return toast.error("Max size 10MB");
+
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type))
+      return toast.error("Only JPG/PNG/WEBP allowed");
+
+    setPreviewFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleRemovePreview = () => {
@@ -99,51 +117,70 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
     setPreviewUrl("");
   };
 
-  const togglePackage = (packageId: number) => {
-    setSelectedPackages((prev) =>
-      prev.includes(packageId)
-        ? prev.filter((id) => id !== packageId)
-        : [...prev, packageId]
-    );
+  const handleSelect = (id: number) => {
+    setSelectedPackage((prev) => (prev === id ? null : id)); // toggle select
   };
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.companyName || !formData.link)
       return toast.error("Please fill all required fields");
+    if (!selectedPackage)
+      return toast.error("Please select one website package");
 
     setLoading(true);
     try {
+      const token = getToken();
+
+      if (!token) {
+        toast.error("Authentication required. Please login.");
+        router.push("/login");
+        return;
+      }
+
       const submitData = new FormData();
       submitData.append("name", formData.name);
       submitData.append("companyName", formData.companyName);
       submitData.append("link", formData.link);
-      submitData.append("packageIds", JSON.stringify(selectedPackages));
+      // ✅ PERBAIKAN: Kirim sebagai array JSON
+      submitData.append("packageIds", JSON.stringify([selectedPackage]));
       if (previewFile) submitData.append("preview", previewFile);
 
       const url = isEdit ? `/api/projects/${projectId}` : "/api/projects";
       const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, { method, body: submitData });
+
+      const res = await fetch(url, {
+        method,
+        body: submitData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          router.push("/login");
+          return;
+        }
+        throw new Error(data.message || "Failed to save project");
+      }
 
       if (data.success) {
         toast.success(isEdit ? "Project updated!" : "Project created!");
-        router.push("/dashboard/projects");
-      } else toast.error(data.message || "Failed to save project");
-    } catch (error) {
-      toast.error("Error saving project");
+        router.push("/projects/website-development");
+      } else {
+        toast.error(data.message || "Failed to save project");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Error saving project");
     } finally {
       setLoading(false);
     }
   };
 
-  const packagesByService = packages.reduce((acc, pkg) => {
-    const name = pkg.service?.name;
-    if (!acc[name]) acc[name] = [];
-    acc[name].push(pkg);
-    return acc;
-  }, {} as Record<string, Package[]>);
-
-  const handleCancel = () => router.push("/dashboard/projects");
+  const handleCancel = () => router.push("/projects/website-development");
 
   return (
     <>
@@ -186,51 +223,33 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
       <Wrapper className="grid grid-cols-1 lg:grid-cols-10 gap-6">
         {/* Left column */}
         <div className="lg:col-span-7 space-y-6">
+          {/* Form input */}
           <div className="p-6 rounded-xl bg-white/10 space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">
-                Project Name *
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Enter project name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="companyName" className="text-white">
-                Company Name *
-              </Label>
-              <Input
-                id="companyName"
-                value={formData.companyName}
-                onChange={(e) =>
-                  setFormData({ ...formData, companyName: e.target.value })
-                }
-                placeholder="Enter company name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="link" className="text-white">
-                Project URL *
-              </Label>
-              <Input
-                id="link"
-                type="url"
-                value={formData.link}
-                onChange={(e) =>
-                  setFormData({ ...formData, link: e.target.value })
-                }
-                placeholder="https://example.com"
-              />
-            </div>
+            {["name", "companyName", "link"].map((field) => (
+              <div key={field} className="space-y-2">
+                <Label htmlFor={field} className="text-white capitalize">
+                  {field === "link" ? "Project URL *" : `${field} *`}
+                </Label>
+                <Input
+                  id={field}
+                  type={field === "link" ? "url" : "text"}
+                  value={(formData as any)[field]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [field]: e.target.value })
+                  }
+                  placeholder={
+                    field === "link"
+                      ? "https://example.com"
+                      : `Enter ${field
+                          .replace(/([A-Z])/g, " $1")
+                          .toLowerCase()}`
+                  }
+                />
+              </div>
+            ))}
           </div>
 
+          {/* Preview */}
           <div className="p-6 rounded-xl bg-white/10 space-y-5">
             <Label className="text-white">Preview Image</Label>
             {previewUrl ? (
@@ -271,36 +290,25 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
         {/* Right column */}
         <div className="lg:col-span-3 space-y-6">
           <div className="p-6 rounded-xl bg-white/10 space-y-5">
-            <Label className="text-white">Select Packages</Label>
-            {Object.keys(packagesByService).length === 0 ? (
+            <Label className="text-white">Select Website Package</Label>
+            {websitePackages.length === 0 ? (
               <p className="text-neutral-400 text-sm">No packages available</p>
             ) : (
-              <div className="space-y-4">
-                {Object.entries(packagesByService).map(
-                  ([serviceName, pkgs]) => (
-                    <div key={serviceName}>
-                      <h3 className="text-sm font-medium text-neutral-300 mb-2">
-                        {serviceName}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {pkgs.map((pkg) => (
-                          <button
-                            key={pkg.id}
-                            type="button"
-                            onClick={() => togglePackage(pkg.id)}
-                            className={`p-2 text-xs rounded-md border transition-all ${
-                              selectedPackages.includes(pkg.id)
-                                ? "border-mainColor bg-mainColor/20 text-white"
-                                : "border-neutral-700 hover:border-neutral-600 text-neutral-300"
-                            }`}
-                          >
-                            {pkg.type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
+              <div className="flex flex-col gap-2">
+                {websitePackages.map((pkg: any) => (
+                  <button
+                    key={pkg.id}
+                    type="button"
+                    onClick={() => handleSelect(pkg.id)}
+                    className={`p-2 text-xs rounded-md transition-all cursor-pointer ${
+                      selectedPackage === pkg.id
+                        ? "border border-mainColor bg-mainColor/60 text-white"
+                        : "bg-mainColor/20 text-white"
+                    }`}
+                  >
+                    {pkg.type}
+                  </button>
+                ))}
               </div>
             )}
           </div>
