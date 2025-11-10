@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react";
 import { Column } from "./table-list";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -54,15 +66,18 @@ export function DialogInput<T>({
       .replace(/-+/g, "-"); // hapus dash ganda
   };
 
-  // Otomatis buat slug dari name
+  // Replace the problematic useEffect with this:
   useEffect(() => {
-    if ("name" in formValues && !isEdit) {
-      setFormValues((prev) => ({
-        ...prev,
-        slug: generateSlug(prev.name || ""),
-      }));
+    if (formValues.name && !isEdit) {
+      const newSlug = generateSlug(formValues.name);
+      if (formValues.slug !== newSlug) {
+        setFormValues((prev) => ({
+          ...prev,
+          slug: newSlug,
+        }));
+      }
     }
-  }, [formValues.name, isEdit]);
+  }, [formValues.name, formValues.slug, isEdit]);
 
   const handleChange = (key: string, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));

@@ -1,5 +1,5 @@
 // app/api/projects/route.ts
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
@@ -38,7 +38,12 @@ export async function POST(req: Request) {
 
     // Upload preview image to Cloudinary if provided
     if (previewFile && previewFile.size > 0) {
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(previewFile.type)) {
         return NextResponse.json(
           { success: false, message: "Preview file type not allowed" },
@@ -55,7 +60,9 @@ export async function POST(req: Request) {
 
       const arrayBuffer = await previewFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const base64 = `data:${previewFile.type};base64,${buffer.toString("base64")}`;
+      const base64 = `data:${previewFile.type};base64,${buffer.toString(
+        "base64"
+      )}`;
 
       const uploadResponse = await cloudinary.uploader.upload(base64, {
         folder: "ganesha_cms_project_previews",
@@ -72,9 +79,7 @@ export async function POST(req: Request) {
     }
 
     // Parse package IDs
-    const parsedPackageIds: number[] = packageIds
-      ? JSON.parse(packageIds)
-      : [];
+    const parsedPackageIds: number[] = packageIds ? JSON.parse(packageIds) : [];
 
     // Create project with package relations
     const project = await prisma.project.create({
@@ -136,7 +141,7 @@ export async function GET(req: NextRequest) {
     const packageId = searchParams.get("packageId");
     const skip = (page - 1) * limit;
 
-    const whereClause: any = search
+    const whereClause: Prisma.ProjectWhereInput = search
       ? {
           OR: [
             { name: { contains: search, mode: "insensitive" } },
@@ -196,4 +201,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

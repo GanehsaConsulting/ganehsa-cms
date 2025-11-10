@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectComponent } from "@/components/ui/select";
@@ -41,12 +41,6 @@ interface Project {
   }[];
 }
 
-interface Package {
-  id: number;
-  type: string;
-  serviceId: number;
-}
-
 function WebProjectPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -68,9 +62,9 @@ function WebProjectPage() {
 
   // ✅ Ambil data packages
   const { packages } = usePackages();
-  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+  // const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -85,7 +79,7 @@ function WebProjectPage() {
 
       if (data.success) {
         console.log("INI EGE", data.data);
-        
+
         setProjects(data.data);
         setPagination(data.pagination);
       }
@@ -95,7 +89,7 @@ function WebProjectPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, selectedPackage]);
 
   const handleSearch = () => {
     setPage(1);
@@ -271,7 +265,9 @@ function WebProjectPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() =>
-                            router.push(`/projects/website-development/${proj.id}/edit`)
+                            router.push(
+                              `/projects/website-development/${proj.id}/edit`
+                            )
                           }
                           title="Edit Project"
                         >

@@ -12,7 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import JoditEditor from "jodit-react";

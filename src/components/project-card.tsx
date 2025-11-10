@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
 
 interface WebProjectCardProps {
   image: string;
@@ -16,8 +14,6 @@ export function WebProjectCard({
   image,
   title,
   category,
-  onEdit,
-  onDelete,
 }: WebProjectCardProps) {
   return (
     <div className="group bg-darkColor/40 backdrop-blur-xl rounded-lg border border-gray-200/10 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer">

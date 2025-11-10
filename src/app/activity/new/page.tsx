@@ -12,7 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import JoditEditor from "jodit-react";
@@ -35,7 +34,6 @@ export default function AddNewActivity() {
 
   // Form State
   const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [showTitle, setshowTitle] = useState("inActive");
   const [instaUrl, setInstaUrl] = useState("");
@@ -111,7 +109,7 @@ export default function AddNewActivity() {
     try {
       const requestBody = {
         title: title.trim(),
-        desc: desc.trim(),
+        desc: longDesc.trim(),
         longDesc: longDesc.trim(),
         date: combinedDateTime, // Use combined date and time
         showTitle: showTitleBoolean,

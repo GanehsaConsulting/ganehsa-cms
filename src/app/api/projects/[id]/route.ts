@@ -9,11 +9,14 @@ const prisma = new PrismaClient();
 // GET single project
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    const projectId = Number(id);
+
     const project = await prisma.project.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: projectId },
       include: {
         packages: {
           include: {
@@ -51,7 +54,7 @@ export async function GET(
 // PATCH update project
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -62,6 +65,9 @@ export async function PATCH(
         { status: 401 }
       );
     }
+
+     const { id } = await params;
+    const projectId = Number(id);
 
     const formData = await req.formData();
     const name = formData.get("name") as string;
@@ -79,7 +85,7 @@ export async function PATCH(
 
     // Check if project exists
     const existingProject = await prisma.project.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: projectId },
       include: { packages: true },
     });
 
@@ -95,7 +101,12 @@ export async function PATCH(
 
     // Upload new preview image if provided
     if (previewFile && previewFile.size > 0) {
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(previewFile.type)) {
         return NextResponse.json(
           { success: false, message: "Preview file type not allowed" },
@@ -121,7 +132,9 @@ export async function PATCH(
 
       const arrayBuffer = await previewFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const base64 = `data:${previewFile.type};base64,${buffer.toString("base64")}`;
+      const base64 = `data:${previewFile.type};base64,${buffer.toString(
+        "base64"
+      )}`;
 
       const uploadResponse = await cloudinary.uploader.upload(base64, {
         folder: "ganesha_cms_project_previews",
@@ -138,21 +151,19 @@ export async function PATCH(
     }
 
     // Parse package IDs
-    const parsedPackageIds: number[] = packageIds
-      ? JSON.parse(packageIds)
-      : [];
+    const parsedPackageIds: number[] = packageIds ? JSON.parse(packageIds) : [];
 
     // Update project
     try {
       // ✅ PERBAIKAN: Gunakan PackageProject (bukan projectPackage)
       // Delete existing package relations
       await prisma.packageProject.deleteMany({
-        where: { projectId: parseInt(params.id) },
+        where: { projectId: projectId },
       });
 
       // Update project
       const project = await prisma.project.update({
-        where: { id: parseInt(params.id) },
+        where: { id: projectId },
         data: {
           name,
           companyName,
@@ -207,7 +218,7 @@ export async function PATCH(
 // DELETE project
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -219,8 +230,11 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
+    const projectId = Number(id);
+
     const project = await prisma.project.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: projectId },
     });
 
     if (!project) {
@@ -241,7 +255,7 @@ export async function DELETE(
 
     // Delete project (cascade akan menghapus PackageProject records secara otomatis)
     await prisma.project.delete({
-      where: { id: parseInt(params.id) },
+      where: { id: projectId },
     });
 
     revalidatePath("/dashboard/projects");

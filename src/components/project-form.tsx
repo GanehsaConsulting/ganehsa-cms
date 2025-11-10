@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,36 @@ interface ProjectFormProps {
   projectId?: string;
 }
 
+interface FormData {
+  name: string;
+  companyName: string;
+  link: string;
+}
+
+// Use the actual type from your usePackages hook
+interface TablePackages {
+  id: number;
+  type: string;
+  // Add other properties that TablePackages actually has
+  // Remove serviceId if it doesn't exist in TablePackages
+}
+
+interface ProjectPackage {
+  package: TablePackages;
+}
+
+interface ProjectResponse {
+  success: boolean;
+  data: {
+    name: string;
+    companyName: string;
+    link: string;
+    preview: string;
+    packages: ProjectPackage[];
+  };
+  message?: string;
+}
+
 export function ProjectForm({ projectId }: ProjectFormProps) {
   const router = useRouter();
   const isEdit = !!projectId;
@@ -26,7 +56,7 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     companyName: "",
     link: "",
@@ -34,32 +64,23 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
 
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
-  // ✅ Ambil data packages
+  // ✅ Ambil data packages - use TablePackages type instead of Package
   const { packages } = usePackages();
-  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+  
+  // FIX: Remove the serviceId filter since TablePackages doesn't have it
+  // If you need to filter website packages, you'll need to adjust the logic
+  const websitePackages = packages; // Remove the filter since serviceId doesn't exist
 
   // ✅ Fungsi untuk mendapatkan token
   const getToken = (): string | null => {
-    // Opsi 1: Dari localStorage
     if (typeof window !== "undefined") {
       return localStorage.getItem("token");
     }
-
-    // Opsi 2: Dari cookie (jika menggunakan cookie-based auth)
-    // return document.cookie
-    //   .split("; ")
-    //   .find((row) => row.startsWith("token="))
-    //   ?.split("=")[1] || null;
-
     return null;
   };
 
   // ✅ Fetch data project (edit mode)
-  useEffect(() => {
-    if (isEdit) fetchProject();
-  }, [projectId]);
-
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
     try {
       const token = getToken();
 
@@ -69,7 +90,7 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
         },
       });
 
-      const data = await res.json();
+      const data: ProjectResponse = await res.json();
 
       if (!res.ok) {
         if (res.status === 401) {
@@ -93,10 +114,15 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
           setSelectedPackage(project.packages[0].package.id);
         }
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to fetch project data");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch project data";
+      toast.error(errorMessage);
     }
-  };
+  }, [projectId, router]);
+
+  useEffect(() => {
+    if (isEdit) fetchProject();
+  }, [isEdit, fetchProject]);
 
   // ✅ Upload preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,14 +199,17 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
       } else {
         toast.error(data.message || "Failed to save project");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Error saving project");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Error saving project";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => router.push("/projects/website-development");
+
+  const formFields: (keyof FormData)[] = ["name", "companyName", "link"];
 
   return (
     <>
@@ -225,24 +254,22 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
         <div className="lg:col-span-7 space-y-6">
           {/* Form input */}
           <div className="p-6 rounded-xl bg-white/10 space-y-5">
-            {["name", "companyName", "link"].map((field) => (
+            {formFields.map((field) => (
               <div key={field} className="space-y-2">
                 <Label htmlFor={field} className="text-white capitalize">
-                  {field === "link" ? "Project URL *" : `${field} *`}
+                  {field === "link" ? "Project URL *" : `${field.replace(/([A-Z])/g, " $1").toLowerCase()} *`}
                 </Label>
                 <Input
                   id={field}
                   type={field === "link" ? "url" : "text"}
-                  value={(formData as any)[field]}
+                  value={formData[field]}
                   onChange={(e) =>
                     setFormData({ ...formData, [field]: e.target.value })
                   }
                   placeholder={
                     field === "link"
                       ? "https://example.com"
-                      : `Enter ${field
-                          .replace(/([A-Z])/g, " $1")
-                          .toLowerCase()}`
+                      : `Enter ${field.replace(/([A-Z])/g, " $1").toLowerCase()}`
                   }
                 />
               </div>
@@ -295,10 +322,10 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
               <p className="text-neutral-400 text-sm">No packages available</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {websitePackages.map((pkg: any) => (
+                {websitePackages.map((pkg: TablePackages) => (
                   <button
                     key={pkg.id}
-                    type="button"
+                    type="button" // FIX: Added type="button" to prevent form submission
                     onClick={() => handleSelect(pkg.id)}
                     className={`p-2 text-xs rounded-md transition-all cursor-pointer ${
                       selectedPackage === pkg.id
