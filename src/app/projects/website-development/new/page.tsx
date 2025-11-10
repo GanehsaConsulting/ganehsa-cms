@@ -1,12 +1,13 @@
 import { ProjectForm } from '@/components/project-form'
-import React from 'react'
 
- function NewProjectPage() {
-    return (
-    <>
-        <ProjectForm />
-    </>
-)
+function NewWebPage() {
+  return (
+    <ProjectForm 
+      serviceId={3}
+      basePath="/projects/website-development"
+      pageTitle="Website Development"
+    />
+  )
 }
 
-export default NewProjectPage
+export default NewWebPage

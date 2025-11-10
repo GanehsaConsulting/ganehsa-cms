@@ -1,9 +1,18 @@
 import { ProjectForm } from "@/components/project-form";
 
-export default function EditProjectPage({
+function EditWebPage({
   params,
 }: {
   params: { id: string };
 }) {
-  return <ProjectForm projectId={params.id} />;
+  return (
+    <ProjectForm 
+      projectId={params.id}
+      serviceId={3}
+      basePath="/projects/website-development"
+      pageTitle="Website Development"
+    />
+  );
 }
+
+export default EditWebPage;

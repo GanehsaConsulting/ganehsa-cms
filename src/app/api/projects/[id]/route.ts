@@ -6,14 +6,21 @@ import cloudinary from "@/lib/cloudinary";
 
 const prisma = new PrismaClient();
 
-// GET single project
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const {  id } = await params;
     const projectId = Number(id);
+    
+    if (isNaN(projectId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid project ID" },
+        { status: 400 }
+      );
+    }
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },

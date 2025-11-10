@@ -17,8 +17,9 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/helpers";
+import { formatDate, getToken } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
+import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 
 interface Project {
   id: number;
@@ -54,15 +55,12 @@ function WebProjectPage() {
     currentPage: 1,
     limit: 10,
   });
+  const [showAlertDelete, setShowAlertDelete] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Fetch projects
-  useEffect(() => {
-    fetchProjects();
-  }, [page, search, selectedPackage]);
-
-  // ✅ Ambil data packages
+  // ✅ Ambil data packages hanya untuk service ID 3
   const { packages } = usePackages();
-  // const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -70,6 +68,7 @@ function WebProjectPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: "10",
+        serviceId: "3", // Explicitly request service ID 3
         ...(search && { search }),
         ...(selectedPackage && { packageId: selectedPackage }),
       });
@@ -78,9 +77,14 @@ function WebProjectPage() {
       const data = await res.json();
 
       if (data.success) {
-        console.log("INI EGE", data.data);
+        console.log("Fetched projects data:", data.data);
+        
+        // Filter tambahan di client side untuk memastikan hanya service ID 3
+        const filteredProjects = data.data.filter((project: Project) => 
+          project.packages.some(pkg => pkg.package.service.id === 3)
+        );
 
-        setProjects(data.data);
+        setProjects(filteredProjects);
         setPagination(data.pagination);
       }
     } catch (error) {
@@ -91,23 +95,33 @@ function WebProjectPage() {
     }
   }, [page, search, selectedPackage]);
 
+  // Fetch projects
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
   const handleSearch = () => {
     setPage(1);
     fetchProjects();
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+  const token = getToken();
 
+  const handleDelete = async (project: Project) => {
     try {
-      const res = await fetch(`/api/projects/${id}`, {
+      const res = await fetch(`/api/projects/${project.id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const data = await res.json();
 
       if (data.success) {
         toast.success("Project deleted successfully");
+        setShowAlertDelete(false);
+        setSelectedProject(null);
         fetchProjects();
       } else {
         toast.error(data.message || "Failed to delete project");
@@ -123,9 +137,18 @@ function WebProjectPage() {
       return <span className="text-neutral-400 text-xs">No package</span>;
     }
 
+    // Hanya tampilkan packages dengan service ID 3
+    const websitePackages = project.packages.filter(
+      pkg => pkg.package.service.id === 3
+    );
+
+    if (websitePackages.length === 0) {
+      return <span className="text-neutral-400 text-xs">No website package</span>;
+    }
+
     return (
       <div className="flex flex-wrap gap-1">
-        {project.packages.map((pkg, idx) => (
+        {websitePackages.map((pkg, idx) => (
           <span
             key={idx}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-mainColor/50 backdrop-blur-2xl text-neutral-200 text-xs font-medium"
@@ -159,7 +182,7 @@ function WebProjectPage() {
               placeholder="All Packages"
               options={[
                 { label: "All Packages", value: "" },
-                ...packages.map((pkg) => ({
+                ...websitePackages.map((pkg: any) => ({
                   label: pkg.type,
                   value: pkg.id.toString(),
                 })),
@@ -189,7 +212,7 @@ function WebProjectPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-20 text-neutral-400">
-            No projects found
+            No website projects found
           </div>
         ) : (
           <>
@@ -276,7 +299,10 @@ function WebProjectPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleDelete(proj.id)}
+                          onClick={() => {
+                            setSelectedProject(proj);
+                            setShowAlertDelete(true);
+                          }}
                           className="text-red-500 hover:text-red-600"
                           title="Delete Project"
                         >
@@ -330,6 +356,24 @@ function WebProjectPage() {
           </>
         )}
       </section>
+
+      {/* Alert Dialog for Delete Confirmation */}
+      {showAlertDelete && selectedProject && (
+        <AlertDialogComponent
+          open={showAlertDelete}
+          onOpenChange={(open) => {
+            setShowAlertDelete(open);
+            if (!open) {
+              setSelectedProject(null);
+            }
+          }}
+          header="Hapus Project"
+          desc={`Apakah Anda yakin ingin menghapus project "${selectedProject.name}"?`}
+          continueAction={() =>
+            selectedProject && handleDelete(selectedProject)
+          }
+        />
+      )}
     </Wrapper>
   );
 }

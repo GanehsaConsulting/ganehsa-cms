@@ -140,21 +140,36 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const packageId = searchParams.get("packageId");
     const skip = (page - 1) * limit;
+    const serviceIdParams = searchParams.get("serviceId");
+    
 
-    const whereClause: Prisma.ProjectWhereInput = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { companyName: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {};
+    // Default filter untuk service ID 3
+    const whereClause: Prisma.ProjectWhereInput = {
+      packages: {
+        some: {
+          package: {
+            serviceId: Number(serviceIdParams), // Default filter service ID 3
+          },
+        },
+      },
+    };
 
-    // Filter by packageId if provided
+    // Tambahkan search filter jika ada
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { companyName: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Filter tambahan by packageId jika provided
     if (packageId) {
       whereClause.packages = {
         some: {
           packageId: parseInt(packageId, 10),
+          package: {
+            serviceId: 3, // Tetap pastikan service ID 3
+          },
         },
       };
     }
