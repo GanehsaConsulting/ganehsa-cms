@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { formatDate, getToken } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
+import { TablePackages } from "@/app/business/packages/page";
 
 interface Project {
   id: number;
@@ -60,7 +61,17 @@ function WebProjectPage() {
 
   // ✅ Ambil data packages hanya untuk service ID 3
   const { packages } = usePackages();
-  const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+  // const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
+  const websitePackages = packages.filter((pkg) => {
+    const p = pkg as unknown as Record<string, unknown>;
+    const serviceIdValue =
+      typeof p["serviceId"] === "number"
+        ? (p["serviceId"] as number)
+        : typeof p["service_id"] === "number"
+        ? (p["service_id"] as number)
+        : undefined;
+    return serviceIdValue === 3;
+  }) as TablePackages[];
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -182,7 +193,7 @@ function WebProjectPage() {
               placeholder="All Packages"
               options={[
                 { label: "All Packages", value: "" },
-                ...websitePackages.map((pkg: any) => ({
+                ...websitePackages.map((pkg: TablePackages) => ({
                   label: pkg.type,
                   value: pkg.id.toString(),
                 })),

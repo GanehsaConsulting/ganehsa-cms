@@ -20,8 +20,9 @@ import { toast } from "sonner";
 import { formatDate, getToken } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
+import { TablePackages } from "@/app/business/packages/page";
 
-interface Project {
+export interface Project {
   id: number;
   name: string;
   companyName: string;
@@ -60,7 +61,17 @@ function SocmedProjectPage() {
 
   // ✅ Ambil data packages hanya untuk service ID 7
   const { packages } = usePackages();
-  const socmedPackages = packages.filter((pkg: any) => pkg.serviceId === 7);
+  // const socmedPackages = packages.filter((pkg: any) => pkg.serviceId === 7);
+   const socmedPackages = packages.filter((pkg) => {
+    const p = pkg as unknown as Record<string, unknown>;
+    const serviceIdValue =
+      typeof p["serviceId"] === "number"
+        ? (p["serviceId"] as number)
+        : typeof p["service_id"] === "number"
+        ? (p["service_id"] as number)
+        : undefined;
+    return serviceIdValue === 7;
+  }) as TablePackages[];
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -184,7 +195,7 @@ function SocmedProjectPage() {
               placeholder="All Packages"
               options={[
                 { label: "All Packages", value: "" },
-                ...socmedPackages.map((pkg: any) => ({
+                ...socmedPackages.map((pkg: TablePackages) => ({
                   label: pkg.type,
                   value: pkg.id.toString(),
                 })),

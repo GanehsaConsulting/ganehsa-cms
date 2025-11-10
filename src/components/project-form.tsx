@@ -47,6 +47,13 @@ interface ProjectResponse {
   message?: string;
 }
 
+// FIXED: Define a minimal interface with only the properties we actually use
+interface Package {
+  id: number;
+  type: string;
+  serviceId: number;
+}
+
 export function ProjectForm({
   projectId,
   serviceId,
@@ -55,15 +62,17 @@ export function ProjectForm({
 }: ProjectFormProps) {
   const router = useRouter();
   const isEdit = !!projectId;
-  
+
   const hasFetched = useRef(false);
   const isFetching = useRef(false);
-  const initialPackageSet = useRef(false); // NEW: Track if initial package has been set
+  const initialPackageSet = useRef(false);
 
   const [loading, setLoading] = useState(false);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [projectData, setProjectData] = useState<any>(null);
+  const [projectData, setProjectData] = useState<
+    ProjectResponse["data"] | null
+  >(null);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -73,11 +82,38 @@ export function ProjectForm({
 
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
-  // ✅ Ambil data packages dan filter berdasarkan serviceId
+  // FIXED: Use the minimal Package interface and handle type conversion safely
   const { packages, isLoading: packagesLoading } = usePackages();
-  const servicePackages = packages.filter(
-    (pkg: any) => pkg.serviceId === serviceId
-  );
+
+  // FIXED: Safely convert packages to our Package type
+  const servicePackages = packages
+    .map((pkg) => {
+      const p = pkg as unknown as Record<string, unknown>;
+
+      const id =
+        typeof p["id"] === "number"
+          ? (p["id"] as number)
+          : Number(p["id"] as unknown as string);
+
+      const type =
+        typeof p["type"] === "string"
+          ? (p["type"] as string)
+          : String(p["type"] ?? "");
+
+      const serviceIdValue =
+        typeof p["serviceId"] === "number"
+          ? (p["serviceId"] as number)
+          : typeof p["service_id"] === "number"
+          ? (p["service_id"] as number)
+          : undefined;
+
+      return {
+        id,
+        type,
+        serviceId: serviceIdValue ?? 0,
+      } as Package;
+    })
+    .filter((pkg: Package) => pkg.serviceId === serviceId);
 
   // ✅ Fungsi untuk mendapatkan token
   const getToken = (): string | null => {
@@ -94,7 +130,7 @@ export function ProjectForm({
     }
 
     isFetching.current = true;
-    
+
     try {
       const token = getToken();
 
@@ -123,7 +159,7 @@ export function ProjectForm({
           link: data.data.link,
         });
         setPreviewUrl(data.data.preview);
-        
+
         hasFetched.current = true;
       }
     } catch (error: unknown) {
@@ -146,11 +182,17 @@ export function ProjectForm({
   useEffect(() => {
     // Only set the initial package once when both projectData and servicePackages are available
     // and we haven't set it yet
-    if (projectData && servicePackages.length > 0 && !initialPackageSet.current) {
+    if (
+      projectData &&
+      servicePackages.length > 0 &&
+      !initialPackageSet.current
+    ) {
       // Cari package dari project yang sesuai dengan serviceId saat ini
       const projectPackagesForService = projectData.packages?.filter(
         (pkg: ProjectPackage) => {
-          return servicePackages.some((sp: any) => sp.id === pkg.package.id);
+          return servicePackages.some(
+            (sp: Package) => sp.id === pkg.package.id
+          );
         }
       );
 
@@ -161,17 +203,23 @@ export function ProjectForm({
         // Ambil package pertama yang sesuai
         const firstMatchingPackage = projectPackagesForService[0];
         setSelectedPackage(firstMatchingPackage.package.id);
-        console.log("Setting initial package to:", firstMatchingPackage.package.id);
+        console.log(
+          "Setting initial package to:",
+          firstMatchingPackage.package.id
+        );
       } else if (servicePackages.length > 0) {
         // Jika tidak ada package yang cocok, set ke package pertama dari service
         setSelectedPackage(servicePackages[0].id);
-        console.log("Setting initial package to first available:", servicePackages[0].id);
+        console.log(
+          "Setting initial package to first available:",
+          servicePackages[0].id
+        );
       }
-      
+
       // Mark that we've set the initial package
       initialPackageSet.current = true;
     }
-  }, [projectData, servicePackages]); // REMOVED: selectedPackage dari dependencies
+  }, [projectData, servicePackages]);
 
   // ✅ Upload preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,12 +246,15 @@ export function ProjectForm({
     setSelectedPackage(id);
   };
 
-  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }, []);
+  const handleInputChange = useCallback(
+    (field: keyof FormData, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  );
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.companyName || !formData.link)
@@ -448,17 +499,19 @@ export function ProjectForm({
         <div className="lg:col-span-3 space-y-6">
           <div className="p-6 rounded-xl bg-white/10 space-y-5">
             <Label className="text-white">Select {pageTitle} Package</Label>
-            
+
             {packagesLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="w-4 h-4 animate-spin text-mainColor mr-2" />
-                <span className="text-neutral-400 text-sm">Loading packages...</span>
+                <span className="text-neutral-400 text-sm">
+                  Loading packages...
+                </span>
               </div>
             ) : servicePackages.length === 0 ? (
               <p className="text-neutral-400 text-sm">No packages available</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {servicePackages.map((pkg: any) => (
+                {servicePackages.map((pkg: Package) => (
                   <button
                     key={pkg.id}
                     type="button"
@@ -479,16 +532,6 @@ export function ProjectForm({
                 ))}
               </div>
             )}
-            
-            {/* Debug info - bisa dihapus di production */}
-            {/* {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-2 bg-neutral-800 rounded text-xs">
-                <div>Selected Package ID: {selectedPackage}</div>
-                <div>Available Packages: {servicePackages.length}</div>
-                <div>Project Data Loaded: {projectData ? 'Yes' : 'No'}</div>
-                <div>Initial Package Set: {initialPackageSet.current ? 'Yes' : 'No'}</div>
-              </div>
-            )} */}
           </div>
         </div>
       </Wrapper>
