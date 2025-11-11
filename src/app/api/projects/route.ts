@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
         some: {
           packageId: parseInt(packageId, 10),
           package: {
-            serviceId: 3, // Tetap pastikan service ID 3
+            serviceId: Number(serviceIdParams), // Tetap pastikan service ID 3
           },
         },
       };

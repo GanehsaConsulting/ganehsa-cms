@@ -48,6 +48,7 @@ function SocmedProjectPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -62,7 +63,7 @@ function SocmedProjectPage() {
   // ✅ Ambil data packages hanya untuk service ID 7
   const { packages } = usePackages();
   // const socmedPackages = packages.filter((pkg: any) => pkg.serviceId === 7);
-   const socmedPackages = packages.filter((pkg) => {
+  const socmedPackages = packages.filter((pkg) => {
     const p = pkg as unknown as Record<string, unknown>;
     const serviceIdValue =
       typeof p["serviceId"] === "number"
@@ -84,19 +85,37 @@ function SocmedProjectPage() {
         ...(selectedPackage && { packageId: selectedPackage }),
       });
 
-      const res = await fetch(`/api/projects?${params}`);
+      console.log("Fetch projects params:", params.toString());
+
+      const res = await fetch(`/api/projects?${params.toString()}`);
       const data = await res.json();
 
-      if (data.success) {
-        console.log("Fetched projects data:", data.data);
+      console.log("Projects response:", data);
 
-        // Filter tambahan di client side untuk memastikan hanya service ID 7
-        const filteredProjects = data.data.filter((project: Project) =>
-          project.packages.some((pkg) => pkg.package.service.id === 7)
-        );
+      if (data.success) {
+        // Server may not filter by packageId, so apply robust client-side filtering:
+        const filteredProjects = (data.data as Project[]).filter((project) => {
+          // ensure project belongs to service 7
+          const hasService7 = project.packages.some(
+            (pkg) => pkg.package.service?.id === 7
+          );
+          if (!hasService7) return false;
+
+          // if a package is selected, further filter by that package id
+          if (selectedPackage) {
+            const selId = Number(selectedPackage);
+            if (Number.isNaN(selId)) return false;
+            return project.packages.some((pkg) => pkg.package.id === selId);
+          }
+
+          return true;
+        });
 
         setProjects(filteredProjects);
+        // If backend returns pagination based on unfiltered results, you may want to adjust pagination here.
         setPagination(data.pagination);
+      } else {
+        setProjects([]);
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -109,7 +128,7 @@ function SocmedProjectPage() {
   // Fetch projects
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+  }, [page, search, selectedPackage]);
 
   const handleSearch = () => {
     setPage(1);
@@ -174,21 +193,39 @@ function SocmedProjectPage() {
     );
   };
 
+  function handleSubmitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchTerm);
+  }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setPage(1);
+      setSearch(searchTerm);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(id);
+  }, [searchTerm]);
+
   return (
     <Wrapper className="flex flex-col">
       {/* Header Action */}
       <section className="flex items-center justify-between gap-0 w-full mb-6">
         <div className="flex items-center gap-4 w-full">
-          <div className="flex items-center gap-2">
+          <form
+            onSubmit={handleSubmitSearch}
+            className="flex items-center gap-2"
+          >
             <Input
               className="w-100"
               placeholder="Cari Socmed Management Projects..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmitSearch(e)}
             />
-            <Button onClick={handleSearch}>Cari</Button>
-          </div>
+            <Button>Cari</Button>
+          </form>
           <div>
             <SelectComponent
               label="Filter By Package"
@@ -197,12 +234,17 @@ function SocmedProjectPage() {
                 { label: "All Packages", value: "" },
                 ...socmedPackages.map((pkg: TablePackages) => ({
                   label: pkg.type,
-                  value: pkg.id.toString(),
+                  // ensure option value is string
+                  value: String(pkg.id),
                 })),
               ]}
               value={selectedPackage}
               onChange={(value) => {
-                setSelectedPackage(value);
+                // Coerce value to string (SelectComponent may emit number)
+                const v =
+                  value === null || value === undefined ? "" : String(value);
+                console.log("Selected package (coerced):", v);
+                setSelectedPackage(v);
                 setPage(1);
               }}
             />

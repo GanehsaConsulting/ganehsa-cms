@@ -48,6 +48,7 @@ function WebProjectPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -89,10 +90,10 @@ function WebProjectPage() {
 
       if (data.success) {
         console.log("Fetched projects data:", data.data);
-        
+
         // Filter tambahan di client side untuk memastikan hanya service ID 3
-        const filteredProjects = data.data.filter((project: Project) => 
-          project.packages.some(pkg => pkg.package.service.id === 3)
+        const filteredProjects = data.data.filter((project: Project) =>
+          project.packages.some((pkg) => pkg.package.service.id === 3)
         );
 
         setProjects(filteredProjects);
@@ -150,11 +151,13 @@ function WebProjectPage() {
 
     // Hanya tampilkan packages dengan service ID 3
     const websitePackages = project.packages.filter(
-      pkg => pkg.package.service.id === 3
+      (pkg) => pkg.package.service.id === 3
     );
 
     if (websitePackages.length === 0) {
-      return <span className="text-neutral-400 text-xs">No website package</span>;
+      return (
+        <span className="text-neutral-400 text-xs">No website package</span>
+      );
     }
 
     return (
@@ -172,21 +175,39 @@ function WebProjectPage() {
     );
   };
 
+  function handleSubmitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchTerm);
+  }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setPage(1);
+      setSearch(searchTerm);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(id);
+  }, [searchTerm]);
+
   return (
     <Wrapper className="flex flex-col">
       {/* Header Action */}
       <section className="flex items-center justify-between gap-0 w-full mb-6">
         <div className="flex items-center gap-4 w-full">
-          <div className="flex items-center gap-2">
+          <form
+            onSubmit={handleSubmitSearch}
+            className="flex items-center gap-2"
+          >
             <Input
               className="w-100"
-              placeholder="Cari Website..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="Cari Website Projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmitSearch(e)}
             />
-            <Button onClick={handleSearch}>Cari</Button>
-          </div>
+            <Button>Cari</Button>
+          </form>
           <div>
             <SelectComponent
               label="Filter By Package"
