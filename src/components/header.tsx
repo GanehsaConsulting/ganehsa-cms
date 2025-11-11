@@ -93,7 +93,9 @@ export const Header = () => {
                                                         : "text-lightColor/70 hover:text-lightColor font-medium"
                                                 } `}
                                         >
-                                            {crumb.label}
+                                            {crumb.label.length > 20
+                                                ? crumb.label.slice(0, 17) + "..."
+                                                : crumb.label}
                                         </Link>
                                     </React.Fragment>
                                 ))}

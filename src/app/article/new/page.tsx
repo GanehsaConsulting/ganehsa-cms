@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
@@ -22,9 +22,11 @@ import { getToken } from "@/lib/helpers";
 import { useCategory } from "@/hooks/useCategory";
 
 // Dynamic Import - Jodit Editor
-const JoditEditor = dynamic(() => import("jodit-react"), { 
+const JoditEditor = dynamic(() => import("jodit-react"), {
   ssr: false,
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  loading: () => (
+    <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  ),
 });
 
 // Constants
@@ -59,13 +61,13 @@ export default function NewArticlePage() {
   const [highlight, setHighlight] = useState("inactive"); // ✅ Pertahankan highlight
   const [excerpt, setExcerpt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Media State (hanya thumbnail)
   const [medias, setMedias] = useState<Media[]>([]);
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const { dataCategories } = useCategory()
- 
+  const { dataCategories } = useCategory();
+
   // Fetch media (hanya untuk thumbnail)
   async function getMedias() {
     const token = getToken();
@@ -78,11 +80,11 @@ export default function NewArticlePage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       if (data.success) {
         setMedias(data.data);
@@ -127,17 +129,17 @@ export default function NewArticlePage() {
       toast.error("Judul artikel wajib diisi!");
       return;
     }
-    
+
     if (!slug.trim()) {
       toast.error("Slug wajib diisi!");
       return;
     }
-    
+
     if (!category) {
       toast.error("Kategori wajib dipilih!");
       return;
     }
-    
+
     if (!content.trim()) {
       toast.error("Konten artikel wajib diisi!");
       return;
@@ -179,6 +181,8 @@ export default function NewArticlePage() {
       setIsLoading(false);
     }
   };
+
+  const editor = useRef(null);
 
   const handleCancel = () => {
     router.push("/article");
@@ -235,7 +239,9 @@ export default function NewArticlePage() {
         <div className="lg:col-span-7 space-y-5">
           {/* Title */}
           <div className="space-y-3">
-            <Label htmlFor="title" className="text-white">Judul Artikel *</Label>
+            <Label htmlFor="title" className="text-white">
+              Judul Artikel *
+            </Label>
             <Input
               id="title"
               type="text"
@@ -249,25 +255,16 @@ export default function NewArticlePage() {
           {/* Content Editor */}
           <div className="space-y-3">
             <Label className="text-white">Konten Artikel *</Label>
-            <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="rounded-lg overflow-hidden">
               <JoditEditor
+                className="prose lg:prose-xl"
+                ref={editor}
                 value={content}
+                tabIndex={1}
                 onBlur={(newContent) => setContent(newContent)}
                 onChange={() => {}}
                 config={{
-                  minHeight: 400,
-                  placeholder: "Tulis konten artikel di sini...",
-                  readonly: isLoading,
-                  toolbarAdaptive: false,
-                  buttons: [
-                    'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'ul', 'ol', '|',
-                    'outdent', 'indent', '|',
-                    'font', 'fontsize', 'brush', '|',
-                    'image', 'video', 'table', 'link', '|',
-                    'align', 'undo', 'redo', '|',
-                    'preview', 'fullscreen'
-                  ]
+                  minHeight: 400
                 }}
               />
             </div>
@@ -286,14 +283,17 @@ export default function NewArticlePage() {
               {thumbnailId ? (
                 <div className="relative w-full h-40">
                   <Image
-                    src={medias.find(m => m.id === thumbnailId)?.url || '/placeholder.png'}
+                    src={
+                      medias.find((m) => m.id === thumbnailId)?.url ||
+                      "/placeholder.png"
+                    }
                     alt="Thumbnail"
                     fill
                     className="object-cover"
                     onError={(e) => {
                       // Fallback if image fails to load
                       const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
+                      target.style.display = "none";
                     }}
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
@@ -311,7 +311,9 @@ export default function NewArticlePage() {
 
           {/* Slug */}
           <div className="space-y-3">
-            <Label htmlFor="slug" className="text-white">Slug *</Label>
+            <Label htmlFor="slug" className="text-white">
+              Slug *
+            </Label>
             <Input
               id="slug"
               type="text"
@@ -327,7 +329,9 @@ export default function NewArticlePage() {
 
           {/* Excerpt */}
           <div className="space-y-3">
-            <Label htmlFor="excerpt" className="text-white">Ringkasan</Label>
+            <Label htmlFor="excerpt" className="text-white">
+              Ringkasan
+            </Label>
             <Textarea
               id="excerpt"
               className="resize-none h-24"
@@ -343,12 +347,14 @@ export default function NewArticlePage() {
             <Label className="text-white">Kategori *</Label>
             {dataCategories.length === 0 ? (
               <div className="text-sm text-gray-400 italic">
-                {isLoading ? "Memuat kategori..." : "Tidak ada kategori tersedia"}
+                {isLoading
+                  ? "Memuat kategori..."
+                  : "Tidak ada kategori tersedia"}
               </div>
             ) : (
               <SelectComponent
                 placeholder="Pilih Kategori"
-                options={dataCategories.map(cat => ({
+                options={dataCategories.map((cat) => ({
                   label: cat.name,
                   value: String(cat.id),
                 }))}
@@ -387,43 +393,40 @@ export default function NewArticlePage() {
           <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-lg font-semibold">Pilih Thumbnail</h2>
-              <Button
-                variant="ghost"
-                onClick={() => setShowMediaModal(false)}
-              >
+              <Button variant="ghost" onClick={() => setShowMediaModal(false)}>
                 ✕
               </Button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-grow">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {medias
-                  .filter(m => m.type.startsWith('image'))
+                  .filter((m) => m.type.startsWith("image"))
                   .map((media) => (
                     <div
                       key={media.id}
                       className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                        media.id === thumbnailId 
-                          ? 'border-primary ring-2 ring-primary/20' 
-                          : 'border-gray-200 hover:border-gray-400'
+                        media.id === thumbnailId
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-gray-200 hover:border-gray-400"
                       }`}
                       onClick={() => handleSelectThumbnail(media.id)}
                     >
                       <div className="w-full h-20 relative">
                         <Image
                           src={media.url}
-                          alt={media.alt || ''}
+                          alt={media.alt || ""}
                           fill
                           className="object-cover"
                           onError={(e) => {
                             // Fallback if image fails to load
                             const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
+                            target.style.display = "none";
                           }}
                         />
                       </div>
                       <div className="p-2 text-xs truncate">
-                        {media.title || 'Untitled'}
+                        {media.title || "Untitled"}
                       </div>
                     </div>
                   ))}

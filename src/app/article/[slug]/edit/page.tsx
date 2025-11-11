@@ -1,7 +1,7 @@
 // app/article/[slug]/edit/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Save, Loader2 } from "lucide-react";
@@ -75,6 +75,7 @@ export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
   const articleSlug = params.slug as string;
+  const editor = useRef(null);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -113,7 +114,7 @@ export default function EditArticlePage() {
       setIsFetching(true);
       try {
         console.log("Fetching article dengan slug:", articleSlug);
-        
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/article/${articleSlug}`,
           {
@@ -142,13 +143,13 @@ export default function EditArticlePage() {
           setHighlight(article.highlight ? "active" : "inactive");
           setExcerpt(article.excerpt || "");
           setThumbnailId(article.thumbnailId);
-          
+
           console.log("Form diisi dengan data:", {
             title: article.title,
             slug: article.slug,
             category: article.category.id,
             status: article.status,
-            highlight: article.highlight
+            highlight: article.highlight,
           });
         } else {
           toast.error(data.message || "Gagal mengambil data artikel");
@@ -244,7 +245,7 @@ export default function EditArticlePage() {
         newSlug: slug,
         title,
         category,
-        status
+        status,
       });
 
       const res = await fetch(
@@ -276,7 +277,9 @@ export default function EditArticlePage() {
         router.push("/article");
       } else {
         if (data.message === "Slug already exists") {
-          toast.error("Slug sudah digunakan. Silakan gunakan slug yang berbeda.");
+          toast.error(
+            "Slug sudah digunakan. Silakan gunakan slug yang berbeda."
+          );
         } else {
           toast.error(data.message || "Gagal memperbarui artikel");
         }
@@ -309,7 +312,7 @@ export default function EditArticlePage() {
       <>
         <HeaderActions position="left">
           <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
-            Edit Article - {articleSlug}
+            Edit Article
           </h1>
         </HeaderActions>
         <Wrapper>
@@ -328,7 +331,7 @@ export default function EditArticlePage() {
     <>
       <HeaderActions position="left">
         <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
-          Edit Article - {title || articleSlug}
+          Edit Article
         </h1>
       </HeaderActions>
 
@@ -382,25 +385,14 @@ export default function EditArticlePage() {
           {/* Content Editor */}
           <div className="space-y-3">
             <Label className="text-white">Konten Artikel *</Label>
-            <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="rounded-lg overflow-hidden">
               <JoditEditor
+                className="prose lg:prose-xl"
+                ref={editor}
                 value={content}
+                tabIndex={1}
                 onBlur={(newContent) => setContent(newContent)}
                 onChange={() => {}}
-                config={{
-                  minHeight: 400,
-                  placeholder: "Tulis konten artikel di sini...",
-                  readonly: isLoading,
-                  toolbarAdaptive: false,
-                  buttons: [
-                    "bold", "italic", "underline", "strikethrough", "|",
-                    "ul", "ol", "|", "outdent", "indent", "|",
-                    "font", "fontsize", "brush", "|",
-                    "image", "video", "table", "link", "|",
-                    "align", "undo", "redo", "|",
-                    "preview", "fullscreen",
-                  ],
-                }}
               />
             </div>
           </div>

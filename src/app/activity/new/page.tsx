@@ -16,7 +16,7 @@ import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import JoditEditor from "jodit-react";
 import { ChevronDownIcon, Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { combineDateAndTime } from "@/lib/helpers";
@@ -162,6 +162,8 @@ export default function AddNewActivity() {
     setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
   };
 
+  const editor = useRef(null);
+
   return (
     <>
       <HeaderActions position="left">
@@ -240,39 +242,9 @@ export default function AddNewActivity() {
                 onBlur={(newContent) => setLongDesc(newContent)}
                 onChange={() => {}}
                 config={{
-                  minHeight: 400,
-                  placeholder: "Tulis konten activity di sini...",
-                  readonly: isLoading,
-                  toolbarAdaptive: false,
-                  buttons: [
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "|",
-                    "ul",
-                    "ol",
-                    "|",
-                    "outdent",
-                    "indent",
-                    "|",
-                    "font",
-                    "fontsize",
-                    "brush",
-                    "|",
-                    "image",
-                    "video",
-                    "table",
-                    "link",
-                    "|",
-                    "align",
-                    "undo",
-                    "redo",
-                    "|",
-                    "preview",
-                    "fullscreen",
-                  ],
+                  minHeight: 400
                 }}
+                ref={editor}
               />
             </div>
           </div>

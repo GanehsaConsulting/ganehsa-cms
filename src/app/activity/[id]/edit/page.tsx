@@ -16,7 +16,7 @@ import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import JoditEditor from "jodit-react";
 import { ChevronDownIcon, Save } from "lucide-react";
-import { useState, useEffect, useCallback } from "react"; // Added useCallback
+import { useState, useEffect, useCallback, useRef } from "react"; // Added useCallback
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
@@ -93,6 +93,8 @@ export default function EditActivityPage() {
     return combinedDate.toISOString();
   };
 
+  const editor = useRef(null);
+
   // Function to extract time from ISO string
   const extractTimeFromISO = (isoString: string) => {
     const date = new Date(isoString);
@@ -146,7 +148,8 @@ export default function EditActivityPage() {
         setInstaUrl(activity.instaUrl || "");
 
         // Set selected media IDs from existing medias - with null check
-        const mediaIds = activity?.medias?.map((mediaItem) => mediaItem.media.id) || [];
+        const mediaIds =
+          activity?.medias?.map((mediaItem) => mediaItem.media.id) || [];
         setSelectedMediaIds(mediaIds);
       } else {
         toast.error(data.message || "Gagal mengambil data activity");
@@ -404,6 +407,7 @@ export default function EditActivityPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isLoading}
+              ref={editor}
             />
           </div>
 
@@ -430,38 +434,7 @@ export default function EditActivityPage() {
                 onBlur={(newContent) => setLongDesc(newContent)}
                 onChange={() => {}}
                 config={{
-                  minHeight: 400,
-                  placeholder: "Tulis konten activity di sini...",
-                  readonly: isLoading,
-                  toolbarAdaptive: false,
-                  buttons: [
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "|",
-                    "ul",
-                    "ol",
-                    "|",
-                    "outdent",
-                    "indent",
-                    "|",
-                    "font",
-                    "fontsize",
-                    "brush",
-                    "|",
-                    "image",
-                    "video",
-                    "table",
-                    "link",
-                    "|",
-                    "align",
-                    "undo",
-                    "redo",
-                    "|",
-                    "preview",
-                    "fullscreen",
-                  ],
+                  minHeight: 400
                 }}
               />
             </div>
@@ -563,7 +536,7 @@ export default function EditActivityPage() {
                             onError={(e) => {
                               // Fallback if image fails to load
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
+                              target.style.display = "none";
                             }}
                           />
                         </div>
@@ -610,11 +583,15 @@ export default function EditActivityPage() {
                 <div>ID: {activityData?.id}</div>
                 <div>
                   Dibuat:{" "}
-                  {new Date(activityData?.createdAt).toLocaleDateString("id-ID")}
+                  {new Date(activityData?.createdAt).toLocaleDateString(
+                    "id-ID"
+                  )}
                 </div>
                 <div>
                   Diupdate:{" "}
-                  {new Date(activityData?.updatedAt).toLocaleDateString("id-ID")}
+                  {new Date(activityData?.updatedAt).toLocaleDateString(
+                    "id-ID"
+                  )}
                 </div>
                 <div>Author: {activityData?.author?.name}</div>
               </div>
@@ -662,7 +639,7 @@ export default function EditActivityPage() {
                             onError={(e) => {
                               // Fallback if image fails to load
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
+                              target.style.display = "none";
                             }}
                           />
                         </div>
