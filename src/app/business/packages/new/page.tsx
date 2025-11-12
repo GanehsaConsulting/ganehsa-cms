@@ -10,9 +10,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
-import { ArrowLeft, Plus, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useServices } from "@/hooks/useServices";
+import { HeaderActions } from "@/components/header-actions";
 
 interface Feature {
   feature: string;
@@ -22,12 +23,16 @@ interface Feature {
 export default function NewPackagePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const { dataServices, isLoading: servicesLoading, fetchDataService } = useServices();
+  const {
+    dataServices,
+    isLoading: servicesLoading,
+    fetchDataService,
+  } = useServices();
 
   // Form state
   const [type, setType] = useState("");
   const [price, setPrice] = useState("");
-  const [discount, setDiscount] = useState("")
+  const [discount, setDiscount] = useState("");
   const [link, setLink] = useState("");
   const [highlight, setHighlight] = useState(false);
   const [features, setFeatures] = useState<Feature[]>([
@@ -103,7 +108,6 @@ export default function NewPackagePage() {
       return false;
     }
 
-
     if (!link.trim()) {
       toast.error("Link harus diisi");
       return false;
@@ -151,14 +155,17 @@ export default function NewPackagePage() {
 
       console.log("📦 Creating package with payload:", payload);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/packages`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/packages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -184,14 +191,13 @@ export default function NewPackagePage() {
     }
   };
 
-  // If services are loading
   if (servicesLoading) {
     return (
       <Wrapper>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Memuat services...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-white mx-auto mb-4" />
+            <p className="text-white">Memuat data package...</p>
           </div>
         </div>
       </Wrapper>
@@ -202,19 +208,24 @@ export default function NewPackagePage() {
     <Wrapper>
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+        <HeaderActions position="left">
+          <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
+            Add New Package
+          </h1>
+        </HeaderActions>
+
+        <HeaderActions position="right">
+          <div className="flex items-center gap-3">
             <Link href="/business/packages">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="w-4 h-4" />
+              <Button type="button" variant="outline">
+                Batal
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Package Baru</h1>
-              <p className="text-sm text-gray-400">Buat package pricing baru</p>
-            </div>
+            <Button type="submit" form="new-package-form">
+              Simpan Package
+            </Button>
           </div>
-        </div>
+        </HeaderActions>
 
         {/* No Services Available */}
         {dataServices.length === 0 && !servicesLoading && (
@@ -225,7 +236,8 @@ export default function NewPackagePage() {
                   Tidak ada Services Tersedia
                 </h3>
                 <p className="text-yellow-300/80 mt-1">
-                  Anda perlu membuat service terlebih dahulu sebelum membuat package.
+                  Anda perlu membuat service terlebih dahulu sebelum membuat
+                  package.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -247,10 +259,13 @@ export default function NewPackagePage() {
             </div>
           </div>
         )}
-
         {/* Form - Only show if services are available */}
         {dataServices.length > 0 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form
+            id="new-package-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             {/* Basic Information */}
             <div className="bg-white/5 rounded-lg p-6 space-y-4">
               <h2 className="text-lg font-semibold text-white mb-4">
@@ -309,14 +324,14 @@ export default function NewPackagePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="discount" className="text-white">
-                    Discount (%) 
+                    Discount (%)
                   </Label>
                   <Input
                     id="discount"
                     type="number"
                     placeholder="50"
                     value={discount}
-                    onChange={(e) =>setDiscount(e.target.value)}
+                    onChange={(e) => setDiscount(e.target.value)}
                     required
                     min="0"
                   />
@@ -379,7 +394,9 @@ export default function NewPackagePage() {
                     <Input
                       placeholder={`Feature ${index + 1}`}
                       value={feature.feature}
-                      onChange={(e) => handleFeatureChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handleFeatureChange(index, e.target.value)
+                      }
                     />
                   </div>
                   <div className="flex items-center gap-2 pt-2">
@@ -451,11 +468,11 @@ export default function NewPackagePage() {
                     </Button>
                   )}
                 </div>
-              ))} 
+              ))}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-4">
+            {/* <div className="flex items-center justify-end gap-4">
               <Link href="/business/packages">
                 <Button type="button" variant="outline" disabled={isLoading}>
                   Batal
@@ -464,7 +481,7 @@ export default function NewPackagePage() {
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Menyimpan..." : "Simpan Package"}
               </Button>
-            </div>
+            </div> */}
           </form>
         )}
       </div>

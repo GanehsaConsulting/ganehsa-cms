@@ -13,6 +13,7 @@ import { getToken } from "@/lib/helpers";
 import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useServices } from "@/hooks/useServices";
+import { HeaderActions } from "@/components/header-actions";
 
 interface Feature {
   feature: string;
@@ -52,7 +53,11 @@ export default function EditPackagePage() {
   const [requirements, setRequirements] = useState<string[]>([""]);
 
   // Services hook
-  const { dataServices, isLoading: servicesLoading, fetchDataService } = useServices();
+  const {
+    dataServices,
+    isLoading: servicesLoading,
+    fetchDataService,
+  } = useServices();
 
   // Fetch package data
   useEffect(() => {
@@ -90,7 +95,9 @@ export default function EditPackagePage() {
               ? data.features
               : [{ feature: "", status: true }]
           );
-          setRequirements(data.requirements.length > 0 ? data.requirements : [""]);
+          setRequirements(
+            data.requirements.length > 0 ? data.requirements : [""]
+          );
         } else {
           throw new Error("Data package tidak ditemukan");
         }
@@ -167,10 +174,10 @@ export default function EditPackagePage() {
       return false;
     }
 
-    if (!price || parseFloat(price) <= 0) {
-      toast.error("Price harus diisi dengan nilai yang valid");
-      return false;
-    }
+    // if (!price || parseFloat(price) <= 0) {
+    //   toast.error("Price harus diisi dengan nilai yang valid");
+    //   return false;
+    // }
 
     if (!link.trim()) {
       toast.error("Link harus diisi");
@@ -267,21 +274,34 @@ export default function EditPackagePage() {
     <Wrapper>
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+        <HeaderActions position="left">
+          <h1 className="text-xs capitalize px-4 py-2 font-semibold bg-black/50 dark:bg-white/10 rounded-full border border-neutral-300/10 text-white">
+            Edit Package
+          </h1>
+        </HeaderActions>
+
+        <HeaderActions position="right">
+          <div className="flex items-center gap-3">
             <Link href="/business/packages">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="w-4 h-4" />
+              <Button type="button" variant="outline" disabled={isLoading}>
+                Batal
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Edit Package</h1>
-              <p className="text-sm text-gray-400">
-                Edit informasi package pricing
-              </p>
-            </div>
+            <Button
+              type="submit"
+              form="edit-package-form"
+              disabled={isLoading || dataServices.length === 0}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Menyimpan...
+                </>
+              ) : (
+                "Update Package"
+              )}
+            </Button>
           </div>
-        </div>
+        </HeaderActions>
 
         {/* No Services Available */}
         {dataServices.length === 0 && !servicesLoading && (
@@ -292,7 +312,8 @@ export default function EditPackagePage() {
                   Tidak ada Services Tersedia
                 </h3>
                 <p className="text-yellow-300/80 mt-1">
-                  Anda perlu membuat service terlebih dahulu sebelum mengedit package.
+                  Anda perlu membuat service terlebih dahulu sebelum mengedit
+                  package.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -317,7 +338,11 @@ export default function EditPackagePage() {
 
         {/* Form - Only show if services are available */}
         {dataServices.length > 0 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form
+            id="edit-package-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             {/* Basic Information */}
             <div className="bg-white/5 rounded-lg p-6 space-y-4">
               <h2 className="text-lg font-semibold text-white mb-4">
@@ -525,8 +550,8 @@ export default function EditPackagePage() {
               ))}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-4">
+            {/* pindahin Actions button keatas */}
+            {/* <div className="flex items-center justify-end gap-4">
               <Link href="/business/packages">
                 <Button type="button" variant="outline" disabled={isLoading}>
                   Batal
@@ -535,7 +560,7 @@ export default function EditPackagePage() {
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Menyimpan..." : "Update Package"}
               </Button>
-            </div>
+            </div> */}
           </form>
         )}
       </div>

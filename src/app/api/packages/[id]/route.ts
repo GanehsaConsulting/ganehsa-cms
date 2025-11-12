@@ -111,15 +111,31 @@ export async function PATCH(
       requirements,
     } = body;
 
+    // Validate service exists if serviceId is provided
+    if (serviceId) {
+      const serviceExists = await prisma.service.findUnique({
+        where: { id: serviceId },
+      });
+      if (!serviceExists) {
+        return NextResponse.json(
+          { success: false, message: "Service not found" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Check if package exists
     const existing = await prisma.package.findUnique({
       where: { id: packageIdInt },
     });
+    
     if (!existing)
       return NextResponse.json(
         { success: false, message: "Package not found" },
         { status: 404 }
       );
 
+    // Prepare update data
     const updateData: {
       serviceId?: number;
       type?: string;
@@ -129,70 +145,104 @@ export async function PATCH(
       discount?: number;
       link?: string;
     } = {};
+
     if (serviceId !== undefined) updateData.serviceId = serviceId;
     if (type !== undefined) updateData.type = type;
     if (highlight !== undefined) updateData.highlight = highlight;
-    if (price !== undefined) updateData.price = price;
-    if (discount !== undefined) {
-      updateData.discount = discount;
-      updateData.priceOriginal = await calculateOriginalPrice(
-        price ?? existing.price,
-        discount
-      );
-    }
     if (link !== undefined) updateData.link = link;
+    
+    // Handle price and discount calculation
+    const finalPrice = price !== undefined ? price : existing.price;
+    const finalDiscount = discount !== undefined ? discount : existing.discount;
+    
+    if (price !== undefined) updateData.price = price;
+    if (discount !== undefined) updateData.discount = discount;
+    
+    // Calculate original price
+    updateData.priceOriginal = calculateOriginalPrice(finalPrice, finalDiscount);
 
+    // Perform transaction
     const updated = await prisma.$transaction(async (tx) => {
-      // Update package basic info
-      await tx.package.update({ 
+      // 1. Update package basic info
+      const updatedPackage = await tx.package.update({ 
         where: { id: packageIdInt }, 
         data: updateData 
       });
 
-      // Update features
-      if (features) {
+      // 2. Update features if provided
+      if (features && Array.isArray(features)) {
+        // Delete existing package features
         await tx.packageFeature.deleteMany({
           where: { packageId: packageIdInt },
         });
+
+        // Insert new features
         for (const f of features) {
+          if (!f.feature || f.feature.trim() === '') continue;
+
           const feature = await tx.feature.upsert({
-            where: { name: f.feature },
-            create: { name: f.feature },
+            where: { name: f.feature.trim() },
+            create: { name: f.feature.trim() },
             update: {},
           });
+
           await tx.packageFeature.create({
             data: {
               packageId: packageIdInt,
               featureId: feature.id,
-              status: f.status,
+              status: f.status !== undefined ? f.status : true,
             },
           });
         }
       }
 
-      // Update requirements
-      if (requirements) {
+      // 3. Update requirements if provided
+      if (requirements && Array.isArray(requirements)) {
+        // Delete existing package requirements
         await tx.packageRequirement.deleteMany({
           where: { packageId: packageIdInt },
         });
+
+        // Insert new requirements
         for (const r of requirements) {
+          if (!r || r.trim() === '') continue;
+
           const req = await tx.requirement.upsert({
-            where: { name: r },
-            create: { name: r },
+            where: { name: r.trim() },
+            create: { name: r.trim() },
             update: {},
           });
+
           await tx.packageRequirement.create({
-            data: { packageId: packageIdInt, requirementId: req.id },
+            data: { 
+              packageId: packageIdInt, 
+              requirementId: req.id 
+            },
           });
         }
       }
 
+      // 4. Fetch final updated package with relations
       return await tx.package.findUnique({
         where: { id: packageIdInt },
         include: {
-          service: { select: { id: true, name: true, slug: true } },
-          features: { include: { feature: true } },
-          requirements: { include: { requirement: true } },
+          service: { 
+            select: { 
+              id: true, 
+              name: true, 
+              slug: true 
+            } 
+          },
+          features: { 
+            include: { 
+              feature: true 
+            } 
+          },
+          requirements: { 
+            include: { 
+              requirement: true 
+            } 
+          },
         },
       });
     });
@@ -203,10 +253,23 @@ export async function PATCH(
       message: "Package updated successfully",
       data: updated,
     });
+    
   } catch (err) {
     console.error("PATCH /api/packages/[id] error:", err);
+    
+    // More detailed error logging
+    if (err instanceof Error) {
+      console.error("Error name:", err.name);
+      console.error("Error message:", err.message);
+      console.error("Error stack:", err.stack);
+    }
+    
     return NextResponse.json(
-      { success: false, message: "Server error" },
+      { 
+        success: false, 
+        message: "Server error",
+        error: process.env.NODE_ENV === 'development' ? String(err) : undefined
+      },
       { status: 500 }
     );
   }

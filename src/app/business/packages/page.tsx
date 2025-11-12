@@ -385,7 +385,7 @@ export default function PriceList() {
             {/* Refresh Button */}
             <Button onClick={handleRefresh} disabled={isLoading}>
               <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
-              <span>Refresh</span>
+              {/* <span>Refresh</span> */}
             </Button>
           </div>
 
