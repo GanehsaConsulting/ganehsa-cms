@@ -47,7 +47,6 @@ function WebProjectPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [page, setPage] = useState(1);
@@ -60,62 +59,95 @@ function WebProjectPage() {
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // ✅ Ambil data packages hanya untuk service ID 3
-  const { packages } = usePackages();
-  // const websitePackages = packages.filter((pkg: any) => pkg.serviceId === 3);
-  const websitePackages = packages.filter((pkg) => {
-    const p = pkg as unknown as Record<string, unknown>;
-    const serviceIdValue =
-      typeof p["serviceId"] === "number"
-        ? (p["serviceId"] as number)
-        : typeof p["service_id"] === "number"
-        ? (p["service_id"] as number)
-        : undefined;
-    return serviceIdValue === 3;
-  }) as TablePackages[];
+  // ✅ Use the fixed usePackages hook with serviceId=3
+  const { 
+    packages: websitePackages, 
+    isLoading: packagesLoading,
+    setServiceIdFilter 
+  } = usePackages();
 
+  // Set serviceId filter to 3 when component mounts
+  useEffect(() => {
+    setServiceIdFilter(3);
+  }, [setServiceIdFilter]);
+
+  // Fixed fetchProjects function
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
+      const token = getToken();
       const params = new URLSearchParams({
         page: page.toString(),
         limit: "10",
-        serviceId: "3", // Explicitly request service ID 3
-        ...(search && { search }),
+        serviceId: "3", // Filter by serviceId=3
+        ...(searchTerm && { search: searchTerm }),
         ...(selectedPackage && { packageId: selectedPackage }),
       });
 
-      const res = await fetch(`/api/projects?${params}`);
+      console.log("Fetching projects with params:", params.toString());
+
+      const res = await fetch(`/api/projects?${params}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
         console.log("Fetched projects data:", data.data);
 
-        // Filter tambahan di client side untuk memastikan hanya service ID 3
+        // Additional client-side filtering to ensure only website projects (service ID 3)
         const filteredProjects = data.data.filter((project: Project) =>
           project.packages.some((pkg) => pkg.package.service.id === 3)
         );
 
         setProjects(filteredProjects);
-        setPagination(data.pagination);
+        setPagination(
+          data.pagination || {
+            total: filteredProjects.length,
+            totalPages: Math.ceil(filteredProjects.length / 10),
+            currentPage: page,
+            limit: 10,
+          }
+        );
+      } else {
+        throw new Error(data.message || "Failed to fetch projects");
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
       toast.error("Failed to fetch projects");
+      setProjects([]);
+      setPagination({
+        total: 0,
+        totalPages: 0,
+        currentPage: 1,
+        limit: 10,
+      });
     } finally {
       setLoading(false);
     }
-  }, [page, search, selectedPackage]);
+  }, [page, searchTerm, selectedPackage]);
 
-  // Fetch projects
+  // Fetch projects when dependencies change
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  // const handleSearch = () => {
-  //   setPage(1);
-  //   fetchProjects();
-  // };
+  // Debounced search - trigger fetch when searchTerm changes after delay
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== "" || page === 1) {
+        fetchProjects();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, page, fetchProjects]);
 
   const token = getToken();
 
@@ -149,7 +181,7 @@ function WebProjectPage() {
       return <span className="text-neutral-400 text-xs">No package</span>;
     }
 
-    // Hanya tampilkan packages dengan service ID 3
+    // Only show packages with service ID 3
     const websitePackages = project.packages.filter(
       (pkg) => pkg.package.service.id === 3
     );
@@ -175,20 +207,16 @@ function WebProjectPage() {
     );
   };
 
-  function handleSubmitSearch(e: React.FormEvent) {
+  const handleSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    setSearch(searchTerm);
-  }
+    // fetchProjects will be triggered by the useEffect
+  };
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setPage(1);
-      setSearch(searchTerm);
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(id);
-  }, [searchTerm]);
+  const handlePackageFilterChange = (value: string) => {
+    setSelectedPackage(value);
+    setPage(1);
+  };
 
   return (
     <Wrapper className="flex flex-col">
@@ -204,14 +232,13 @@ function WebProjectPage() {
               placeholder="Cari Website Projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmitSearch(e)}
             />
-            <Button>Cari</Button>
+            <Button type="submit">Cari</Button>
           </form>
           <div>
             <SelectComponent
               label="Filter By Package"
-              placeholder="All Packages"
+              placeholder={packagesLoading ? "Loading packages..." : "All Packages"}
               options={[
                 { label: "All Packages", value: "" },
                 ...websitePackages.map((pkg: TablePackages) => ({
@@ -220,10 +247,8 @@ function WebProjectPage() {
                 })),
               ]}
               value={selectedPackage}
-              onChange={(value) => {
-                setSelectedPackage(value);
-                setPage(1);
-              }}
+              onChange={handlePackageFilterChange}
+              disabled={packagesLoading}
             />
           </div>
         </div>
@@ -241,10 +266,14 @@ function WebProjectPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-mainColor" />
+            <span className="ml-2 text-neutral-400">Loading projects...</span>
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-20 text-neutral-400">
-            No website projects found
+            {searchTerm || selectedPackage 
+              ? "No website projects match your search criteria" 
+              : "No website projects found"
+            }
           </div>
         ) : (
           <>
@@ -285,6 +314,7 @@ function WebProjectPage() {
                             src={proj.preview}
                             alt={proj.name}
                             className="object-cover"
+                            sizes="96px"
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-neutral-500 text-xs">

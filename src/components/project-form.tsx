@@ -13,6 +13,7 @@ import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { HeaderActions } from "@/components/header-actions";
 import { usePackages } from "@/hooks/usePackages";
+import { getToken } from "@/lib/helpers";
 
 interface ProjectFormProps {
   projectId?: string;
@@ -83,7 +84,11 @@ export function ProjectForm({
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
   // FIXED: Use the minimal Package interface and handle type conversion safely
-  const { packages, isLoading: packagesLoading } = usePackages();
+  const { packages, isLoading: packagesLoading, setServiceIdFilter } = usePackages();
+
+  useEffect(() => {
+    setServiceIdFilter(serviceId);
+  }, [setServiceIdFilter]);
 
   // FIXED: Safely convert packages to our Package type
   const servicePackages = packages
@@ -114,14 +119,6 @@ export function ProjectForm({
       } as Package;
     })
     .filter((pkg: Package) => pkg.serviceId === serviceId);
-
-  // ✅ Fungsi untuk mendapatkan token
-  const getToken = (): string | null => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
 
   // ✅ Fetch data project (edit mode)
   const fetchProject = useCallback(async () => {

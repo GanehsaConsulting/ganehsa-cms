@@ -47,7 +47,6 @@ function SocmedProjectPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [page, setPage] = useState(1);
@@ -60,79 +59,95 @@ function SocmedProjectPage() {
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // ✅ Ambil data packages hanya untuk service ID 7
-  const { packages } = usePackages();
-  // const socmedPackages = packages.filter((pkg: any) => pkg.serviceId === 7);
-  const socmedPackages = packages.filter((pkg) => {
-    const p = pkg as unknown as Record<string, unknown>;
-    const serviceIdValue =
-      typeof p["serviceId"] === "number"
-        ? (p["serviceId"] as number)
-        : typeof p["service_id"] === "number"
-        ? (p["service_id"] as number)
-        : undefined;
-    return serviceIdValue === 7;
-  }) as TablePackages[];
+  // ✅ Use the fixed usePackages hook with serviceId=7 for social media
+  const {
+    packages: socmedPackages,
+    isLoading: packagesLoading,
+    setServiceIdFilter,
+  } = usePackages();
 
+  // Set serviceId filter to 7 when component mounts
+  useEffect(() => {
+    setServiceIdFilter(7);
+  }, [setServiceIdFilter]);
+
+  // Fixed fetchProjects function
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
+      const token = getToken();
       const params = new URLSearchParams({
         page: page.toString(),
         limit: "10",
-        serviceId: "7", // Explicitly request service ID 7
-        ...(search && { search }),
+        serviceId: "7", // Filter by serviceId=7 for social media
+        ...(searchTerm && { search: searchTerm }),
         ...(selectedPackage && { packageId: selectedPackage }),
       });
 
-      console.log("Fetch projects params:", params.toString());
+      console.log("Fetching socmed projects with params:", params.toString());
 
-      const res = await fetch(`/api/projects?${params.toString()}`);
+      const res = await fetch(`/api/projects?${params}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
 
-      console.log("Projects response:", data);
-
       if (data.success) {
-        // Server may not filter by packageId, so apply robust client-side filtering:
-        const filteredProjects = (data.data as Project[]).filter((project) => {
-          // ensure project belongs to service 7
-          const hasService7 = project.packages.some(
-            (pkg) => pkg.package.service?.id === 7
-          );
-          if (!hasService7) return false;
+        console.log("Fetched socmed projects data:", data.data);
 
-          // if a package is selected, further filter by that package id
-          if (selectedPackage) {
-            const selId = Number(selectedPackage);
-            if (Number.isNaN(selId)) return false;
-            return project.packages.some((pkg) => pkg.package.id === selId);
-          }
-
-          return true;
-        });
+        // Additional client-side filtering to ensure only social media projects (service ID 7)
+        const filteredProjects = data.data.filter((project: Project) =>
+          project.packages.some((pkg) => pkg.package.service.id === 7)
+        );
 
         setProjects(filteredProjects);
-        // If backend returns pagination based on unfiltered results, you may want to adjust pagination here.
-        setPagination(data.pagination);
+        setPagination(
+          data.pagination || {
+            total: filteredProjects.length,
+            totalPages: Math.ceil(filteredProjects.length / 10),
+            currentPage: page,
+            limit: 10,
+          }
+        );
       } else {
-        setProjects([]);
+        throw new Error(data.message || "Failed to fetch social media projects");
       }
     } catch (error) {
-      console.error("Error fetching projects:", error);
-      toast.error("Failed to fetch projects");
+      console.error("Error fetching social media projects:", error);
+      toast.error("Failed to fetch social media projects");
+      setProjects([]);
+      setPagination({
+        total: 0,
+        totalPages: 0,
+        currentPage: 1,
+        limit: 10,
+      });
     } finally {
       setLoading(false);
     }
-  }, [page, search, selectedPackage]);
+  }, [page, searchTerm, selectedPackage]);
 
+  // Fetch projects when dependencies change
   useEffect(() => {
     fetchProjects();
-  }, [page, search, selectedPackage]);
+  }, [fetchProjects]);
 
-  // const handleSearch = () => {
-  //   setPage(1);
-  //   fetchProjects();
-  // };
+  // Debounced search - trigger fetch when searchTerm changes after delay
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== "" || page === 1) {
+        fetchProjects();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, page, fetchProjects]);
 
   const token = getToken();
 
@@ -166,14 +181,14 @@ function SocmedProjectPage() {
       return <span className="text-neutral-400 text-xs">No package</span>;
     }
 
-    // Hanya tampilkan packages dengan service ID 7
+    // Only show packages with service ID 7 (social media)
     const socmedProjectPackages = project.packages.filter(
       (pkg) => pkg.package.service.id === 7
     );
 
     if (socmedProjectPackages.length === 0) {
       return (
-        <span className="text-neutral-400 text-xs">No socmed package</span>
+        <span className="text-neutral-400 text-xs">No social media package</span>
       );
     }
 
@@ -192,20 +207,16 @@ function SocmedProjectPage() {
     );
   };
 
-  function handleSubmitSearch(e: React.FormEvent) {
+  const handleSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    setSearch(searchTerm);
-  }
+    // fetchProjects will be triggered by the useEffect
+  };
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setPage(1);
-      setSearch(searchTerm);
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(id);
-  }, [searchTerm]);
+  const handlePackageFilterChange = (value: string) => {
+    setSelectedPackage(value);
+    setPage(1);
+  };
 
   return (
     <Wrapper className="flex flex-col">
@@ -218,34 +229,26 @@ function SocmedProjectPage() {
           >
             <Input
               className="w-100"
-              placeholder="Cari Socmed Management Projects..."
+              placeholder="Cari Social Media Projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmitSearch(e)}
             />
-            <Button>Cari</Button>
+            <Button type="submit">Cari</Button>
           </form>
           <div>
             <SelectComponent
               label="Filter By Package"
-              placeholder="All Packages"
+              placeholder={packagesLoading ? "Loading packages..." : "All Packages"}
               options={[
                 { label: "All Packages", value: "" },
                 ...socmedPackages.map((pkg: TablePackages) => ({
                   label: pkg.type,
-                  // ensure option value is string
-                  value: String(pkg.id),
+                  value: pkg.id.toString(),
                 })),
               ]}
               value={selectedPackage}
-              onChange={(value) => {
-                // Coerce value to string (SelectComponent may emit number)
-                const v =
-                  value === null || value === undefined ? "" : String(value);
-                console.log("Selected package (coerced):", v);
-                setSelectedPackage(v);
-                setPage(1);
-              }}
+              onChange={handlePackageFilterChange}
+              disabled={packagesLoading}
             />
           </div>
         </div>
@@ -253,7 +256,7 @@ function SocmedProjectPage() {
           <Button
             onClick={() => router.push("/projects/socmed-management/new")}
           >
-            <Plus /> New Socmed Project
+            <Plus /> New Social Media Project
           </Button>
         </div>
       </section>
@@ -263,10 +266,14 @@ function SocmedProjectPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-mainColor" />
+            <span className="ml-2 text-neutral-400">Loading social media projects...</span>
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-20 text-neutral-400">
-            No socmed projects found
+            {searchTerm || selectedPackage 
+              ? "No social media projects match your search criteria" 
+              : "No social media projects found"
+            }
           </div>
         ) : (
           <>
@@ -306,7 +313,8 @@ function SocmedProjectPage() {
                             fill
                             src={proj.preview}
                             alt={proj.name}
-                            className="object-cover object-[50%_85%]"
+                            className="object-cover"
+                            sizes="96px"
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-neutral-500 text-xs">
@@ -343,7 +351,7 @@ function SocmedProjectPage() {
                           variant="ghost"
                           onClick={() =>
                             router.push(
-                              `/projects/socmed-management/${proj.id}/edit` // Fixed edit route
+                              `/projects/socmed-management/${proj.id}/edit`
                             )
                           }
                           title="Edit Project"
