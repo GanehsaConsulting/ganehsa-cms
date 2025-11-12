@@ -3,200 +3,200 @@ import bcrypt from "bcryptjs";
 
 // Website Development Packages Data (serviceId: 3)
 export const websitePackagesData = [
-  {
-    serviceId: 3,
-    type: "Mini Web Company Profile",
-    highlight: false,
-    price: 1350000,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "1 Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 2x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: false },
-      { feature: "CMS Admin", status: false },
-      { feature: "Free 1 Professional Email", status: false },
-      { feature: "Free 10 Related Article Content", status: false },
-      { feature: "Free 5 Design Product", status: false },
-      { feature: "Login Owner & User", status: false },
-      { feature: "Payment Gateway", status: false },
-      { feature: "Client Request Feature", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Company Profile Basic",
-    highlight: false,
-    price: 3950000,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Up to 8 Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 2x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: false },
-      { feature: "CMS Admin", status: false },
-      { feature: "Free 1 Professional Email", status: false },
-      { feature: "Free 10 Related Article Content", status: false },
-      { feature: "Free 5 Design Product", status: false },
-      { feature: "Login Owner & User", status: false },
-      { feature: "Payment Gateway", status: false },
-      { feature: "Client Request Feature", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Blog Static / Product Catalog",
-    highlight: false,
-    price: 7000000,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Dynamic Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 4x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: true },
-      { feature: "1 Internal Admin", status: true },
-      { feature: "Client Request Feature", status: true },
-      { feature: "CMS Admin", status: false },
-      { feature: "Free 1 Professional Email", status: false },
-      { feature: "Free 10 Related Article Content", status: false },
-      { feature: "Free 5 Design Product", status: false },
-      { feature: "Login Owner & User", status: false },
-      { feature: "Payment Gateway", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Dynamic Data Company Profile",
-    highlight: false,
-    price: 14000000,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Up to 15 Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 4x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: true },
-      { feature: "CMS Admin", status: true },
-      { feature: "Free 1 Professional Email", status: false },
-      { feature: "Free 10 Related Article Content", status: false },
-      { feature: "Free 5 Design Product", status: false },
-      { feature: "Login Owner & User", status: false },
-      { feature: "Payment Gateway", status: false },
-      { feature: "Client Request Feature", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Company Blog Website",
-    highlight: false,
-    price: 18000000,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Dynamic Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 4x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: true },
-      { feature: "CMS Admin", status: true },
-      { feature: "Free 1 Professional Email", status: true },
-      { feature: "Free 10 Related Article Content", status: true },
-      { feature: "Login Owner Only", status: true },
-      { feature: "Payment Gateway", status: false },
-      { feature: "Client Request Feature", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Company Business E-Commerce",
-    highlight: true,
-    price: 33183500,
-    discount: 30,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Dynamic Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 4x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: true },
-      { feature: "CMS Admin", status: true },
-      { feature: "Free 1 Professional Email", status: true },
-      { feature: "Free 5 Design Product", status: true },
-      { feature: "Login Owner & User", status: true },
-      { feature: "Payment Gateway", status: true },
-      { feature: "Client Request Feature", status: false },
-    ],
-  },
-  {
-    serviceId: 3,
-    type: "Custom Web Client Request",
-    highlight: false,
-    price: 0,
-    discount: 0,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
-    features: [
-      { feature: "Dynamic Page", status: true },
-      { feature: "Domain Included", status: true },
-      { feature: "SEO Friendly", status: true },
-      { feature: "Design Premium", status: true },
-      { feature: "Design Responsive", status: true },
-      { feature: "Lifetime Support & Maintenance Teknis", status: true },
-      { feature: "Content Writing", status: true },
-      { feature: "SSL Included (Https)", status: true },
-      { feature: "Revisi 4x", status: true },
-      { feature: "Integrasi Sosial media", status: true },
-      { feature: "Managed Server Data", status: true },
-      { feature: "CMS Admin", status: true },
-      { feature: "Free 1 Professional Email", status: true },
-      { feature: "Free Design Or Content", status: true },
-      { feature: "Login Owner & User", status: true },
-      { feature: "Payment Gateway", status: true },
-      { feature: "Client Request Feature", status: true },
-    ],
-  },
+    {
+        serviceId: 3,
+        type: "Mini Web Company Profile",
+        highlight: false,
+        price: 1350000,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "1 Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 2x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: false },
+            { feature: "CMS Admin", status: false },
+            { feature: "Free 1 Professional Email", status: false },
+            { feature: "Free 10 Related Article Content", status: false },
+            { feature: "Free 5 Design Product", status: false },
+            { feature: "Login Owner & User", status: false },
+            { feature: "Payment Gateway", status: false },
+            { feature: "Client Request Feature", status: false }
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Company Profile Basic",
+        highlight: false,
+        price: 3950000,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Up to 8 Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 2x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: false },
+            { feature: "CMS Admin", status: false },
+            { feature: "Free 1 Professional Email", status: false },
+            { feature: "Free 10 Related Article Content", status: false },
+            { feature: "Free 5 Design Product", status: false },
+            { feature: "Login Owner & User", status: false },
+            { feature: "Payment Gateway", status: false },
+            { feature: "Client Request Feature", status: false }
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Blog Static / Product Catalog",
+        highlight: false,
+        price: 7000000,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Dynamic Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 4x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: true },
+            { feature: "1 Internal Admin", status: true },
+            { feature: "Client Request Feature", status: true },
+            { feature: "CMS Admin", status: false },
+            { feature: "Free 1 Professional Email", status: false },
+            { feature: "Free 10 Related Article Content", status: false },
+            { feature: "Free 5 Design Product", status: false },
+            { feature: "Login Owner & User", status: false },
+            { feature: "Payment Gateway", status: false },
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Dynamic Data Company Profile",
+        highlight: false,
+        price: 14000000,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Up to 15 Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 4x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: true },
+            { feature: "CMS Admin", status: true },
+            { feature: "Free 1 Professional Email", status: false },
+            { feature: "Free 10 Related Article Content", status: false },
+            { feature: "Free 5 Design Product", status: false },
+            { feature: "Login Owner & User", status: false },
+            { feature: "Payment Gateway", status: false },
+            { feature: "Client Request Feature", status: false }
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Company Blog Website",
+        highlight: false,
+        price: 18000000,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Dynamic Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 4x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: true },
+            { feature: "CMS Admin", status: true },
+            { feature: "Free 1 Professional Email", status: true },
+            { feature: "Free 10 Related Article Content", status: true },
+            { feature: "Login Owner Only", status: true },
+            { feature: "Payment Gateway", status: false },
+            { feature: "Client Request Feature", status: false }
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Company Business E-Commerce",
+        highlight: false,
+        price: 0,
+        discount: 30,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Dynamic Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 4x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: true },
+            { feature: "CMS Admin", status: true },
+            { feature: "Free 1 Professional Email", status: true },
+            { feature: "Free 5 Design Product", status: true },
+            { feature: "Login Owner & User", status: true },
+            { feature: "Payment Gateway", status: true },
+            { feature: "Client Request Feature", status: false }
+        ]
+    },
+    {
+        serviceId: 3,
+        type: "Custom Web Client Request",
+        highlight: false,
+        price: 0,
+        discount: 0,
+        link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20pembuatan%20Website%20nih!%20",
+        features: [
+            { feature: "Dynamic Page", status: true },
+            { feature: "Domain Included", status: true },
+            { feature: "SEO Friendly", status: true },
+            { feature: "Design Premium", status: true },
+            { feature: "Design Responsive", status: true },
+            { feature: "Lifetime Support & Maintenance Teknis", status: true },
+            { feature: "Content Writing", status: true },
+            { feature: "SSL Included (Https)", status: true },
+            { feature: "Revisi 4x", status: true },
+            { feature: "Integrasi Sosial media", status: true },
+            { feature: "Managed Server Data", status: true },
+            { feature: "CMS Admin", status: true },
+            { feature: "Free 1 Professional Email", status: true },
+            { feature: "Free Design Or Content", status: true },
+            { feature: "Login Owner & User", status: true },
+            { feature: "Payment Gateway", status: true },
+            { feature: "Client Request Feature", status: true }
+        ]
+    }
 ];
 
 // Social Media Management Packages Data (serviceId: 7)
@@ -1647,13 +1647,143 @@ export const servicePackagesData = [
   },
 ];
 
+// [Previous package data arrays remain the same...]
+// websitePackagesData, socialMediaPackagesData, PTPackagesData, etc.
+
 const prisma = new PrismaClient();
+
+// Helper function to check if package exists
+async function packageExists(serviceId: number, type: string): Promise<boolean> {
+  const existing = await prisma.package.findFirst({
+    where: {
+      serviceId,
+      type,
+    },
+  });
+  return !!existing;
+}
+
+// Helper function to remove duplicate packages
+async function removeDuplicatePackages() {
+  console.log("\n🧹 Checking for duplicate packages...");
+  
+  // Get all packages grouped by serviceId and type
+  const packages = await prisma.package.findMany({
+    orderBy: [
+      { serviceId: 'asc' },
+      { type: 'asc' },
+      { createdAt: 'asc' } // Keep the oldest one
+    ],
+  });
+
+  const seen = new Map<string, number>();
+  const duplicates: number[] = [];
+
+  for (const pkg of packages) {
+    const key = `${pkg.serviceId}-${pkg.type}`;
+    
+    if (seen.has(key)) {
+      duplicates.push(pkg.id);
+    } else {
+      seen.set(key, pkg.id);
+    }
+  }
+
+  if (duplicates.length > 0) {
+    console.log(`Found ${duplicates.length} duplicate packages. Removing...`);
+    
+    // Delete package features first (due to foreign key)
+    await prisma.packageFeature.deleteMany({
+      where: {
+        packageId: {
+          in: duplicates,
+        },
+      },
+    });
+
+    // Then delete packages
+    const deleted = await prisma.package.deleteMany({
+      where: {
+        id: {
+          in: duplicates,
+        },
+      },
+    });
+    
+    console.log(`✅ Removed ${deleted.count} duplicate packages`);
+  } else {
+    console.log("✅ No duplicate packages found");
+  }
+}
+
+// Generic function to seed packages
+async function seedPackages(
+  packageData: any[],
+  categoryName: string
+): Promise<void> {
+  console.log(`\n📦 Seeding ${categoryName} packages...`);
+  
+  let created = 0;
+  let skipped = 0;
+
+  for (const pkg of packageData) {
+    // Check if package already exists
+    const exists = await packageExists(pkg.serviceId, pkg.type);
+    
+    if (exists) {
+      console.log(`⏭️  Skipped (already exists): ${pkg.type}`);
+      skipped++;
+      continue;
+    }
+
+    // Calculate priceOriginal
+    const priceOriginal =
+      pkg.discount > 0
+        ? Math.round(pkg.price / (1 - pkg.discount / 100))
+        : pkg.price;
+
+    try {
+      const createdPackage = await prisma.package.create({
+        data: {
+          serviceId: pkg.serviceId,
+          type: pkg.type,
+          highlight: pkg.highlight,
+          price: pkg.price,
+          discount: pkg.discount,
+          priceOriginal: priceOriginal,
+          link: pkg.link,
+          features: {
+            create: pkg.features.map((f: any) => ({
+              status: f.status,
+              feature: {
+                connectOrCreate: {
+                  where: { name: f.feature },
+                  create: { name: f.feature },
+                },
+              },
+            })),
+          },
+        },
+      });
+      console.log(`✅ Created: ${createdPackage.type}`);
+      created++;
+    } catch (error) {
+      console.log(`❌ Error creating package: ${pkg.type}`);
+      console.error(error);
+    }
+  }
+  
+  console.log(`📊 Summary: ${created} created, ${skipped} skipped`);
+}
 
 async function main() {
   console.log("🌱 Starting seeding...\n");
 
+  // Remove duplicates first
+  await removeDuplicatePackages();
+
   // Seed Users
-  console.log("👤 Seeding users...");
+  console.log("\n👤 Seeding users...");
   const users = [
     {
       name: "Admin",
@@ -1681,439 +1811,21 @@ async function main() {
       update: {},
       create: user,
     });
-    console.log(`✅ User created or already exists: ${createdUser.email}`);
+    console.log(`✅ User: ${createdUser.email}`);
   }
 
-  // Seed Website Development Packages
-  // console.log("\n📦 Seeding Website Development packages...");
-
-  // for (const pkg of websitePackagesData) {
-  //   // Calculate priceOriginal
-  //   const priceOriginal =
-  //     pkg.discount > 0
-  //       ? Math.round(pkg.price / (1 - pkg.discount / 100))
-  //       : pkg.price;
-
-  //   try {
-  //     const createdPackage = await prisma.package.create({
-  //       data: {
-  //         serviceId: pkg.serviceId,
-  //         type: pkg.type,
-  //         highlight: pkg.highlight,
-  //         price: pkg.price,
-  //         discount: pkg.discount,
-  //         priceOriginal: priceOriginal,
-  //         link: pkg.link,
-  //         features: {
-  //           create: pkg.features.map((f) => ({
-  //             status: f.status,
-  //             feature: {
-  //               connectOrCreate: {
-  //                 where: { name: f.feature },
-  //                 create: { name: f.feature },
-  //               },
-  //             },
-  //           })),
-  //         },
-  //       },
-  //     });
-  //     console.log(`✅ Package created: ${createdPackage.type}`);
-  //   } catch (error) {
-  //     console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-  //     console.error(error);
-  //   }
-  // }
-
-  // Seed Social Media Packages
-  // console.log("\n📦 Seeding Socmed Management packages...");
-
-  // for (const pkg of socialMediaPackagesData) {
-  //   // Calculate priceOriginal
-  //   const priceOriginal =
-  //     pkg.discount > 0
-  //       ? Math.round(pkg.price / (1 - pkg.discount / 100))
-  //       : pkg.price;
-
-  //   try {
-  //     const createdPackage = await prisma.package.create({
-  //       data: {
-  //         serviceId: pkg.serviceId,
-  //         type: pkg.type,
-  //         highlight: pkg.highlight,
-  //         price: pkg.price,
-  //         discount: pkg.discount,
-  //         priceOriginal: priceOriginal,
-  //         link: pkg.link,
-  //         features: {
-  //           create: pkg.features.map((f) => ({
-  //             status: f.status,
-  //             feature: {
-  //               connectOrCreate: {
-  //                 where: { name: f.feature },
-  //                 create: { name: f.feature },
-  //               },
-  //             },
-  //           })),
-  //         },
-  //       },
-  //     });
-  //     console.log(`✅ Package created: ${createdPackage.type}`);
-  //   } catch (error) {
-  //     console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-  //     console.error(error);
-  //   }
-  // }
-
-  console.log("\n📦 Seeding PT Packages Data...");
-
-  for (const pkg of PTPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding CV Packages Data...");
-
-  for (const pkg of CVPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding VO Packages Data...");
-
-  for (const pkg of VirtualOfficePackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding Konsultan Pajak Packages Data...");
-
-  for (const pkg of KonsultanPajakPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding Badan Usaha Packages Data...");
-
-  for (const pkg of BadanUsahaPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding HAKI Packages Data...");
-
-  for (const pkg of HakiPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding Go Space Packages Data...");
-
-  for (const pkg of goSpacePackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding Akuntansi Packages Data...");
-
-  for (const pkg of AccountantPackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
-
-  console.log("\n📦 Seeding Service Packages Data...");
-
-  for (const pkg of servicePackagesData) {
-    // Calculate priceOriginal
-    const priceOriginal =
-      pkg.discount > 0
-        ? Math.round(pkg.price / (1 - pkg.discount / 100))
-        : pkg.price;
-
-    try {
-      const createdPackage = await prisma.package.create({
-        data: {
-          serviceId: pkg.serviceId,
-          type: pkg.type,
-          highlight: pkg.highlight,
-          price: pkg.price,
-          discount: pkg.discount,
-          priceOriginal: priceOriginal,
-          link: pkg.link,
-          features: {
-            create: pkg.features.map((f) => ({
-              status: f.status,
-              feature: {
-                connectOrCreate: {
-                  where: { name: f.feature },
-                  create: { name: f.feature },
-                },
-              },
-            })),
-          },
-        },
-      });
-      console.log(`✅ Package created: ${createdPackage.type}`);
-    } catch (error) {
-      console.log(`⚠️  Package might already exist or error: ${pkg.type}`);
-      console.error(error);
-    }
-  }
+  // Seed all package categories
+  await seedPackages(websitePackagesData, "Website Development");
+  await seedPackages(socialMediaPackagesData, "Social Media Management");
+  await seedPackages(PTPackagesData, "PT");
+  await seedPackages(CVPackagesData, "CV");
+  await seedPackages(VirtualOfficePackagesData, "Virtual Office");
+  await seedPackages(KonsultanPajakPackagesData, "Konsultan Pajak");
+  await seedPackages(BadanUsahaPackagesData, "Badan Usaha");
+  await seedPackages(HakiPackagesData, "HAKI");
+  await seedPackages(goSpacePackagesData, "Go Space");
+  await seedPackages(AccountantPackagesData, "Jasa Akuntansi");
+  await seedPackages(servicePackagesData, "Layanan Izin & Sertifikasi");
 
   console.log("\n🎉 Seeding completed successfully!");
 }
