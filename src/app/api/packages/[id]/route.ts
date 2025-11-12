@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { calculateOriginalPrice } from "@/lib/helpers";
+import { calculateOriginalPrice, processFeatures, processRequirements } from "@/lib/helpers";
 
-interface PackageFeature {
+export interface PackageFeature {
   feature: string;
   status: boolean;
 }
@@ -91,13 +91,13 @@ export async function GET(
   }
 }
 
-// ===================== PATCH (UPDATE) =====================
+// ===================== PATCH (UPDATE) - OPTIMIZED =====================
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log("🔄 Starting PATCH operation for package");
+    console.log("🔄 Starting optimized PATCH operation for package");
     
     const user = await verifyAuth(req);
     if (!user) {
@@ -128,8 +128,8 @@ export async function PATCH(
       price,
       discount,
       link,
-      features,
-      requirements,
+      features = [],
+      requirements = [],
     } = body;
 
     console.log("📨 Received update data:", {
@@ -139,8 +139,8 @@ export async function PATCH(
       price,
       discount,
       link,
-      featuresCount: features?.length,
-      requirementsCount: requirements?.length
+      featuresCount: features.length,
+      requirementsCount: requirements.length
     });
 
     // Enhanced validation
@@ -152,7 +152,7 @@ export async function PATCH(
         );
       }
 
-      // Validate service exists if serviceId is provided
+      // Validate service exists
       const serviceExists = await prisma.service.findUnique({
         where: { id: serviceId },
       });
@@ -178,13 +178,6 @@ export async function PATCH(
       );
     }
 
-    if (type !== undefined && (!type.trim() || type.length > 100)) {
-      return NextResponse.json(
-        { success: false, message: "Type must be between 1 and 100 characters" },
-        { status: 400 }
-      );
-    }
-
     // Check if package exists
     const existingPackage = await prisma.package.findUnique({
       where: { id: packageIdInt },
@@ -198,175 +191,79 @@ export async function PATCH(
       );
     }
 
-    console.log("✅ Package found, proceeding with update...");
+    console.log("✅ Package found, preparing update...");
 
-    // Prepare update data
-    const updateData: {
-      serviceId?: number;
-      type?: string;
-      highlight?: boolean;
-      price?: number;
-      priceOriginal?: number;
-      discount?: number;
-      link?: string;
-      updatedAt?: Date;
-    } = {
-      updatedAt: new Date() // Always update the timestamp
+    // Prepare update data - hanya field yang berubah
+    const updateData: any = {
+      updatedAt: new Date()
     };
 
-    // Only update fields that are provided
     if (serviceId !== undefined) updateData.serviceId = serviceId;
     if (type !== undefined) updateData.type = type.trim();
     if (highlight !== undefined) updateData.highlight = highlight;
     if (link !== undefined) updateData.link = link.trim();
     
-    // Handle price and discount calculation
+    // Handle price calculations
     const finalPrice = price !== undefined ? price : existingPackage.price;
     const finalDiscount = discount !== undefined ? discount : existingPackage.discount;
     
     if (price !== undefined) updateData.price = price;
     if (discount !== undefined) updateData.discount = discount;
     
-    // Calculate original price
     updateData.priceOriginal = calculateOriginalPrice(finalPrice, finalDiscount);
 
-    console.log("📊 Update data prepared:", updateData);
+    console.log("📊 Basic update data prepared");
 
-    // Perform transaction with enhanced error handling
-    let updatedPackage;
-    try {
-      updatedPackage = await prisma.$transaction(async (tx) => {
-        console.log("💾 Starting database transaction...");
+    // **OPTIMISASI: Pisahkan operations untuk menghindari transaction timeout**
+    
+    // 1. Update package basic info terlebih dahulu (tanpa transaction)
+    console.log("💾 Updating basic package info...");
+    await prisma.package.update({ 
+      where: { id: packageIdInt }, 
+      data: updateData 
+    });
+    console.log("✅ Basic package info updated");
 
-        // 1. Update package basic info
-        const updated = await tx.package.update({ 
-          where: { id: packageIdInt }, 
-          data: updateData 
-        });
-        console.log("✅ Package basic info updated");
-
-        // 2. Update features if provided
-        if (features && Array.isArray(features)) {
-          console.log("🔄 Processing features:", features.length);
-          
-          // Delete existing package features
-          await tx.packageFeature.deleteMany({
-            where: { packageId: packageIdInt },
-          });
-          console.log("✅ Existing features deleted");
-
-          // Insert new features
-          for (const [index, f] of features.entries()) {
-            if (!f.feature || f.feature.trim() === '') {
-              console.log(`⏭️ Skipping empty feature at index ${index}`);
-              continue;
-            }
-
-            const featureName = f.feature.trim();
-            console.log(`📝 Processing feature: ${featureName}`);
-
-            // Upsert feature
-            const feature = await tx.feature.upsert({
-              where: { name: featureName },
-              create: { name: featureName },
-              update: {},
-            });
-            console.log(`✅ Feature upserted with ID: ${feature.id}`);
-
-            // Create package-feature relationship
-            await tx.packageFeature.create({
-              data: {
-                packageId: packageIdInt,
-                featureId: feature.id,
-                status: f.status !== undefined ? f.status : true,
-              },
-            });
-            console.log(`✅ Package-feature relationship created`);
-          }
-          console.log("✅ All features processed");
-        }
-
-        // 3. Update requirements if provided
-        if (requirements && Array.isArray(requirements)) {
-          console.log("🔄 Processing requirements:", requirements.length);
-          
-          // Delete existing package requirements
-          await tx.packageRequirement.deleteMany({
-            where: { packageId: packageIdInt },
-          });
-          console.log("✅ Existing requirements deleted");
-
-          // Insert new requirements
-          for (const [index, r] of requirements.entries()) {
-            if (!r || r.trim() === '') {
-              console.log(`⏭️ Skipping empty requirement at index ${index}`);
-              continue;
-            }
-
-            const requirementName = r.trim();
-            console.log(`📝 Processing requirement: ${requirementName}`);
-
-            // Upsert requirement
-            const req = await tx.requirement.upsert({
-              where: { name: requirementName },
-              create: { name: requirementName },
-              update: {},
-            });
-            console.log(`✅ Requirement upserted with ID: ${req.id}`);
-
-            // Create package-requirement relationship
-            await tx.packageRequirement.create({
-              data: { 
-                packageId: packageIdInt, 
-                requirementId: req.id 
-              },
-            });
-            console.log(`✅ Package-requirement relationship created`);
-          }
-          console.log("✅ All requirements processed");
-        }
-
-        // 4. Fetch final updated package with relations
-        console.log("🔍 Fetching updated package with relations...");
-        const finalPackage = await tx.package.findUnique({
-          where: { id: packageIdInt },
-          include: {
-            service: { 
-              select: { 
-                id: true, 
-                name: true, 
-                slug: true 
-              } 
-            },
-            features: { 
-              include: { 
-                feature: true 
-              } 
-            },
-            requirements: { 
-              include: { 
-                requirement: true 
-              } 
-            },
-          },
-        });
-        console.log("✅ Final package data fetched");
-        
-        return finalPackage;
-      });
-
-      console.log("🎉 Transaction completed successfully");
-
-    } catch (transactionError) {
-      console.error("❌ Transaction failed:", transactionError);
-      throw transactionError;
+    // 2. Process features secara terpisah dengan batch operations
+    if (Array.isArray(features)) {
+      await processFeatures(packageIdInt, features);
     }
+
+    // 3. Process requirements secara terpisah dengan batch operations
+    if (Array.isArray(requirements)) {
+      await processRequirements(packageIdInt, requirements);
+    }
+
+    // 4. Fetch updated package data
+    console.log("🔍 Fetching final updated package...");
+    const updatedPackage = await prisma.package.findUnique({
+      where: { id: packageIdInt },
+      include: {
+        service: { 
+          select: { 
+            id: true, 
+            name: true, 
+            slug: true 
+          } 
+        },
+        features: { 
+          include: { 
+            feature: true 
+          } 
+        },
+        requirements: { 
+          include: { 
+            requirement: true 
+          } 
+        },
+      },
+    });
 
     if (!updatedPackage) {
       throw new Error("Failed to retrieve updated package data");
     }
 
-    // Format response data
+    // Format response
     const responseData = {
       ...updatedPackage,
       features: updatedPackage.features.map((f) => ({
@@ -376,7 +273,7 @@ export async function PATCH(
       requirements: updatedPackage.requirements.map((r) => r.requirement.name),
     };
 
-    console.log("📤 Sending success response");
+    console.log("✅ Package update completed successfully");
 
     return NextResponse.json({
       status: 200,
@@ -388,27 +285,17 @@ export async function PATCH(
   } catch (err) {
     console.error("❌ PATCH /api/packages/[id] error:", err);
     
-    // More detailed error logging
     let errorMessage = "Server error";
-    let errorDetails = null;
-
     if (err instanceof Error) {
       errorMessage = err.message;
-      console.error("Error name:", err.name);
-      console.error("Error message:", err.message);
       
-      if (err.stack) {
-        console.error("Error stack:", err.stack);
-        errorDetails = process.env.NODE_ENV === 'development' ? err.stack : undefined;
-      }
-
-      // Handle specific Prisma errors
+      // Handle specific errors
       if (err.message.includes('Unique constraint')) {
         errorMessage = "A package with similar features already exists";
       } else if (err.message.includes('Foreign key constraint')) {
-        errorMessage = "Related service or feature not found";
-      } else if (err.message.includes('Database')) {
-        errorMessage = "Database connection error";
+        errorMessage = "Related service not found";
+      } else if (err.message.includes('Database') || err.message.includes('transaction')) {
+        errorMessage = "Database operation timed out. Please try again with less data.";
       }
     }
     
@@ -417,8 +304,7 @@ export async function PATCH(
         success: false, 
         message: errorMessage,
         ...(process.env.NODE_ENV === 'development' && { 
-          error: String(err),
-          details: errorDetails
+          error: String(err)
         })
       },
       { status: 500 }
