@@ -162,7 +162,7 @@ export default function EditPackagePage() {
     setRequirements(updatedRequirements);
   };
 
-  // Validate form
+  // Fix price validation in validateForm
   const validateForm = () => {
     if (!serviceId) {
       toast.error("Service harus dipilih");
@@ -174,10 +174,26 @@ export default function EditPackagePage() {
       return false;
     }
 
-    // if (!price || parseFloat(price) <= 0) {
-    //   toast.error("Price harus diisi dengan nilai yang valid");
-    //   return false;
-    // }
+    // Fix price validation - allow 0 or empty
+    if (price === "" || price === null || price === undefined) {
+      toast.error("Price harus diisi");
+      return false;
+    }
+
+    const priceNum = parseFloat(price);
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast.error("Price harus berupa angka yang valid");
+      return false;
+    }
+
+    // Fix discount validation
+    if (discount !== "" && discount !== null && discount !== undefined) {
+      const discountNum = parseFloat(discount);
+      if (isNaN(discountNum) || discountNum < 0 || discountNum > 100) {
+        toast.error("Discount harus antara 0-100");
+        return false;
+      }
+    }
 
     if (!link.trim()) {
       toast.error("Link harus diisi");
@@ -194,6 +210,7 @@ export default function EditPackagePage() {
   };
 
   // Handle submit
+  // Enhanced error handling in handleSubmit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -214,8 +231,8 @@ export default function EditPackagePage() {
       const payload = {
         serviceId: parseInt(serviceId),
         type: type.trim(),
-        price: parseFloat(price),
-        discount: parseFloat(discount),
+        price: price ? parseFloat(price) : 0, // Handle empty price
+        discount: discount ? parseFloat(discount) : 0, // Handle empty discount
         link: link.trim(),
         highlight,
         features: validFeatures,
@@ -233,24 +250,43 @@ export default function EditPackagePage() {
         body: JSON.stringify(payload),
       });
 
+      const responseData = await response.json();
+      console.log("📩 API Response:", responseData);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Gagal mengupdate package");
+        // More detailed error information
+        throw new Error(
+          responseData.message || `HTTP error! status: ${response.status}`
+        );
       }
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (responseData.success) {
         toast.success("Package berhasil diupdate!");
         router.push("/business/packages");
         router.refresh();
       } else {
-        throw new Error(data.message || "Gagal mengupdate package");
+        throw new Error(responseData.message || "Gagal mengupdate package");
       }
     } catch (error) {
-      console.error("Error updating package:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Terjadi kesalahan";
+      console.error("❌ Error updating package:", error);
+
+      // More specific error messages
+      let errorMessage = "Terjadi kesalahan";
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Koneksi jaringan terganggu. Periksa koneksi internet Anda.";
+        } else if (error.message.includes("401")) {
+          errorMessage = "Sesi telah berakhir. Silakan login kembali.";
+        } else if (error.message.includes("404")) {
+          errorMessage = "Package tidak ditemukan.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Terjadi kesalahan server. Silakan coba lagi nanti.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
