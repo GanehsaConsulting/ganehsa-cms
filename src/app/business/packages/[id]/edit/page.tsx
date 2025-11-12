@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
-import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useServices } from "@/hooks/useServices";
 import { HeaderActions } from "@/components/header-actions";

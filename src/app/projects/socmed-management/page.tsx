@@ -125,15 +125,14 @@ function SocmedProjectPage() {
     }
   }, [page, search, selectedPackage]);
 
-  // Fetch projects
   useEffect(() => {
     fetchProjects();
   }, [page, search, selectedPackage]);
 
-  const handleSearch = () => {
-    setPage(1);
-    fetchProjects();
-  };
+  // const handleSearch = () => {
+  //   setPage(1);
+  //   fetchProjects();
+  // };
 
   const token = getToken();
 

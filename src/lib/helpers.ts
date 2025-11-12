@@ -78,7 +78,7 @@ export async function processFeatures(packageId: number, features: PackageFeatur
         console.log(`🔄 Processing features batch ${i / batchSize + 1}`);
 
         await Promise.all(
-          batch.map(async (f, index) => {
+          batch.map(async (f) => {
             const featureName = f.feature.trim();
 
             // Upsert feature

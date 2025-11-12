@@ -112,10 +112,10 @@ function WebProjectPage() {
     fetchProjects();
   }, [fetchProjects]);
 
-  const handleSearch = () => {
-    setPage(1);
-    fetchProjects();
-  };
+  // const handleSearch = () => {
+  //   setPage(1);
+  //   fetchProjects();
+  // };
 
   const token = getToken();
 

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { calculateOriginalPrice, processFeatures, processRequirements } from "@/lib/helpers";
+import {
+  calculateOriginalPrice,
+  processFeatures,
+  processRequirements,
+} from "@/lib/helpers";
 
 export interface PackageFeature {
   feature: string;
@@ -19,6 +23,17 @@ interface UpdatePackageBody {
   requirements?: string[];
 }
 
+interface PackageUpdateData {
+  serviceId?: number;
+  type?: string;
+  highlight?: boolean;
+  price?: number;
+  discount?: number;
+  link?: string;
+  priceOriginal?: number;
+  updatedAt: Date;
+}
+
 // ===================== GET BY ID =====================
 // Temporary debugging endpoint - remove after fixing
 export async function GET(
@@ -27,7 +42,7 @@ export async function GET(
 ) {
   try {
     console.log("🔍 GET package request for:", await params);
-    
+
     const { id } = await params;
     const packageIdInt = Number(id);
 
@@ -77,14 +92,17 @@ export async function GET(
     });
   } catch (err) {
     console.error("❌ GET /api/packages/[id] error:", err);
-    
+
     // More detailed error information
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Server error",
-        error: process.env.NODE_ENV === 'development' ? String(err) : undefined,
-        stack: process.env.NODE_ENV === 'development' ? (err as Error).stack : undefined
+        error: process.env.NODE_ENV === "development" ? String(err) : undefined,
+        stack:
+          process.env.NODE_ENV === "development"
+            ? (err as Error).stack
+            : undefined,
       },
       { status: 500 }
     );
@@ -98,7 +116,7 @@ export async function PATCH(
 ) {
   try {
     console.log("🔄 Starting optimized PATCH operation for package");
-    
+
     const user = await verifyAuth(req);
     if (!user) {
       console.log("❌ Unauthorized access attempt");
@@ -140,12 +158,12 @@ export async function PATCH(
       discount,
       link,
       featuresCount: features.length,
-      requirementsCount: requirements.length
+      requirementsCount: requirements.length,
     });
 
     // Enhanced validation
     if (serviceId !== undefined) {
-      if (typeof serviceId !== 'number' || serviceId <= 0) {
+      if (typeof serviceId !== "number" || serviceId <= 0) {
         return NextResponse.json(
           { success: false, message: "Invalid service ID" },
           { status: 400 }
@@ -164,14 +182,17 @@ export async function PATCH(
       }
     }
 
-    if (price !== undefined && (typeof price !== 'number' || price < 0)) {
+    if (price !== undefined && (typeof price !== "number" || price < 0)) {
       return NextResponse.json(
         { success: false, message: "Invalid price" },
         { status: 400 }
       );
     }
 
-    if (discount !== undefined && (typeof discount !== 'number' || discount < 0 || discount > 100)) {
+    if (
+      discount !== undefined &&
+      (typeof discount !== "number" || discount < 0 || discount > 100)
+    ) {
       return NextResponse.json(
         { success: false, message: "Discount must be between 0 and 100" },
         { status: 400 }
@@ -182,7 +203,7 @@ export async function PATCH(
     const existingPackage = await prisma.package.findUnique({
       where: { id: packageIdInt },
     });
-    
+
     if (!existingPackage) {
       console.log("❌ Package not found:", packageIdInt);
       return NextResponse.json(
@@ -193,34 +214,38 @@ export async function PATCH(
 
     console.log("✅ Package found, preparing update...");
 
-    // Prepare update data - hanya field yang berubah
-    const updateData: any = {
-      updatedAt: new Date()
+    // Prepare update data dengan type yang tepat
+    const updateData: PackageUpdateData = {
+      updatedAt: new Date(),
     };
 
     if (serviceId !== undefined) updateData.serviceId = serviceId;
     if (type !== undefined) updateData.type = type.trim();
     if (highlight !== undefined) updateData.highlight = highlight;
     if (link !== undefined) updateData.link = link.trim();
-    
+
     // Handle price calculations
     const finalPrice = price !== undefined ? price : existingPackage.price;
-    const finalDiscount = discount !== undefined ? discount : existingPackage.discount;
-    
+    const finalDiscount =
+      discount !== undefined ? discount : existingPackage.discount;
+
     if (price !== undefined) updateData.price = price;
     if (discount !== undefined) updateData.discount = discount;
-    
-    updateData.priceOriginal = calculateOriginalPrice(finalPrice, finalDiscount);
+
+    updateData.priceOriginal = calculateOriginalPrice(
+      finalPrice,
+      finalDiscount
+    );
 
     console.log("📊 Basic update data prepared");
 
     // **OPTIMISASI: Pisahkan operations untuk menghindari transaction timeout**
-    
+
     // 1. Update package basic info terlebih dahulu (tanpa transaction)
     console.log("💾 Updating basic package info...");
-    await prisma.package.update({ 
-      where: { id: packageIdInt }, 
-      data: updateData 
+    await prisma.package.update({
+      where: { id: packageIdInt },
+      data: updateData,
     });
     console.log("✅ Basic package info updated");
 
@@ -239,22 +264,22 @@ export async function PATCH(
     const updatedPackage = await prisma.package.findUnique({
       where: { id: packageIdInt },
       include: {
-        service: { 
-          select: { 
-            id: true, 
-            name: true, 
-            slug: true 
-          } 
+        service: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
         },
-        features: { 
-          include: { 
-            feature: true 
-          } 
+        features: {
+          include: {
+            feature: true,
+          },
         },
-        requirements: { 
-          include: { 
-            requirement: true 
-          } 
+        requirements: {
+          include: {
+            requirement: true,
+          },
         },
       },
     });
@@ -281,31 +306,34 @@ export async function PATCH(
       message: "Package updated successfully",
       data: responseData,
     });
-    
   } catch (err) {
     console.error("❌ PATCH /api/packages/[id] error:", err);
-    
+
     let errorMessage = "Server error";
     if (err instanceof Error) {
       errorMessage = err.message;
-      
+
       // Handle specific errors
-      if (err.message.includes('Unique constraint')) {
+      if (err.message.includes("Unique constraint")) {
         errorMessage = "A package with similar features already exists";
-      } else if (err.message.includes('Foreign key constraint')) {
+      } else if (err.message.includes("Foreign key constraint")) {
         errorMessage = "Related service not found";
-      } else if (err.message.includes('Database') || err.message.includes('transaction')) {
-        errorMessage = "Database operation timed out. Please try again with less data.";
+      } else if (
+        err.message.includes("Database") ||
+        err.message.includes("transaction")
+      ) {
+        errorMessage =
+          "Database operation timed out. Please try again with less data.";
       }
     }
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: errorMessage,
-        ...(process.env.NODE_ENV === 'development' && { 
-          error: String(err)
-        })
+        ...(process.env.NODE_ENV === "development" && {
+          error: String(err),
+        }),
       },
       { status: 500 }
     );
