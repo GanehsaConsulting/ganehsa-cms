@@ -62,22 +62,6 @@ const packageColumns: Column<TablePackages>[] = [
       </div>
     ),
   },
-  // {
-  //   key: "service",
-  //   label: "Service",
-  //   className: "min-w-[150px]",
-  //   render: (row) => {
-  //     const serviceName = dataServices.find(
-  //       (s) => s.slug === row.service
-  //     )?.name;
-
-  //     return (
-  //       <span className="font-medium">
-  //         {serviceName || row.service || "N/A"}
-  //       </span>
-  //     );
-  //   },
-  // },
   {
     key: "price",
     label: "Price",
@@ -89,7 +73,7 @@ const packageColumns: Column<TablePackages>[] = [
       </div>
     ),
   },
-  { //  1,928,571
+  {
     key: "priceOriginal",
     label: "Original Price",
     className: "min-w-[170px]",   
@@ -191,15 +175,12 @@ export default function PriceList() {
 
   // usePackages hook dengan semua state management
   const {
-    token,
     setSearchQuery,
     setPage,
-    fetchPackages,
     page,
     limit,
     setLimit,
     searchQuery,
-    highlightFilter,
     serviceFilter,
     setServiceFilter,
     total,
@@ -227,16 +208,7 @@ export default function PriceList() {
   };
 
   const handleRefresh = () => {
-    if (token) {
-      fetchPackages(
-        token,
-        page,
-        limit,
-        searchQuery,
-        serviceFilter,
-        highlightFilter
-      );
-    }
+    window.location.reload()
   };
 
   const { dataServices, isLoading: servicesLoading } = useServices();
@@ -289,17 +261,9 @@ export default function PriceList() {
       if (data.success) {
         toast.success(`Package "${selectedPackage.type}" berhasil dihapus!`);
 
-        const newToken = getToken();
-        if (newToken) {
-          await fetchPackages(
-            newToken,
-            1,
-            limit,
-            searchQuery,
-            serviceFilter,
-            highlightFilter
-          );
-        }
+        // Set page ke 1 dan refresh data
+        setPage(1);
+        window.location.reload
       } else {
         toast.error(data.message || "Gagal menghapus package");
       }
@@ -385,7 +349,6 @@ export default function PriceList() {
             {/* Refresh Button */}
             <Button onClick={handleRefresh} disabled={isLoading}>
               <MdOutlineLoop className={isLoading ? "animate-spin" : ""} />
-              {/* <span>Refresh</span> */}
             </Button>
           </div>
 
