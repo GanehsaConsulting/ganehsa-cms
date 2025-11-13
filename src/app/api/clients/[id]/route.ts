@@ -3,8 +3,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 // 🟢 GET SINGLE CLIENT
 export async function GET(

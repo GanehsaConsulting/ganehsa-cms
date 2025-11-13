@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { calculateOriginalPrice } from "@/lib/helpers";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 // Interfaces
 interface PackageFeature {

@@ -3,9 +3,7 @@ import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
-
-const prisma = new PrismaClient();
-
+import prisma from "@/lib/prisma";
 
 export async function GET(
   req: NextRequest,

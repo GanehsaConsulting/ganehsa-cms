@@ -3,8 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 import { revalidatePath } from "next/cache";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
