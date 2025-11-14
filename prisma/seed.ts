@@ -1,8 +1,10 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+const prisma = new PrismaClient();
+
 // Website Development Packages Data (serviceId: 3)
-export const websitePackagesData = [
+const websitePackagesData = [
   {
     serviceId: 3,
     type: "Landing Page Company Profile",
@@ -200,7 +202,7 @@ export const websitePackagesData = [
 ];
 
 // Social Media Management Packages Data (serviceId: 7)
-export const socialMediaPackagesData = [
+const socialMediaPackagesData = [
   {
     serviceId: 7,
     type: "Paket BotLane",
@@ -282,7 +284,7 @@ export const socialMediaPackagesData = [
 ];
 
 // PT Packages Data (serviceId: 1)
-export const PTPackagesData = [
+const PTPackagesData = [
   {
     serviceId: 1,
     type: "PT DASAR",
@@ -544,7 +546,7 @@ export const PTPackagesData = [
 ];
 
 // CV Packages Data (serviceId: 2)
-export const CVPackagesData = [
+const CVPackagesData = [
   {
     serviceId: 2,
     type: "CV Dasar",
@@ -713,7 +715,7 @@ export const CVPackagesData = [
 ];
 
 // Virtual Office Packages Data (serviceId: 10)
-export const VirtualOfficePackagesData = [
+const VirtualOfficePackagesData = [
   {
     serviceId: 10,
     type: "VIRTUAL OFFICE",
@@ -770,369 +772,8 @@ export const VirtualOfficePackagesData = [
   },
 ];
 
-// Konsultan Pajak Packages Data (serviceId: 8)
-export const KonsultanPajakPackagesData = [
-  {
-    serviceId: 8,
-    type: "Pelaporan SPT Masa Tahunan Pribadi (Non Pegawai Nihil) 1 Tahun",
-    highlight: false,
-    price: 100000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Non%20Pegawai%20Nihil)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Pelaporan SPT Masa Tahunan Pribadi (Non Pegawai Omzet) 1 Tahun",
-    highlight: false,
-    price: 200000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Non%20Pegawai%20Omzet)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Pelaporan SPT Masa Tahunan Pribadi (Pegawai) 1 Tahun",
-    highlight: false,
-    price: 100000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Pegawai)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Pelaporan SPT Masa Tahunan Badan Usaha (Nihil) 1 Tahun",
-    highlight: false,
-    price: 500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Badan%20Usaha%20(Nihil)%201%20Tahun!",
-    features: [
-      { feature: "Laporan keuangan", status: true },
-      { feature: "Review Laporan Keuangan", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-      { feature: "SPT Masa Tahunan Badan", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Pelaporan SPT Masa Tahunan Badan Usaha (Omzet) 1 Tahun",
-    highlight: false,
-    price: 1000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Badan%20Usaha%20(Omzet)%201%20Tahun!",
-    features: [
-      { feature: "Laporan keuangan", status: true },
-      { feature: "Review Laporan Keuangan", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-      { feature: "SPT Masa Tahunan Badan", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet Kurang dari 5M",
-    highlight: true,
-    price: 1000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%20Kurang%20dari%205M!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
-      { feature: "Laporan PPh 23", status: true },
-      { feature: "Laporan PPh Final", status: true },
-      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
-      { feature: "Laporan SPT PPh 25/29", status: true },
-      { feature: "Pajak Daerah (Jika Ada)", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 5M s/d 15M",
-    highlight: false,
-    price: 1500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%205M%20s/d%2015M!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
-      { feature: "Laporan PPh 23", status: true },
-      { feature: "Laporan PPh Final", status: true },
-      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
-      { feature: "Laporan SPT PPh 25/29", status: true },
-      { feature: "Pajak Daerah (Jika Ada)", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 15M s/d 50M",
-    highlight: false,
-    price: 2500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%2015M%20s/d%2050M!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
-      { feature: "Laporan PPh 23", status: true },
-      { feature: "Laporan PPh Final", status: true },
-      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
-      { feature: "Laporan SPT PPh 25/29", status: true },
-      { feature: "Pajak Daerah (Jika Ada)", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet Lebih dari 50M",
-    highlight: false,
-    price: 5000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%20Lebih%20dari%2050M!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
-      { feature: "Laporan PPh 23", status: true },
-      { feature: "Laporan PPh Final", status: true },
-      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
-      { feature: "Laporan SPT PPh 25/29", status: true },
-      { feature: "Pajak Daerah (Jika Ada)", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Pribadi (Non Pegawai Nihil) 1 Tahun",
-    highlight: false,
-    price: 500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Pribadi%20(Non%20Pegawai%20Nihil)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Pribadi (Non Pegawai Omzet) 1 Tahun",
-    highlight: false,
-    price: 750000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Pribadi%20(Non%20Pegawai%20Omzet)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultan Pajak Pribadi (Pegawai) 1 Tahun",
-    highlight: false,
-    price: 500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Pribadi%20(Pegawai)%201%20Tahun!",
-    features: [
-      { feature: "Perencanaan Pajak", status: true },
-      { feature: "Bukti Pelaporan Elektronik", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Laporan Keuangan UMKM (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Laporan%20Keuangan%20UMKM%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Laporan Keuangan UMKM (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 600000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Laporan%20Keuangan%20UMKM%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Laporan Keuangan Badan (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Laporan%20Keuangan%20Badan%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Laporan Keuangan Badan (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 1500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Laporan%20Keuangan%20Badan%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan Pajak", status: true },
-      { feature: "Laporan SPT", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultasi Pajak UMKM (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 500000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultasi%20Pajak%20UMKM%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultasi Pajak UMKM (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 1000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultasi%20Pajak%20UMKM%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan SPT", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultasi Pajak Badan (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 1000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultasi%20Pajak%20Badan%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Konsultasi Pajak Badan (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 2000000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultasi%20Pajak%20Badan%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Laporan Neraca", status: true },
-      { feature: "Laporan Laba / Rugi", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Laporan Pajak", status: true },
-      { feature: "Laporan SPT", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Anggaran Keuangan UMKM (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 400000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Anggaran%20Keuangan%20UMKM%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Penyusunan Anggaran", status: true },
-      { feature: "Analisis Anggaran", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Anggaran Keuangan UMKM (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Anggaran%20Keuangan%20UMKM%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Penyusunan Anggaran", status: true },
-      { feature: "Analisis Anggaran", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Anggaran Keuangan Badan (Sederhana) 1 Tahun",
-    highlight: false,
-    price: 600000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Anggaran%20Keuangan%20Badan%20(Sederhana)%201%20Tahun!",
-    features: [
-      { feature: "Penyusunan Anggaran", status: true },
-      { feature: "Analisis Anggaran", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-  {
-    serviceId: 8,
-    type: "Penyusunan Anggaran Keuangan Badan (Kompleks) 1 Tahun",
-    highlight: false,
-    price: 1200000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Penyusunan%20Anggaran%20Keuangan%20Badan%20(Kompleks)%201%20Tahun!",
-    features: [
-      { feature: "Penyusunan Anggaran", status: true },
-      { feature: "Analisis Anggaran", status: true },
-      { feature: "Perencanaan Pajak", status: true },
-    ],
-  },
-];
-
 // Badan Usaha Packages Data (serviceId: 4)
-export const BadanUsahaPackagesData = [
+const BadanUsahaPackagesData = [
   {
     serviceId: 4,
     type: "Pendirian Yayasan",
@@ -1229,7 +870,7 @@ export const BadanUsahaPackagesData = [
 ];
 
 // HAKI Packages Data (serviceId: 5)
-export const HakiPackagesData = [
+const HakiPackagesData = [
   {
     serviceId: 5,
     type: "Pengurusan HAKI (Merek, Hak Cipta, Paten, dll.)",
@@ -1245,7 +886,7 @@ export const HakiPackagesData = [
 ];
 
 // Go Space Packages Data (serviceId: 11)
-export const goSpacePackagesData = [
+const goSpacePackagesData = [
   {
     serviceId: 11,
     type: "Virtual Office Space Lite",
@@ -1294,182 +935,8 @@ export const goSpacePackagesData = [
   },
 ];
 
-// Jasa Akuntansi Packages Data (serviceId: 9)
-export const AccountantPackagesData = [
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet Kurang dari 2,5 M (1 Tahun)",
-    highlight: true,
-    price: 800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%20Kurang%20dari%202,5%20M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 2,5M s/d 5M (1 Tahun)",
-    highlight: false,
-    price: 1300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%202,5M%20s/d%205M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 5M s/d 7,5M (1 Tahun)",
-    highlight: false,
-    price: 1800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%205M%20s/d%207,5M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 7,5M s/d 10M (1 Tahun)",
-    highlight: false,
-    price: 2300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%207,5M%20s/d%2010M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 10M s/d 12,5M (1 Tahun)",
-    highlight: false,
-    price: 2800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2010M%20s/d%2012,5M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 12,5M s/d 15M (1 Tahun)",
-    highlight: false,
-    price: 3300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2012,5M%20s/d%2015M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 15M s/d 17,5M (1 Tahun)",
-    highlight: false,
-    price: 3800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2015M%20s/d%2017,5M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 17,5M s/d 20M (1 Tahun)",
-    highlight: false,
-    price: 4300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2017,5M%20s/d%2020M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 20M s/d 25M (1 Tahun)",
-    highlight: false,
-    price: 4800000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2020M%20s/d%2025M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-  {
-    serviceId: 9,
-    type: "Jasa Akuntansi (Kontrak) Omzet 25M s/d 30M (1 Tahun)",
-    highlight: false,
-    price: 5300000,
-    discount: 36,
-    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2025M%20s/d%2030M%20(1%20Tahun)!",
-    features: [
-      { feature: "Jurnal Keuangan", status: true },
-      { feature: "Buku Besar", status: true },
-      { feature: "Laporan Neraca Keuangan", status: true },
-      { feature: "Laporan Laba / Rugi Keuangan", status: true },
-      { feature: "Jurnal Penyesuaian", status: true },
-      { feature: "Rekonsiliasi Bank", status: true },
-      { feature: "Buku Besar Pembantu", status: true },
-    ],
-  },
-];
-
 // Layanan Izin & Sertifikasi Packages Data (serviceId: 6)
-export const servicePackagesData = [
+const servicePackagesData = [
   {
     serviceId: 6,
     type: "Pengurusan Izin SKPL A",
@@ -1647,10 +1114,916 @@ export const servicePackagesData = [
   },
 ];
 
-// [Previous package data arrays remain the same...]
-// websitePackagesData, socialMediaPackagesData, PTPackagesData, etc.
+// Jasa Akuntansi Packages Data (serviceId: 9)
+const AccountantPackagesData = [
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet < 2,5 M (1 Tahun)",
+    price: 800000,
+    priceOriginal: 1250000, // price = priceOriginal * (1 - discount)
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%20Kurang%20dari%202,5%20M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 2,5M s/d 5M (1 Tahun)",
+    price: 1300000,
+    priceOriginal: 2031250,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%202,5M%20s/d%205M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 5M s/d 7,5M (1 Tahun)",
+    price: 1800000,
+    priceOriginal: 2812500,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%205M%20s/d%207,5M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 7,5M s/d 10M (1 Tahun)",
+    price: 2300000,
+    priceOriginal: 3593750,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%207,5M%20s/d%2010M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 10M s/d 12,5M (1 Tahun)",
+    price: 2800000,
+    priceOriginal: 4375000,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2010M%20s/d%2012,5M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 12,5M s/d 15M (1 Tahun)",
+    price: 3300000,
+    priceOriginal: 5156250,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2012,5M%20s/d%2015M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 15M s/d 17,5M (1 Tahun)",
+    price: 3800000,
+    priceOriginal: 5937500,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2015M%20s/d%2017,5M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 17,5M s/d 20M (1 Tahun)",
+    price: 4300000,
+    priceOriginal: 6718750,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2017,5M%20s/d%2020M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 20M s/d 25M (1 Tahun)",
+    price: 4800000,
+    priceOriginal: 7500000,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2020M%20s/d%2025M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+  {
+    serviceId: 9,
+    type: "Jasa Akuntansi (Kontrak) Omzet 25M s/d 30M (1 Tahun)",
+    price: 5300000,
+    priceOriginal: 8281250,
+    discount: 36,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Jasa%20Akuntansi%20(Kontrak)%20Omzet%2025M%20s/d%2030M%20(1%20Tahun)!",
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Buku Besar", status: true },
+      { feature: "Laporan Neraca Keuangan", status: true },
+      { feature: "Laporan Laba / Rugi Keuangan", status: true },
+      { feature: "Jurnal Penyesuaian", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Buku Besar Pembantu", status: true },
+    ],
+    requirements: [
+      "Mutasi Rekening Bank",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Rekap AP (Account Payable)",
+      "Rekap AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+      "Rekap Pajak Perusahaan",
+      "Stock Perusahaan (Jika Perusahaan Dagang)",
+    ],
+  },
+];
 
-const prisma = new PrismaClient();
+const NIBPTPackage = [
+  {
+    serviceId: 1,
+    type: "Pengurusan NIB (Nomor Induk Berusaha)",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20Pengurusan%20NIB%20nih!%20",
+    discount: 50,
+    features: [
+      { feature: "NIB (Nomor Induk Berusaha)", status: true },
+      {
+        feature: "Pernyataan Mandiri (K3L, SPPL dan Tata Ruang)",
+        status: true,
+      },
+      {
+        feature: "Sertifikat Standar (Jika Skala Resiko Menengah Rendah)",
+        status: true,
+      },
+      { feature: "Hak Akses OSS", status: true },
+    ],
+  },
+];
+
+const NIBCVPackage = [
+  {
+    serviceId: 2,
+    type: "Pengurusan NIB (Nomor Induk Berusaha)",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20Pengurusan%20NIB%20nih!%20",
+    discount: 50,
+    features: [
+      { feature: "NIB (Nomor Induk Berusaha)", status: true },
+      {
+        feature: "Pernyataan Mandiri (K3L, SPPL dan Tata Ruang)",
+        status: true,
+      },
+      {
+        feature: "Sertifikat Standar (Jika Skala Resiko Menengah Rendah)",
+        status: true,
+      },
+      { feature: "Hak Akses OSS", status: true },
+    ],
+  },
+];
+
+// Konsultan Pajak Packages Data (serviceId: 8)
+const KonsultanPajakPackagesData = [
+  {
+    serviceId: 8,
+    type: "Pelaporan SPT Masa Tahunan Pribadi (Non Pegawai Nihil) 1 Tahun",
+    highlight: false,
+    price: 100000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Non%20Pegawai%20Nihil)%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Bukti Pelaporan Elektronik", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Bukti Potong",
+      "Kartu Keluarga",
+      "KTP",
+      "Asset",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pelaporan SPT Masa Tahunan Pribadi (Non Pegawai Omzet) 1 Tahun",
+    highlight: false,
+    price: 200000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Non%20Pegawai%20Omzet)%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Bukti Pelaporan Elektronik", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Bukti Potong",
+      "Kartu Keluarga",
+      "KTP",
+      "Asset",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pelaporan SPT Masa Tahunan Pribadi (Pegawai) 1 Tahun",
+    highlight: false,
+    price: 100000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Pribadi%20(Pegawai)%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Bukti Pelaporan Elektronik", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Bukti Potong",
+      "Kartu Keluarga",
+      "KTP",
+      "Asset",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pelaporan SPT Masa Tahunan Badan Usaha (Nihil) 1 Tahun",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Badan%20Usaha%20(Nihil)%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Laporan keuangan", status: true },
+      { feature: "Review Laporan Keuangan", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Bukti Pelaporan Elektronik", status: true },
+      { feature: "SPT Masa Tahunan Badan", status: true },
+    ],
+    requirements: [
+      "Jurnal Keuangan",
+      "Laporan Neraca",
+      "Laporan Laba / Rugi",
+      "Rekonsiliasi Bank",
+      "Laporan SPT PPh 21 Pegawai",
+      "Laporan PPh 23",
+      "Laporan PPh Final",
+      "Laporan PPN (Jika Sudah PKP)",
+      "Laporan SPT PPh 25/29",
+      "Pajak Daerah (Jika Ada)",
+      "Perencanaan Pajak",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pelaporan SPT Masa Tahunan Badan Usaha (Omzet) 1 Tahun",
+    highlight: false,
+    price: 1000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pelaporan%20SPT%20Masa%20Tahunan%20Badan%20Usaha%20(Omzet)%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Laporan keuangan", status: true },
+      { feature: "Review Laporan Keuangan", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Bukti Pelaporan Elektronik", status: true },
+      { feature: "SPT Masa Tahunan Badan", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Laporan Keuangan (Jika Ada)",
+      "SPT PPh 21 Pegawai (Jika Ada)",
+      "SPT PPN (Jika PKP)",
+      "Bukti Potong PPh (Jika Ada)",
+      "Akta Perusahaan Pendirian s/d Perubahan Terakhir",
+      "KTP & NPWP Direksi",
+      "NPWP Perusahaan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet Kurang dari 5M",
+    highlight: false,
+    price: 1000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%20Kurang%20dari%205M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 5M s/d 15M",
+    highlight: false,
+    price: 1500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%205M%20s/d%2015M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 15M s/d 25M",
+    highlight: false,
+    price: 2000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%2015M%20s/d%2025M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 25M s/d 35M",
+    highlight: false,
+    price: 2500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%2025M%20s/d%2035M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMDN (Kontrak 1 Tahun) Omzet 35M s/d 50M",
+    highlight: false,
+    price: 3000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMDN%20(Kontrak%201%20Tahun)%20Omzet%2035M%20s/d%2050M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMA (Kontrak 1 Tahun) Omzet Kurang dari 5M",
+    highlight: false,
+    price: 1250000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMA%20(Kontrak%201%20Tahun)%20Omzet%20Kurang%20dari%205M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMA (Kontrak 1 Tahun) Omzet 5M s/d 15M",
+    highlight: false,
+    price: 1750000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMA%20(Kontrak%201%20Tahun)%20Omzet%205M%20s/d%2015M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMA (Kontrak 1 Tahun) Omzet 15M s/d 25M",
+    highlight: false,
+    price: 2250000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMA%20(Kontrak%201%20Tahun)%20Omzet%2015M%20s/d%2025M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMA (Kontrak 1 Tahun) Omzet 25M s/d 35M",
+    highlight: false,
+    price: 2750000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMA%20(Kontrak%201%20Tahun)%20Omzet%2025M%20s/d%2035M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Konsultan Pajak Badan PMA (Kontrak 1 Tahun) Omzet 35M s/d 50M",
+    highlight: false,
+    price: 3250000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Konsultan%20Pajak%20Badan%20PMA%20(Kontrak%201%20Tahun)%20Omzet%2035M%20s/d%2050M!",
+    discount: 36,
+    features: [
+      { feature: "Jurnal Keuangan", status: true },
+      { feature: "Laporan Neraca", status: true },
+      { feature: "Laporan Laba / Rugi", status: true },
+      { feature: "Rekonsiliasi Bank", status: true },
+      { feature: "Laporan SPT PPh 21 Pegawai", status: true },
+      { feature: "Laporan PPh 23", status: true },
+      { feature: "Laporan PPh Final", status: true },
+      { feature: "Laporan PPN (Jika Sudah PKP)", status: true },
+      { feature: "Laporan SPT PPh 25/29", status: true },
+      { feature: "Pajak Daerah (Jika Ada)", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP (Jika Sudah PKP)",
+      "Rekap Pengeluaran",
+      "Rekap Pemasukan",
+      "Mutasi Rekening Bank",
+      "AP (Account Payable)",
+      "AR (Account Receivable)",
+      "Daftar Asset Perusahaan",
+      "Daftar Gaji Karyawan",
+    ],
+  },
+
+  {
+    serviceId: 8,
+    type: "Pendaftaran Pajak Restoran (PB1) Badan/Perorangan",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pendaftaran%20Pajak%20Restoran%20(PB1)%20Badan%2FPerorangan!",
+    discount: 36,
+    features: [
+      { feature: "Semua Pengurusan Pendaftaran", status: true },
+      { feature: "Pendampingan Survey", status: true },
+      { feature: "NPWPD", status: true },
+      { feature: "NOPD", status: true },
+    ],
+    requirements: [
+      "Akta Perusahaan Pendirian s/d Perubahan Terakhir",
+      "KTP & NPWP Direksi",
+      "NIB Perusahaan",
+      "Email Perusahaan",
+      "Nomor HP/WA Perusahaan",
+      "NPWP Perusahaan",
+      "Foto-foto Reklame",
+      "Luas Reklame",
+      "Tinggi Reklame",
+      "Lokasi Reklame",
+      "Posisi Reklame",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pendaftaran Pajak Hiburan",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pendaftaran%20Pajak%20Hiburan!",
+    discount: 36,
+    features: [
+      { feature: "Semua Pengurusan Pendaftaran", status: true },
+      { feature: "Pendampingan Survey", status: true },
+      { feature: "NPWPD", status: true },
+      { feature: "NOPD", status: true },
+    ],
+    requirements: [
+      "Akta Perusahaan Pendirian s/d Perubahan Terakhir",
+      "KTP & NPWP Direksi",
+      "NIB Perusahaan",
+      "Email Perusahaan",
+      "Nomor HP/WA Perusahaan",
+      "NPWP Perusahaan",
+      "Foto-foto Reklame",
+      "Luas Reklame",
+      "Tinggi Reklame",
+      "Lokasi Reklame",
+      "Posisi Reklame",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pendaftaran Pajak Reklame",
+    highlight: false,
+    price: 500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pendaftaran%20Pajak%20Reklame!",
+    discount: 36,
+    features: [
+      { feature: "Semua Pengurusan Pendaftaran", status: true },
+      { feature: "Pendampingan Survey", status: true },
+      { feature: "NPWPD", status: true },
+      { feature: "NOPD", status: true },
+    ],
+    requirements: [
+      "Akta Perusahaan Pendirian s/d Perubahan Terakhir",
+      "KTP & NPWP Direksi",
+      "NIB Perusahaan",
+      "Email Perusahaan",
+      "Nomor HP/WA Perusahaan",
+      "NPWP Perusahaan",
+      "Foto-foto Reklame",
+      "Luas Reklame",
+      "Tinggi Reklame",
+      "Lokasi Reklame",
+      "Posisi Reklame",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Restitusi Pajak Periode 1 Tahun",
+    highlight: false,
+    price: 30000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Restitusi%20Pajak%20Periode%201%20Tahun!",
+    discount: 36,
+    features: [
+      { feature: "Review Kebenaran Pelaporan Pajak", status: true },
+      { feature: "Review Kebenaran Laporan Keuangan Pajak", status: true },
+      { feature: "Semua Pengurusan Permohonan", status: true },
+      { feature: "Pendampingan Sidang Restitusi", status: true },
+      { feature: "Pencairan Restitusi Pajak", status: true },
+    ],
+    requirements: [
+      "Akun DJP Online",
+      "Akun PKP",
+      "Laporan Keuangan",
+      "Buku Besar",
+      "Mutasi Rekening Bank",
+      "Bukti Dokumen Asli",
+      "Akta Perusahaan Pendirian s/d Perubahan Terakhir",
+      "SPT Tahunan Badan Usaha",
+      "SPT PPh 21 Pegawai",
+      "Bukti Potong PPh",
+      "KTP & NPWP Direksi",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Pendampingan Pajak SP2DK",
+    highlight: false,
+    price: 1000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Pendampingan%20Pajak%20SP2DK!",
+    discount: 36,
+    features: [
+      { feature: "Pendampingan Pajak", status: true },
+      { feature: "Review SPT Tahunan Badan Usaha", status: true },
+      { feature: "Review Laporan Keuangan Pajak", status: true },
+      { feature: "Perencanaan Pajak", status: true },
+      { feature: "Pembetulan Pajak", status: true },
+    ],
+    requirements: [
+      "Surat Pajak SP2DK",
+      "SPT Tahunan Badan Usaha",
+      "Laporan Keuangan Pajak",
+      "Bukti Pendukung Lainnya Menyesuaikan Temuan Pajak",
+    ],
+  },
+  {
+    serviceId: 8,
+    type: "Brevet B & C (Kurang lebih 2.5 Bulan)",
+    highlight: false,
+    price: 3000000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo!%20Saya%20mau%20konsultasi%20terkait%20Brevet%20B%20%26%20C!",
+    discount: 36,
+    features: [
+      { feature: "Materi KUP Tentang PPh 21", status: true },
+      { feature: "Materi KUP Tentang PPh 23", status: true },
+      { feature: "Materi KUP Tentang PPh Final", status: true },
+      { feature: "Materi KUP Tentang PPN", status: true },
+      { feature: "Materi KUP Tentang PPh Badan Usaha", status: true },
+    ],
+    requirements: ["KTP", "NPWP", "Nomor HP", "Email"],
+  },
+];
 
 // Helper function to check if package exists
 async function packageExists(
@@ -1746,6 +2119,11 @@ async function seedPackages(
         : pkg.price;
 
     try {
+      // Debug log
+      console.log(`📝 Processing: ${pkg.type}`);
+      console.log(`   Has requirements: ${!!pkg.requirements}`);
+      console.log(`   Requirements count: ${pkg.requirements?.length || 0}`);
+
       const createdPackage = await prisma.package.create({
         data: {
           serviceId: pkg.serviceId,
@@ -1766,6 +2144,20 @@ async function seedPackages(
               },
             })),
           },
+          // Add requirements if they exist
+          ...(pkg.requirements &&
+            pkg.requirements.length > 0 && {
+              requirements: {
+                create: pkg.requirements.map((req: string) => ({
+                  requirement: {
+                    connectOrCreate: {
+                      where: { name: req },
+                      create: { name: req },
+                    },
+                  },
+                })),
+              },
+            }),
         },
       });
       console.log(`✅ Created: ${createdPackage.type}`);
@@ -1810,36 +2202,39 @@ async function main() {
     },
   ];
 
-  for (const user of users) {
-    const createdUser = await prisma.user.upsert({
-      where: { email: user.email },
-      update: {},
-      create: user,
-    });
-    console.log(`✅ User: ${createdUser.email}`);
-  }
+  // for (const user of users) {
+  //   const createdUser = await prisma.user.upsert({
+  //     where: { email: user.email },
+  //     update: {},
+  //     create: user,
+  //   });
+  //   console.log(`✅ User: ${createdUser.email}`);
+  // }
 
   // ==============================
   // SEED PACKAGES
   // ==============================
-  await seedPackages(websitePackagesData, "Website Development");
-  await seedPackages(socialMediaPackagesData, "Social Media Management");
-  await seedPackages(PTPackagesData, "PT");
-  await seedPackages(CVPackagesData, "CV");
-  await seedPackages(VirtualOfficePackagesData, "Virtual Office");
+  // await seedPackages(websitePackagesData, "Website Development");
+  // await seedPackages(socialMediaPackagesData, "Social Media Management");
+  // await seedPackages(PTPackagesData, "PT");
+  // await seedPackages(CVPackagesData, "CV");
+  // await seedPackages(VirtualOfficePackagesData, "Virtual Office");
   await seedPackages(KonsultanPajakPackagesData, "Konsultan Pajak");
-  await seedPackages(BadanUsahaPackagesData, "Badan Usaha");
-  await seedPackages(HakiPackagesData, "HAKI");
-  await seedPackages(goSpacePackagesData, "Go Space");
-  await seedPackages(AccountantPackagesData, "Jasa Akuntansi");
-  await seedPackages(servicePackagesData, "Layanan Izin & Sertifikasi");
+  // await seedPackages(BadanUsahaPackagesData, "Badan Usaha");
+  // await seedPackages(HakiPackagesData, "HAKI");
+  // await seedPackages(goSpacePackagesData, "Go Space");
+  // await seedPackages(AccountantPackagesData, "Jasa Akuntansi");
+  // await seedPackages(servicePackagesData, "Layanan Izin & Sertifikasi");
+
+  // await seedPackages(NIBCVPackage, "nambah NIB PT");
+  // await seedPackages(NIBPTPackage, "nambah NIB cv");
 
   // ==============================
   // SEED PACKAGE ↔ PROJECT RELATIONS (M to M)
   // ==============================
   console.log("\n🔗 Seeding PackageProject relations...");
 
-  const packageId = 3; 
+  const packageId = 3;
   const projectIds = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16];
 
   for (const projectId of projectIds) {
@@ -1875,5 +2270,3 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
-
-  // npx prisma db seed
