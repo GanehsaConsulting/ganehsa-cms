@@ -227,3 +227,13 @@ model PackageProject {
 
   @@id([packageId, projectId])
 }
+
+model Promo {
+  id            Int              @id @default(autoincrement())
+  url_dekstop   String
+  url_mobile    String
+  url           String
+  alt           String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
