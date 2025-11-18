@@ -46,8 +46,8 @@ export const navigationItems = {
         path: "/marketing",
         icon: <HiSpeakerphone />,
         subs: [
-          { name: "Promotional Banners", path: "/marketing" },
-          { name: "Popup Image", path: "/popup" },
+          { name: "Promotional Banners", path: "/marketing/promo-banner" },
+          // { name: "Popup Image", path: "/popup" },
         ]
       },
 

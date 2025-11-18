@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
 
+// Helper function to extract public ID from Cloudinary URL
+function getPublicIdFromUrl(url: string): string {
+  try {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    return filename.split('.')[0];
+  } catch (error) {
+    console.error('Error extracting public ID from URL:', url);
+    return '';
+  }
+}
+
 // PATCH - Update promo
 export async function PATCH(
   req: NextRequest,
@@ -28,14 +40,14 @@ export async function PATCH(
       );
     }
 
-    // Cek apakah promo ada
+    // Check if promo exists
     const existingPromo = await prisma.promo.findUnique({
       where: { id: promoId },
     });
 
     if (!existingPromo) {
       return NextResponse.json(
-        { success: false, message: "Promo tidak ditemukan" },
+        { success: false, message: "Promo not found" },
         { status: 404 }
       );
     }
@@ -49,13 +61,15 @@ export async function PATCH(
     let url_dekstop = existingPromo.url_dekstop;
     let url_mobile = existingPromo.url_mobile;
 
-    // Upload gambar desktop baru jika ada
+    // Upload new desktop image if provided
     if (desktopImage && desktopImage.size > 0) {
-      // Hapus gambar lama dari Cloudinary
-      const oldDesktopPublicId = existingPromo.url_dekstop.split("/").slice(-2).join("/").split(".")[0];
-      await cloudinary.uploader.destroy(`promos/desktop/${oldDesktopPublicId}`).catch(console.error);
+      // Delete old image from Cloudinary
+      const oldDesktopPublicId = getPublicIdFromUrl(existingPromo.url_dekstop);
+      if (oldDesktopPublicId) {
+        await cloudinary.uploader.destroy(`promos/desktop/${oldDesktopPublicId}`).catch(console.error);
+      }
 
-      // Upload gambar baru
+      // Upload new image
       const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
       const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
       
@@ -67,13 +81,15 @@ export async function PATCH(
       url_dekstop = desktopUpload.secure_url;
     }
 
-    // Upload gambar mobile baru jika ada
+    // Upload new mobile image if provided
     if (mobileImage && mobileImage.size > 0) {
-      // Hapus gambar lama dari Cloudinary
-      const oldMobilePublicId = existingPromo.url_mobile.split("/").slice(-2).join("/").split(".")[0];
-      await cloudinary.uploader.destroy(`promos/mobile/${oldMobilePublicId}`).catch(console.error);
+      // Delete old image from Cloudinary
+      const oldMobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
+      if (oldMobilePublicId) {
+        await cloudinary.uploader.destroy(`promos/mobile/${oldMobilePublicId}`).catch(console.error);
+      }
 
-      // Upload gambar baru
+      // Upload new image
       const mobileBuffer = Buffer.from(await mobileImage.arrayBuffer());
       const mobileBase64 = `data:${mobileImage.type};base64,${mobileBuffer.toString("base64")}`;
       
@@ -101,7 +117,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: "Promo berhasil diupdate",
+      message: "Promo updated successfully",
       data: updatedPromo,
     });
   } catch (err) {
@@ -114,7 +130,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Hapus promo
+// DELETE - Delete promo
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -138,28 +154,28 @@ export async function DELETE(
       );
     }
 
-    // Cek apakah promo ada
+    // Check if promo exists
     const existingPromo = await prisma.promo.findUnique({
       where: { id: promoId },
     });
 
     if (!existingPromo) {
       return NextResponse.json(
-        { success: false, message: "Promo tidak ditemukan" },
+        { success: false, message: "Promo not found" },
         { status: 404 }
       );
     }
 
-    // Hapus gambar dari Cloudinary
-    const desktopPublicId = existingPromo.url_dekstop.split("/").slice(-2).join("/").split(".")[0];
-    const mobilePublicId = existingPromo.url_mobile.split("/").slice(-2).join("/").split(".")[0];
+    // Delete images from Cloudinary
+    const desktopPublicId = getPublicIdFromUrl(existingPromo.url_dekstop);
+    const mobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
 
     await Promise.all([
-      cloudinary.uploader.destroy(`promos/desktop/${desktopPublicId}`).catch(console.error),
-      cloudinary.uploader.destroy(`promos/mobile/${mobilePublicId}`).catch(console.error),
+      desktopPublicId ? cloudinary.uploader.destroy(`promos/desktop/${desktopPublicId}`).catch(console.error) : Promise.resolve(),
+      mobilePublicId ? cloudinary.uploader.destroy(`promos/mobile/${mobilePublicId}`).catch(console.error) : Promise.resolve(),
     ]);
 
-    // Hapus dari database
+    // Delete from database
     await prisma.promo.delete({
       where: { id: promoId },
     });
@@ -169,7 +185,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Promo berhasil dihapus",
+      message: "Promo deleted successfully",
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "Unknown error";

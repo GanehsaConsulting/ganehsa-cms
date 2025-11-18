@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
 
-// GET - Ambil semua promo
+// GET - Get all promos
 export async function GET(req: NextRequest) {
   try {
     const promos = await prisma.promo.findMany({
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Buat promo baru dengan upload gambar ke Cloudinary
+// POST - Create new promo with Cloudinary upload
 export async function POST(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
@@ -44,18 +44,18 @@ export async function POST(req: NextRequest) {
     const url = formData.get("url") as string;
     const alt = formData.get("alt") as string;
 
-    // Validasi input
+    // Validation
     if (!desktopImage || !mobileImage || !url || !alt) {
       return NextResponse.json(
         {
           success: false,
-          message: "Desktop image, mobile image, URL, dan alt text harus diisi",
+          message: "Desktop image, mobile image, URL, and alt text are required",
         },
         { status: 400 }
       );
     }
 
-    // Upload gambar desktop ke Cloudinary
+    // Upload desktop image to Cloudinary
     const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
     const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
     
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       resource_type: "image",
     });
 
-    // Upload gambar mobile ke Cloudinary
+    // Upload mobile image to Cloudinary
     const mobileBuffer = Buffer.from(await mobileImage.arrayBuffer());
     const mobileBase64 = `data:${mobileImage.type};base64,${mobileBuffer.toString("base64")}`;
     
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       resource_type: "image",
     });
 
-    // Simpan ke database
+    // Save to database
     const promo = await prisma.promo.create({
       data: {
         url_dekstop: desktopUpload.secure_url,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Promo berhasil dibuat",
+        message: "Promo created successfully",
         data: promo,
       },
       { status: 201 }

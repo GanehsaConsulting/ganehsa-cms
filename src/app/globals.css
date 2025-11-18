@@ -4,6 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+button {
+  @apply cursor-pointer
+}
+
 @theme {
   /* Color */
   --color-mainColor: #441752;
