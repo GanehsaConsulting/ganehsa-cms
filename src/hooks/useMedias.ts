@@ -17,17 +17,23 @@ interface UseMediasReturn {
   setIsLoading: (loading: boolean) => void;
   medias: Medias[];
   setMedias: (medias: Medias[] | ((prev: Medias[]) => Medias[])) => void;
+  setLimit: (limit: number) => void; // Tambahan untuk mengubah limit
 }
 
-export function useMedias(): UseMediasReturn {
+interface UseMediasProps {
+  limit?: number; // Optional limit parameter
+}
+
+export function useMedias({ limit: initialLimit = 10 }: UseMediasProps = {}): UseMediasReturn {
   const [token, setToken] = useState<string | null>(null);
   const [medias, setMedias] = useState<Medias[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [limit, setLimit] = useState(initialLimit);
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
     totalPages: 0,
     currentPage: 1,
-    limit: 10,
+    limit: initialLimit,
   });
 
   // Get token from localStorage or your auth context
@@ -43,7 +49,7 @@ export function useMedias(): UseMediasReturn {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
+        limit: limit.toString(), // Gunakan limit dari state
         ...(search && { search }),
       });
 
@@ -73,7 +79,7 @@ export function useMedias(): UseMediasReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, limit]); // Tambahkan limit ke dependency array
 
   // Load medias on initial mount
   useEffect(() => {
@@ -90,5 +96,6 @@ export function useMedias(): UseMediasReturn {
     setIsLoading,
     medias,
     setMedias,
+    setLimit, // Export setLimit untuk mengubah limit
   };
 }

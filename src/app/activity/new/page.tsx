@@ -42,7 +42,7 @@ export default function AddNewActivity() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("00:00:00"); 
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const { getMedias, token, medias} = useMedias()
+  const { getMedias, token, medias, setLimit} = useMedias()
 
   // Handle select images - now using media IDs
   const handleSelectImages = (mediaId: number) => {
@@ -360,6 +360,7 @@ export default function AddNewActivity() {
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
                 onClick={() => {
                   getMedias();
+                  setLimit(100)
                   setShowMediaModal(true);
                 }}
               >

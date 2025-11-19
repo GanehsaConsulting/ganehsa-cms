@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useCategory } from "@/hooks/useCategory";
+import { useMedias } from "@/hooks/useMedias";
 
 // Dynamic Import - Jodit Editor
 const JoditEditor = dynamic(() => import("jodit-react"), {
@@ -63,46 +64,11 @@ export default function NewArticlePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Media State (hanya thumbnail)
-  const [medias, setMedias] = useState<Media[]>([]);
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const { dataCategories } = useCategory();
-
-  // Fetch media (hanya untuk thumbnail)
-  async function getMedias() {
-    const token = getToken();
-    if (!token) return;
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setMedias(data.data);
-      } else {
-        toast.error(data.message || "Gagal mengambil data media");
-      }
-    } catch (err) {
-      console.error("Error fetching media:", err);
-      toast.error("Gagal mengambil data media");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    // fetchDataCategory();
-    getMedias();
-  }, []);
+  const { getMedias, setLimit, medias } = useMedias()
+  
 
   // Auto generate slug from title
   const handleTitleChange = (value: string) => {
@@ -278,7 +244,11 @@ export default function NewArticlePage() {
             <Label className="text-white">Thumbnail</Label>
             <div
               className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
-              onClick={() => setShowMediaModal(true)}
+              onClick={() => {
+                getMedias()
+                setLimit(100)
+                setShowMediaModal(true)
+              }}
             >
               {thumbnailId ? (
                 <div className="relative w-full h-40">

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useCategory } from "@/hooks/useCategory";
 import { Medias } from "@/app/media-library/page";
+import { useMedias } from "@/hooks/useMedias";
 
 // Dynamic Import - Jodit Editor
 const JoditEditor = dynamic(() => import("jodit-react"), {
@@ -89,13 +90,19 @@ export default function EditArticlePage() {
   const [isFetching, setIsFetching] = useState(true);
   const [originalSlug, setOriginalSlug] = useState("");
 
-  // Media State
-  const [medias, setMedias] = useState<Medias[]>([]);
+  // Media State - PERBAIKAN: Simpan data thumbnail lengkap
   const [thumbnailId, setThumbnailId] = useState<number | null>(null);
+  const [thumbnailData, setThumbnailData] = useState<{
+    id: number;
+    url: string;
+    title: string | null;
+    alt: string | null;
+  } | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const { dataCategories } = useCategory();
+  const { getMedias, setLimit, medias } = useMedias({ limit: 100 });
 
-  // Fetch article data
+  // Fetch article data - PERBAIKAN: Simpan data thumbnail lengkap
   useEffect(() => {
     if (!articleSlug) {
       toast.error("Slug artikel tidak ditemukan");
@@ -137,12 +144,24 @@ export default function EditArticlePage() {
           setTitle(article.title);
           setSlug(article.slug);
           setOriginalSlug(article.slug);
-          setCategory(String(article.category.id)); // Gunakan category.id
+          setCategory(String(article.category.id));
           setContent(article.content);
           setStatus(article.status);
           setHighlight(article.highlight ? "active" : "inactive");
           setExcerpt(article.excerpt || "");
           setThumbnailId(article.thumbnailId);
+
+          // PERBAIKAN: Simpan data thumbnail lengkap, bukan hanya URL
+          if (article.thumbnail) {
+            setThumbnailData({
+              id: article.thumbnail.id,
+              url: article.thumbnail.url,
+              title: article.thumbnail.title,
+              alt: article.thumbnail.alt,
+            });
+          } else {
+            setThumbnailData(null);
+          }
 
           console.log("Form diisi dengan data:", {
             title: article.title,
@@ -150,6 +169,8 @@ export default function EditArticlePage() {
             category: article.category.id,
             status: article.status,
             highlight: article.highlight,
+            thumbnailId: article.thumbnailId,
+            thumbnailData: article.thumbnail,
           });
         } else {
           toast.error(data.message || "Gagal mengambil data artikel");
@@ -166,38 +187,6 @@ export default function EditArticlePage() {
 
     fetchArticleData();
   }, [articleSlug, router]);
-
-  // Fetch media untuk thumbnail selection
-  useEffect(() => {
-    getMedias();
-  }, []);
-
-  async function getMedias() {
-    const token = getToken();
-    if (!token) return;
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setMedias(data.data);
-      } else {
-        toast.error(data.message || "Gagal mengambil data media");
-      }
-    } catch (err) {
-      console.error("Error fetching media:", err);
-      toast.error("Gagal mengambil data media");
-    }
-  }
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -246,6 +235,7 @@ export default function EditArticlePage() {
         title,
         category,
         status,
+        thumbnailId,
       });
 
       const res = await fetch(
@@ -296,16 +286,32 @@ export default function EditArticlePage() {
     router.push("/article");
   };
 
-  const handleSelectThumbnail = (mediaId: number) => {
-    setThumbnailId(mediaId);
+  // PERBAIKAN: Handle select thumbnail dengan data lengkap
+  const handleSelectThumbnail = (media: Medias) => {
+    setThumbnailId(media.id);
+    setThumbnailData({
+      id: media.id,
+      url: media.url,
+      title: media.title,
+      alt: media.alt,
+    });
     setShowMediaModal(false);
     toast.success("Thumbnail dipilih!");
   };
 
+  // PERBAIKAN: Handle remove thumbnail dengan reset data lengkap
   const handleRemoveThumbnail = () => {
     setThumbnailId(null);
+    setThumbnailData(null);
     toast.success("Thumbnail dihapus!");
   };
+
+  // PERBAIKAN: Preload medias ketika modal dibuka
+  useEffect(() => {
+    if (showMediaModal) {
+      getMedias();
+    }
+  }, [showMediaModal, getMedias]);
 
   if (isFetching) {
     return (
@@ -400,11 +406,11 @@ export default function EditArticlePage() {
 
         {/* Right Column - Settings */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Thumbnail Picker */}
+          {/* Thumbnail Picker - PERBAIKAN: Gunakan thumbnailData langsung */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <Label className="text-white">Thumbnail</Label>
-              {thumbnailId && (
+              {thumbnailData && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -420,14 +426,11 @@ export default function EditArticlePage() {
               className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
               onClick={() => setShowMediaModal(true)}
             >
-              {thumbnailId ? (
+              {thumbnailData ? (
                 <div className="relative w-full h-40">
                   <Image
-                    src={
-                      medias.find((m) => m.id === thumbnailId)?.url ||
-                      "/placeholder.png"
-                    }
-                    alt="Thumbnail"
+                    src={thumbnailData.url}
+                    alt={thumbnailData.alt || "Thumbnail artikel"}
                     fill
                     className="object-cover"
                     onError={(e) => {
@@ -526,7 +529,7 @@ export default function EditArticlePage() {
         </div>
       </Wrapper>
 
-      {/* Media Selection Modal */}
+      {/* Media Selection Modal - PERBAIKAN: Gunakan handleSelectThumbnail dengan data lengkap */}
       {showMediaModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -549,7 +552,7 @@ export default function EditArticlePage() {
                           ? "border-primary ring-2 ring-primary/20"
                           : "border-gray-200 hover:border-gray-400"
                       }`}
-                      onClick={() => handleSelectThumbnail(media.id)}
+                      onClick={() => handleSelectThumbnail(media)}
                     >
                       <div className="w-full h-20 relative">
                         <Image

@@ -77,7 +77,7 @@ export default function EditActivityPage() {
   // Media State
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [open, setOpen] = useState(false);
-  const { medias, getMedias } = useMedias();
+  const { medias, getMedias, setLimit } = useMedias();
 
   // Activity data state
   const [activityData, setActivityData] = useState<Activity | null>(null);
@@ -559,6 +559,7 @@ export default function EditActivityPage() {
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
                 onClick={() => {
                   getMedias();
+                  setLimit(100)
                   setShowMediaModal(true);
                 }}
               >
