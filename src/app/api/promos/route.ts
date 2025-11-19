@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     const mobileImage = formData.get("mobile_image") as File;
     const url = formData.get("url") as string;
     const alt = formData.get("alt") as string;
+    const isPopup = formData.get("isPopup") as string;
 
     // Validation
     if (!desktopImage || !mobileImage || !url || !alt) {
@@ -76,10 +77,11 @@ export async function POST(req: NextRequest) {
     // Save to database
     const promo = await prisma.promo.create({
       data: {
-        url_dekstop: desktopUpload.secure_url,
+        url_desktop: desktopUpload.secure_url, // Fixed typo
         url_mobile: mobileUpload.secure_url,
         url,
         alt,
+        isPopup: isPopup === "true", // Convert string to boolean
       },
     });
 

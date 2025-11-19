@@ -53,32 +53,33 @@ export async function PATCH(
     }
 
     const formData = await req.formData();
-    const desktopImage = formData.get("desktop_image") as File | null;
+    const url_desktopImage = formData.get("url_desktop_image") as File | null;
     const mobileImage = formData.get("mobile_image") as File | null;
     const url = formData.get("url") as string | null;
     const alt = formData.get("alt") as string | null;
+    const isPopup = formData.get("isPopup") as string | null;
 
-    let url_dekstop = existingPromo.url_dekstop;
+    let url_desktop = existingPromo.url_desktop; // Fixed typo
     let url_mobile = existingPromo.url_mobile;
 
-    // Upload new desktop image if provided
-    if (desktopImage && desktopImage.size > 0) {
+    // Upload new url_desktop image if provided
+    if (url_desktopImage && url_desktopImage.size > 0) {
       // Delete old image from Cloudinary
-      const oldDesktopPublicId = getPublicIdFromUrl(existingPromo.url_dekstop);
-      if (oldDesktopPublicId) {
-        await cloudinary.uploader.destroy(`promos/desktop/${oldDesktopPublicId}`).catch(console.error);
+      const oldurl_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop); // Fixed typo
+      if (oldurl_desktopPublicId) {
+        await cloudinary.uploader.destroy(`promos/url_desktop/${oldurl_desktopPublicId}`).catch(console.error);
       }
 
       // Upload new image
-      const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
-      const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
+      const url_desktopBuffer = Buffer.from(await url_desktopImage.arrayBuffer());
+      const url_desktopBase64 = `data:${url_desktopImage.type};base64,${url_desktopBuffer.toString("base64")}`;
       
-      const desktopUpload = await cloudinary.uploader.upload(desktopBase64, {
-        folder: "promos/desktop",
+      const url_desktopUpload = await cloudinary.uploader.upload(url_desktopBase64, {
+        folder: "promos/url_desktop",
         resource_type: "image",
       });
 
-      url_dekstop = desktopUpload.secure_url;
+      url_desktop = url_desktopUpload.secure_url;
     }
 
     // Upload new mobile image if provided
@@ -101,15 +102,23 @@ export async function PATCH(
       url_mobile = mobileUpload.secure_url;
     }
 
+    // Prepare update data
+    const updateData: any = {
+      url_desktop, // Fixed typo
+      url_mobile,
+      ...(url && { url }),
+      ...(alt && { alt }),
+    };
+
+    // Add isPopup if provided
+    if (isPopup !== null) {
+      updateData.isPopup = isPopup === "true";
+    }
+
     // Update database
     const updatedPromo = await prisma.promo.update({
       where: { id: promoId },
-      data: {
-        url_dekstop,
-        url_mobile,
-        ...(url && { url }),
-        ...(alt && { alt }),
-      },
+      data: updateData,
     });
 
     revalidatePath("/admin/promos");
@@ -167,11 +176,11 @@ export async function DELETE(
     }
 
     // Delete images from Cloudinary
-    const desktopPublicId = getPublicIdFromUrl(existingPromo.url_dekstop);
+    const url_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop); // Fixed typo
     const mobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
 
     await Promise.all([
-      desktopPublicId ? cloudinary.uploader.destroy(`promos/desktop/${desktopPublicId}`).catch(console.error) : Promise.resolve(),
+      url_desktopPublicId ? cloudinary.uploader.destroy(`promos/url_desktop/${url_desktopPublicId}`).catch(console.error) : Promise.resolve(),
       mobilePublicId ? cloudinary.uploader.destroy(`promos/mobile/${mobilePublicId}`).catch(console.error) : Promise.resolve(),
     ]);
 

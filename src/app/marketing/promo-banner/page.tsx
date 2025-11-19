@@ -8,23 +8,32 @@ import { SiGoogleadsense } from "react-icons/si";
 import { Plus, Trash, X, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getToken } from "@/lib/helpers";
 import { usePromos } from "@/hooks/usePromos";
+import Image from "next/image";
+import { FiEdit } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
+import { RadioGroupField } from "@/components/radio-group-field";
+import { RiWhatsappLine } from "react-icons/ri";
 
 interface PromoBanner {
   id: number;
-  url_dekstop: string;
+  url_desktop: string; // Fixed typo
   url_mobile: string;
   url: string;
   alt: string;
+  isPopup: boolean; // Added isPopup
   createdAt: string;
 }
+
+const ISPOPUP_OPTIONS = [
+  { label: "Active", value: "active", color: "green" as const },
+  { label: "Inactive", value: "inactive", color: "gray" as const },
+];
 
 function PromoBannerPage() {
   const [currentBanner, setCurrentBanner] = useState<PromoBanner | null>(null);
   const [desktopFile, setDesktopFile] = useState<File | null>(null);
   const [mobileFile, setMobileFile] = useState<File | null>(null);
-  const token = getToken();
 
   const {
     dialogNew,
@@ -34,6 +43,8 @@ function PromoBannerPage() {
     setAlt,
     url,
     setUrl,
+    isPopup,
+    setIsPopup, // Added isPopup from hook
     desktopPreview,
     mobilePreview,
     handleDesktopUpload,
@@ -46,7 +57,6 @@ function PromoBannerPage() {
     handleCancel,
   } = usePromos();
 
-
   const resetForm = () => {
     setDesktopFile(null);
     setMobileFile(null);
@@ -54,6 +64,8 @@ function PromoBannerPage() {
     setUrl("");
     setCurrentBanner(null);
   };
+
+  const defaultLink = "https://api.whatsapp.com/send?phone=628887127000";
 
   return (
     <>
@@ -77,15 +89,24 @@ function PromoBannerPage() {
         )}
 
         {dialogNew && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleCancel}
-            className="flex items-center gap-1"
-            disabled={loading}
-          >
-            <X className="w-4 h-4" /> Close
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleCancel}
+              className="flex items-center gap-1"
+              disabled={loading}
+            >
+              <X className="w-4 h-4" /> Close
+            </Button>
+            <Button size="sm" onClick={handleSubmit} disabled={loading}>
+              {loading
+                ? "Saving..."
+                : editMode
+                ? "Update Banner"
+                : "Save Banner"}
+            </Button>
+          </div>
         )}
       </HeaderActions>
 
@@ -101,7 +122,7 @@ function PromoBannerPage() {
               {/* DESKTOP 16:9 */}
               <div className="space-y-2">
                 <p className="text-white/80 text-sm">Desktop (16:9)</p>
-                <label className="w-full h-40 border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
+                <label className="w-full h-40 relative border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
                   <input
                     type="file"
                     className="hidden"
@@ -109,10 +130,11 @@ function PromoBannerPage() {
                     onChange={handleDesktopUpload}
                   />
                   {desktopPreview ? (
-                    <img
+                    <Image
                       src={desktopPreview}
-                      className="w-full h-full object-cover rounded-lg"
                       alt="Desktop preview"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   ) : (
                     <span className="text-white/60 text-sm">Choose file</span>
@@ -130,7 +152,7 @@ function PromoBannerPage() {
                 <p className="text-white/80 text-sm">
                   Mobile (Rectangle / Square)
                 </p>
-                <label className="w-full h-40 border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
+                <label className="relative w-full h-40 border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
                   <input
                     type="file"
                     className="hidden"
@@ -138,10 +160,11 @@ function PromoBannerPage() {
                     onChange={handleMobileUpload}
                   />
                   {mobilePreview ? (
-                    <img
+                    <Image
                       src={mobilePreview}
-                      className="w-full h-full object-cover rounded-lg"
                       alt="Mobile preview"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   ) : (
                     <span className="text-white/60 text-sm">Choose file</span>
@@ -157,19 +180,32 @@ function PromoBannerPage() {
 
             <div className="space-y-2">
               <Label className="text-white">
-                URL<span className="text-red-500">*</span>
+                Link Tujuan<span className="text-red-500">*</span>
               </Label>
-              <Input
-                placeholder="ex: https://example.com/promo"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                required
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  placeholder="ex: https://example.com/promo"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  required
+                />
+                <Button
+                  onClick={() => {
+                    setUrl(defaultLink);
+                  }}
+                  className="text-sm bg-green-800"
+                >
+                  <span>
+                    <RiWhatsappLine />
+                  </span>
+                  <span>Use Default Link</span>
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-white">
-                Alt Text<span className="text-red-500">*</span>
+                Image Name<span className="text-red-500">*</span>
               </Label>
               <Input
                 placeholder="ex: summer-sale-banner"
@@ -179,7 +215,17 @@ function PromoBannerPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            {/* Radio Group untuk isPopup */}
+            <RadioGroupField
+              id="isPopup"
+              label="Jadikan Popup Image Ads"
+              value={isPopup}
+              onChange={setIsPopup}
+              options={ISPOPUP_OPTIONS}
+              disabled={loading}
+            />
+
+            {/* <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={handleCancel}
@@ -187,25 +233,19 @@ function PromoBannerPage() {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleSubmit}
-                className="bg-green-600 text-white"
-                disabled={loading}
-              >
+              <Button onClick={handleSubmit} disabled={loading}>
                 {loading
                   ? "Saving..."
                   : editMode
                   ? "Update Banner"
                   : "Save Banner"}
               </Button>
-            </div>
+            </div> */}
           </section>
         )}
 
         {/* GALLERY LIST */}
         <section className="bg-white/10 rounded-lg p-4 space-y-4">
-          {/* <h1 className="text-lg font-semibold text-white">Banner Gallery</h1> */}
-
           {loading && banners.length === 0 ? (
             <p className="text-white/50 text-sm">Loading banners...</p>
           ) : banners.length === 0 ? (
@@ -215,26 +255,32 @@ function PromoBannerPage() {
               {banners.map((banner) => (
                 <div
                   key={banner.id}
-                  className="relative bg-white/5 rounded-lg overflow-hidden border border-white/10 p-3"
+                  className="w-fit relative bg-white/5 rounded-lg overflow-hidden border border-white/10 p-3"
                 >
                   <div className="grid grid-cols-2 gap-3">
                     {/* Desktop */}
                     <div className="space-y-1">
-                      <img
-                        src={banner.url_dekstop}
-                        alt={banner.alt}
-                        className="w-full aspect-video object-cover rounded-md"
-                      />
+                      <div className="w-full aspect-video relative">
+                        <Image
+                          src={banner.url_desktop} // Fixed typo
+                          alt={banner.alt}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      </div>
                       <p className="text-xs text-white/60">Desktop</p>
                     </div>
 
                     {/* Mobile */}
                     <div className="space-y-1">
-                      <img
-                        src={banner.url_mobile}
-                        alt={banner.alt}
-                        className="w-full aspect-square object-cover rounded-md"
-                      />
+                      <div className="h-19 w-19 relative">
+                        <Image
+                          src={banner.url_mobile}
+                          alt={banner.alt}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      </div>
                       <p className="text-xs text-white/60">Mobile</p>
                     </div>
                   </div>
@@ -245,29 +291,41 @@ function PromoBannerPage() {
                       {banner.alt}
                     </p>
                     <p className="text-xs text-white/60 break-all">
-                      URL: {banner.url}
-                    </p>
-                    <p className="text-xs text-white/40">
-                      Created: {new Date(banner.createdAt).toLocaleDateString()}
+                      {banner.url.slice(0, 50) + "...."}
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    <button
-                      onClick={() => editBanner(banner)}
-                      className="p-1 bg-darkColor/80 hover:bg-darkColor/50 rounded-md transition"
-                      disabled={loading}
-                    >
-                      <Edit className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                      onClick={() => deleteBanner(banner.id)}
-                      className="p-1 bg-red-800/80 rounded-md hover:bg-red-500/80 transition"
-                      disabled={loading}
-                    >
-                      <Trash className="w-5 h-5 text-white" />
-                    </button>
+                  <div className="flex items-end justify-between">
+                    <div className="flex gap-1 mt-4">
+                      <button
+                        onClick={() => editBanner(banner)}
+                        className="p-2 bg-darkColor/50 hover:bg-darkColor/50 rounded-md transition"
+                        disabled={loading}
+                      >
+                        <FiEdit className="text-sm text-white" />
+                      </button>
+                      <button
+                        onClick={() => deleteBanner(banner.id)}
+                        className="p-2 bg-red-800/80 rounded-md hover:bg-red-500/80 transition"
+                        disabled={loading}
+                      >
+                        <FiTrash2 className="text-sm text-white" />
+                      </button>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <p className="text-xs text-white/40">
+                        Created:{" "}
+                        {new Date(banner.createdAt).toLocaleDateString()}
+                      </p>
+
+                      {/* Conditional badge untuk popup */}
+                      {banner.isPopup && (
+                        <div className="bg-yellow-500/30 drop-shadow-xl border-yellow-500 py-1 px-2 rounded-full text-xs">
+                          <p>popup</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

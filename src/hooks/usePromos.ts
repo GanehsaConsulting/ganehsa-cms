@@ -5,10 +5,11 @@ import { getToken } from "@/lib/helpers";
 
 export interface PromoBanner {
   id: number;
-  url_dekstop: string;
+  url_desktop: string; // Fixed typo
   url_mobile: string;
   url: string;
   alt: string;
+  isPopup: boolean; // Added isPopup
   createdAt: string;
 }
 
@@ -21,6 +22,7 @@ export function usePromos() {
 
   const [alt, setAlt] = useState("");
   const [url, setUrl] = useState("");
+  const [isPopup, setIsPopup] = useState("inactive"); // Added isPopup state
 
   const [desktopFile, setDesktopFile] = useState<File | null>(null);
   const [mobileFile, setMobileFile] = useState<File | null>(null);
@@ -81,6 +83,7 @@ export function usePromos() {
     setMobilePreview(null);
     setAlt("");
     setUrl("");
+    setIsPopup("inactive"); // Reset isPopup
     setCurrentBanner(null);
     setEditMode(false);
   };
@@ -109,6 +112,7 @@ export function usePromos() {
 
       formData.append("alt", alt);
       formData.append("url", url);
+      formData.append("isPopup", isPopup === "active" ? "true" : "false"); // Add isPopup
 
       const endpoint =
         editMode && currentBanner
@@ -173,7 +177,8 @@ export function usePromos() {
     setCurrentBanner(banner);
     setAlt(banner.alt);
     setUrl(banner.url);
-    setDesktopPreview(banner.url_dekstop);
+    setIsPopup(banner.isPopup ? "active" : "inactive"); // Set isPopup from banner data
+    setDesktopPreview(banner.url_desktop); // Fixed typo
     setMobilePreview(banner.url_mobile);
     setEditMode(true);
     setDialogNew(true);
@@ -194,6 +199,8 @@ export function usePromos() {
     setAlt,
     url,
     setUrl,
+    isPopup,
+    setIsPopup, // Export isPopup
 
     desktopFile,
     mobileFile,

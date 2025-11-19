@@ -230,10 +230,11 @@ model PackageProject {
 
 model Promo {
   id            Int              @id @default(autoincrement())
-  url_dekstop   String
+  url_desktop   String
   url_mobile    String
   url           String
   alt           String
+  isPopup       Boolean          @default(false)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
