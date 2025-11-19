@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 import { revalidatePath } from "next/cache";

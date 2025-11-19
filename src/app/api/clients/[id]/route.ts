@@ -1,5 +1,5 @@
 // app/api/testimonial/[id]/route.ts
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";

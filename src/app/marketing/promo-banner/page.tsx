@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Wrapper } from "@/components/wrapper";
 import { HeaderActions } from "@/components/header-actions";
 import { Button } from "@/components/ui/button";
 import { SiGoogleadsense } from "react-icons/si";
-import { Plus, Trash, X, Edit } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePromos } from "@/hooks/usePromos";
@@ -15,15 +14,15 @@ import { FiTrash2 } from "react-icons/fi";
 import { RadioGroupField } from "@/components/radio-group-field";
 import { RiWhatsappLine } from "react-icons/ri";
 
-interface PromoBanner {
-  id: number;
-  url_desktop: string; // Fixed typo
-  url_mobile: string;
-  url: string;
-  alt: string;
-  isPopup: boolean; // Added isPopup
-  createdAt: string;
-}
+// interface PromoBanner {
+//   id: number;
+//   url_desktop: string; // Fixed typo
+//   url_mobile: string;
+//   url: string;
+//   alt: string;
+//   isPopup: boolean; // Added isPopup
+//   createdAt: string;
+// }
 
 const ISPOPUP_OPTIONS = [
   { label: "Active", value: "active", color: "green" as const },
@@ -31,9 +30,9 @@ const ISPOPUP_OPTIONS = [
 ];
 
 function PromoBannerPage() {
-  const [currentBanner, setCurrentBanner] = useState<PromoBanner | null>(null);
-  const [desktopFile, setDesktopFile] = useState<File | null>(null);
-  const [mobileFile, setMobileFile] = useState<File | null>(null);
+  // const [_, setCurrentBanner] = useState<PromoBanner | null>(null);
+  // const [desktopFile] = useState<File | null>(null);
+  // const [mobileFile, setMobileFile] = useState<File | null>(null);
 
   const {
     dialogNew,
@@ -57,13 +56,13 @@ function PromoBannerPage() {
     handleCancel,
   } = usePromos();
 
-  const resetForm = () => {
-    setDesktopFile(null);
-    setMobileFile(null);
-    setAlt("");
-    setUrl("");
-    setCurrentBanner(null);
-  };
+  // const resetForm = () => {
+  //   setDesktopFile(null);
+  //   setMobileFile(null);
+  //   setAlt("");
+  //   setUrl("");
+  //   setCurrentBanner(null);
+  // };
 
   const defaultLink = "https://api.whatsapp.com/send?phone=628887127000";
 
@@ -140,7 +139,7 @@ function PromoBannerPage() {
                     <span className="text-white/60 text-sm">Choose file</span>
                   )}
                 </label>
-                {editMode && !desktopFile && (
+                {editMode && (
                   <p className="text-xs text-yellow-400">
                     Leave empty to keep current image
                   </p>
@@ -170,7 +169,7 @@ function PromoBannerPage() {
                     <span className="text-white/60 text-sm">Choose file</span>
                   )}
                 </label>
-                {editMode && !mobileFile && (
+                {editMode && (
                   <p className="text-xs text-yellow-400">
                     Leave empty to keep current image
                   </p>

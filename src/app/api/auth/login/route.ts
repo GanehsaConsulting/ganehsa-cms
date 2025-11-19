@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, $Enums } from "@prisma/client"; // pakai $Enums, bukan Role
+import { $Enums } from "@prisma/client"; // pakai $Enums, bukan Role
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "@/lib/prisma";

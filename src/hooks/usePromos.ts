@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getToken } from "@/lib/helpers";
 
 export interface PromoBanner {
   id: number;
-  url_desktop: string; // Fixed typo
+  url_desktop: string;
   url_mobile: string;
   url: string;
   alt: string;
-  isPopup: boolean; // Added isPopup
+  isPopup: boolean;
   createdAt: string;
 }
 
@@ -22,7 +22,7 @@ export function usePromos() {
 
   const [alt, setAlt] = useState("");
   const [url, setUrl] = useState("");
-  const [isPopup, setIsPopup] = useState("inactive"); // Added isPopup state
+  const [isPopup, setIsPopup] = useState("inactive");
 
   const [desktopFile, setDesktopFile] = useState<File | null>(null);
   const [mobileFile, setMobileFile] = useState<File | null>(null);
@@ -33,12 +33,10 @@ export function usePromos() {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (token) fetchBanners();
-  }, [token]);
-
   /** Fetch Data */
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
+    if (!token) return;
+    
     try {
       setLoading(true);
       const response = await fetch("/api/promos", {
@@ -55,7 +53,11 @@ export function usePromos() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   /** Upload desktop */
   const handleDesktopUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +85,7 @@ export function usePromos() {
     setMobilePreview(null);
     setAlt("");
     setUrl("");
-    setIsPopup("inactive"); // Reset isPopup
+    setIsPopup("inactive");
     setCurrentBanner(null);
     setEditMode(false);
   };
@@ -112,7 +114,7 @@ export function usePromos() {
 
       formData.append("alt", alt);
       formData.append("url", url);
-      formData.append("isPopup", isPopup === "active" ? "true" : "false"); // Add isPopup
+      formData.append("isPopup", isPopup === "active" ? "true" : "false");
 
       const endpoint =
         editMode && currentBanner
@@ -177,8 +179,8 @@ export function usePromos() {
     setCurrentBanner(banner);
     setAlt(banner.alt);
     setUrl(banner.url);
-    setIsPopup(banner.isPopup ? "active" : "inactive"); // Set isPopup from banner data
-    setDesktopPreview(banner.url_desktop); // Fixed typo
+    setIsPopup(banner.isPopup ? "active" : "inactive");
+    setDesktopPreview(banner.url_desktop);
     setMobilePreview(banner.url_mobile);
     setEditMode(true);
     setDialogNew(true);
@@ -200,7 +202,7 @@ export function usePromos() {
     url,
     setUrl,
     isPopup,
-    setIsPopup, // Export isPopup
+    setIsPopup,
 
     desktopFile,
     mobileFile,

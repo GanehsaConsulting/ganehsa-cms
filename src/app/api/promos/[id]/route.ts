@@ -10,10 +10,20 @@ function getPublicIdFromUrl(url: string): string {
     const parts = url.split('/');
     const filename = parts[parts.length - 1];
     return filename.split('.')[0];
-  } catch (error) {
-    console.error('Error extracting public ID from URL:', url);
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : "unknown error"
+    console.error('Error extracting public ID from URL:', errMsg);
     return '';
   }
+}
+
+// Type for promo update data
+interface PromoUpdateData {
+  url_desktop: string;
+  url_mobile: string;
+  url?: string;
+  alt?: string;
+  isPopup?: boolean;
 }
 
 // PATCH - Update promo
@@ -59,13 +69,13 @@ export async function PATCH(
     const alt = formData.get("alt") as string | null;
     const isPopup = formData.get("isPopup") as string | null;
 
-    let url_desktop = existingPromo.url_desktop; // Fixed typo
+    let url_desktop = existingPromo.url_desktop;
     let url_mobile = existingPromo.url_mobile;
 
     // Upload new url_desktop image if provided
     if (url_desktopImage && url_desktopImage.size > 0) {
       // Delete old image from Cloudinary
-      const oldurl_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop); // Fixed typo
+      const oldurl_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop);
       if (oldurl_desktopPublicId) {
         await cloudinary.uploader.destroy(`promos/url_desktop/${oldurl_desktopPublicId}`).catch(console.error);
       }
@@ -102,15 +112,19 @@ export async function PATCH(
       url_mobile = mobileUpload.secure_url;
     }
 
-    // Prepare update data
-    const updateData: any = {
-      url_desktop, // Fixed typo
+    // Prepare update data with proper typing
+    const updateData: PromoUpdateData = {
+      url_desktop,
       url_mobile,
-      ...(url && { url }),
-      ...(alt && { alt }),
     };
 
-    // Add isPopup if provided
+    // Add optional fields if provided
+    if (url) {
+      updateData.url = url;
+    }
+    if (alt) {
+      updateData.alt = alt;
+    }
     if (isPopup !== null) {
       updateData.isPopup = isPopup === "true";
     }
@@ -176,7 +190,7 @@ export async function DELETE(
     }
 
     // Delete images from Cloudinary
-    const url_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop); // Fixed typo
+    const url_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop);
     const mobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
 
     await Promise.all([

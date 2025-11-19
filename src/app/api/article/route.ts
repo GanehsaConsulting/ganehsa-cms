@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Prisma, PrismaClient, Status } from "@prisma/client";
+import { Prisma, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
