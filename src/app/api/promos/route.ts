@@ -39,49 +39,57 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData();
-    const desktopImage = formData.get("desktop_image") as File;
+    const desktopImage = formData.get("desktop_image") as File | null;
     const mobileImage = formData.get("mobile_image") as File;
     const url = formData.get("url") as string;
     const alt = formData.get("alt") as string;
     const isPopup = formData.get("isPopup") as string;
 
-    // Validation
-    if (!desktopImage || !mobileImage || !url || !alt) {
+    // Validation - hanya mobile image yang required
+    if (!mobileImage || !url || !alt) {
       return NextResponse.json(
         {
           success: false,
-          message: "Desktop image, mobile image, URL, and alt text are required",
+          message: "Mobile image, URL, and alt text are required",
         },
         { status: 400 }
       );
     }
 
-    // Upload desktop image to Cloudinary
-    const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
-    const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
-    
-    const desktopUpload = await cloudinary.uploader.upload(desktopBase64, {
-      folder: "promos/desktop",
-      resource_type: "image",
-    });
+    let desktopUrl = "";
+    let mobileUrl = "";
 
-    // Upload mobile image to Cloudinary
+    // Upload mobile image to Cloudinary (required)
     const mobileBuffer = Buffer.from(await mobileImage.arrayBuffer());
     const mobileBase64 = `data:${mobileImage.type};base64,${mobileBuffer.toString("base64")}`;
     
     const mobileUpload = await cloudinary.uploader.upload(mobileBase64, {
-      folder: "promos/mobile",
+      folder: "ganesha_cms_promos/mobile",
       resource_type: "image",
     });
+    mobileUrl = mobileUpload.secure_url;
+
+    // Upload desktop image to Cloudinary (optional)
+    if (desktopImage && desktopImage.size > 0) {
+      const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
+      const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
+      
+      const desktopUpload = await cloudinary.uploader.upload(desktopBase64, {
+        folder: "ganesha_cms_promos/desktop",
+        resource_type: "image",
+      });
+      desktopUrl = desktopUpload.secure_url;
+    }
+    // Jika tidak ada desktop image, biarkan kosong (tidak menggunakan mobile image)
 
     // Save to database
     const promo = await prisma.promo.create({
       data: {
-        url_desktop: desktopUpload.secure_url, // Fixed typo
-        url_mobile: mobileUpload.secure_url,
+        url_desktop: desktopUrl, // bisa string kosong jika tidak diupload
+        url_mobile: mobileUrl,
         url,
         alt,
-        isPopup: isPopup === "true", // Convert string to boolean
+        isPopup: isPopup === "true",
       },
     });
 

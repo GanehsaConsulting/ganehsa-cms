@@ -16,9 +16,14 @@ export interface PromoBanner {
 export function usePromos() {
   const token = getToken();
 
+  const [error, setError] = useState("");
   const [dialogNew, setDialogNew] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentBanner, setCurrentBanner] = useState<PromoBanner | null>(null);
+
+  // State untuk delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bannerToDelete, setBannerToDelete] = useState<PromoBanner | null>(null);
 
   const [alt, setAlt] = useState("");
   const [url, setUrl] = useState("");
@@ -39,17 +44,21 @@ export function usePromos() {
     
     try {
       setLoading(true);
+      setError("");
       const response = await fetch("/api/promos", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const result = await response.json();
 
-      if (result.success) setBanners(result.data);
-      else alert("Failed to fetch banners: " + result.message);
+      if (result.success) {
+        setBanners(result.data);
+      } else {
+        setError(result.message || "Failed to fetch banners");
+      }
     } catch (error) {
       console.error("Error fetching banners:", error);
-      alert("Error fetching banners");
+      setError("Error fetching banners");
     } finally {
       setLoading(false);
     }
@@ -88,29 +97,36 @@ export function usePromos() {
     setIsPopup("inactive");
     setCurrentBanner(null);
     setEditMode(false);
+    setError("");
   };
 
   /** Create / Update Banner */
   const handleSubmit = async () => {
-    if (!desktopFile && !editMode) {
-      alert("Upload desktop image!");
-      return;
-    }
+    // Validasi: hanya mobile image yang required
     if (!mobileFile && !editMode) {
-      alert("Upload mobile image!");
+      setError("Mobile image is required!");
       return;
     }
+    
     if (!alt.trim() || !url.trim()) {
-      alert("Alt text & URL harus diisi!");
+      setError("Alt text & URL harus diisi!");
       return;
     }
 
     try {
       setLoading(true);
+      setError("");
       const formData = new FormData();
 
-      if (desktopFile) formData.append("desktop_image", desktopFile);
-      if (mobileFile) formData.append("mobile_image", mobileFile);
+      // Desktop image optional - hanya append jika ada file baru
+      if (desktopFile) {
+        formData.append("desktop_image", desktopFile);
+      }
+      
+      // Mobile image required untuk create, optional untuk edit
+      if (mobileFile) {
+        formData.append("mobile_image", mobileFile);
+      }
 
       formData.append("alt", alt);
       formData.append("url", url);
@@ -135,13 +151,12 @@ export function usePromos() {
         await fetchBanners();
         resetForm();
         setDialogNew(false);
-        alert(`Banner ${editMode ? "updated" : "created"} successfully!`);
       } else {
-        alert(`Failed: ${result.message}`);
+        setError(result.message || `Failed to ${editMode ? "update" : "create"} banner`);
       }
     } catch (error) {
       console.error("Error submitting banner:", error);
-      alert("Error submitting banner");
+      setError("Error submitting banner");
     } finally {
       setLoading(false);
     }
@@ -149,10 +164,9 @@ export function usePromos() {
 
   /** Delete Banner */
   const deleteBanner = async (id: number) => {
-    if (!confirm("Delete this banner?")) return;
-
     try {
       setLoading(true);
+      setError("");
       const response = await fetch(`/api/promos/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -162,13 +176,14 @@ export function usePromos() {
 
       if (result.success) {
         await fetchBanners();
-        alert("Banner deleted successfully!");
+        setDeleteDialogOpen(false);
+        setBannerToDelete(null);
       } else {
-        alert("Failed to delete banner: " + result.message);
+        setError(result.message || "Failed to delete banner");
       }
     } catch (error) {
       console.error("Error deleting banner:", error);
-      alert("Error deleting banner");
+      setError("Error deleting banner");
     } finally {
       setLoading(false);
     }
@@ -184,6 +199,19 @@ export function usePromos() {
     setMobilePreview(banner.url_mobile);
     setEditMode(true);
     setDialogNew(true);
+    setError("");
+  };
+
+  /** Open Delete Confirmation Dialog */
+  const openDeleteDialog = (banner: PromoBanner) => {
+    setBannerToDelete(banner);
+    setDeleteDialogOpen(true);
+  };
+
+  /** Close Delete Confirmation Dialog */
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setBannerToDelete(null);
   };
 
   const handleCancel = () => {
@@ -196,7 +224,7 @@ export function usePromos() {
     setDialogNew,
     editMode,
     currentBanner,
-
+    error,
     alt,
     setAlt,
     url,
@@ -216,8 +244,15 @@ export function usePromos() {
     loading,
 
     handleSubmit,
-    deleteBanner,
+    deleteBanner: openDeleteDialog, // sekarang ini membuka dialog
+    confirmDelete: deleteBanner, // ini untuk eksekusi delete
     editBanner,
     handleCancel,
+
+    // Delete dialog state
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    bannerToDelete,
+    closeDeleteDialog,
   };
 }

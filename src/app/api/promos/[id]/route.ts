@@ -63,7 +63,7 @@ export async function PATCH(
     }
 
     const formData = await req.formData();
-    const url_desktopImage = formData.get("url_desktop_image") as File | null;
+    const desktopImage = formData.get("desktop_image") as File | null;
     const mobileImage = formData.get("mobile_image") as File | null;
     const url = formData.get("url") as string | null;
     const alt = formData.get("alt") as string | null;
@@ -72,32 +72,35 @@ export async function PATCH(
     let url_desktop = existingPromo.url_desktop;
     let url_mobile = existingPromo.url_mobile;
 
-    // Upload new url_desktop image if provided
-    if (url_desktopImage && url_desktopImage.size > 0) {
-      // Delete old image from Cloudinary
-      const oldurl_desktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop);
-      if (oldurl_desktopPublicId) {
-        await cloudinary.uploader.destroy(`promos/url_desktop/${oldurl_desktopPublicId}`).catch(console.error);
+    // Upload new desktop image if provided
+    if (desktopImage && desktopImage.size > 0) {
+      // Delete old image from Cloudinary jika ada
+      if (existingPromo.url_desktop) {
+        const oldDesktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop);
+        if (oldDesktopPublicId) {
+          await cloudinary.uploader.destroy(`ganesha_cms_promos/desktop/${oldDesktopPublicId}`).catch(console.error);
+        }
       }
 
       // Upload new image
-      const url_desktopBuffer = Buffer.from(await url_desktopImage.arrayBuffer());
-      const url_desktopBase64 = `data:${url_desktopImage.type};base64,${url_desktopBuffer.toString("base64")}`;
+      const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
+      const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
       
-      const url_desktopUpload = await cloudinary.uploader.upload(url_desktopBase64, {
-        folder: "promos/url_desktop",
+      const desktopUpload = await cloudinary.uploader.upload(desktopBase64, {
+        folder: "ganesha_cms_promos/desktop",
         resource_type: "image",
       });
 
-      url_desktop = url_desktopUpload.secure_url;
+      url_desktop = desktopUpload.secure_url;
     }
+    // Jika desktopImage tidak disediakan, biarkan url_desktop tetap (tidak diubah)
 
     // Upload new mobile image if provided
     if (mobileImage && mobileImage.size > 0) {
       // Delete old image from Cloudinary
       const oldMobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
       if (oldMobilePublicId) {
-        await cloudinary.uploader.destroy(`promos/mobile/${oldMobilePublicId}`).catch(console.error);
+        await cloudinary.uploader.destroy(`ganesha_cms_promos/mobile/${oldMobilePublicId}`).catch(console.error);
       }
 
       // Upload new image
@@ -105,7 +108,7 @@ export async function PATCH(
       const mobileBase64 = `data:${mobileImage.type};base64,${mobileBuffer.toString("base64")}`;
       
       const mobileUpload = await cloudinary.uploader.upload(mobileBase64, {
-        folder: "promos/mobile",
+        folder: "ganesha_cms_promos/mobile",
         resource_type: "image",
       });
 
@@ -113,7 +116,7 @@ export async function PATCH(
     }
 
     // Prepare update data with proper typing
-    const updateData: PromoUpdateData = {
+    const updateData: any = {
       url_desktop,
       url_mobile,
     };
@@ -194,8 +197,8 @@ export async function DELETE(
     const mobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
 
     await Promise.all([
-      url_desktopPublicId ? cloudinary.uploader.destroy(`promos/url_desktop/${url_desktopPublicId}`).catch(console.error) : Promise.resolve(),
-      mobilePublicId ? cloudinary.uploader.destroy(`promos/mobile/${mobilePublicId}`).catch(console.error) : Promise.resolve(),
+      url_desktopPublicId ? cloudinary.uploader.destroy(`ganesha_cms_promos/url_desktop/${url_desktopPublicId}`).catch(console.error) : Promise.resolve(),
+      mobilePublicId ? cloudinary.uploader.destroy(`ganesha_cms_promos/mobile/${mobilePublicId}`).catch(console.error) : Promise.resolve(),
     ]);
 
     // Delete from database

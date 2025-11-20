@@ -4,7 +4,7 @@ import { Wrapper } from "@/components/wrapper";
 import { HeaderActions } from "@/components/header-actions";
 import { Button } from "@/components/ui/button";
 import { SiGoogleadsense } from "react-icons/si";
-import { Plus, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePromos } from "@/hooks/usePromos";
@@ -13,16 +13,18 @@ import { FiEdit } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { RadioGroupField } from "@/components/radio-group-field";
 import { RiWhatsappLine } from "react-icons/ri";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
-// interface PromoBanner {
-//   id: number;
-//   url_desktop: string; // Fixed typo
-//   url_mobile: string;
-//   url: string;
-//   alt: string;
-//   isPopup: boolean; // Added isPopup
-//   createdAt: string;
-// }
+// Import Dialog components
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const ISPOPUP_OPTIONS = [
   { label: "Active", value: "active", color: "green" as const },
@@ -30,10 +32,6 @@ const ISPOPUP_OPTIONS = [
 ];
 
 function PromoBannerPage() {
-  // const [_, setCurrentBanner] = useState<PromoBanner | null>(null);
-  // const [desktopFile] = useState<File | null>(null);
-  // const [mobileFile, setMobileFile] = useState<File | null>(null);
-
   const {
     dialogNew,
     setDialogNew,
@@ -43,7 +41,7 @@ function PromoBannerPage() {
     url,
     setUrl,
     isPopup,
-    setIsPopup, // Added isPopup from hook
+    setIsPopup,
     desktopPreview,
     mobilePreview,
     handleDesktopUpload,
@@ -51,18 +49,23 @@ function PromoBannerPage() {
     banners,
     loading,
     handleSubmit,
-    deleteBanner,
+    deleteBanner, // sekarang ini untuk membuka dialog
+    confirmDelete, // untuk eksekusi delete
     editBanner,
     handleCancel,
+    error,
+    // Delete dialog state
+    deleteDialogOpen,
+    closeDeleteDialog,
+    bannerToDelete,
   } = usePromos();
 
-  // const resetForm = () => {
-  //   setDesktopFile(null);
-  //   setMobileFile(null);
-  //   setAlt("");
-  //   setUrl("");
-  //   setCurrentBanner(null);
-  // };
+  // Handle error dengan toast
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const defaultLink = "https://api.whatsapp.com/send?phone=628887127000";
 
@@ -118,9 +121,9 @@ function PromoBannerPage() {
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* DESKTOP 16:9 */}
+              {/* DESKTOP 16:9 - OPTIONAL */}
               <div className="space-y-2">
-                <p className="text-white/80 text-sm">Desktop (16:9)</p>
+                <p className="text-white/80 text-sm">Desktop (16:9) - Optional</p>
                 <label className="w-full h-40 relative border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
                   <input
                     type="file"
@@ -136,7 +139,7 @@ function PromoBannerPage() {
                       className="object-cover rounded-lg"
                     />
                   ) : (
-                    <span className="text-white/60 text-sm">Choose file</span>
+                    <span className="text-white/60 text-sm">Choose file (Optional)</span>
                   )}
                 </label>
                 {editMode && (
@@ -146,10 +149,10 @@ function PromoBannerPage() {
                 )}
               </div>
 
-              {/* MOBILE RECTANGLE */}
+              {/* MOBILE RECTANGLE - REQUIRED */}
               <div className="space-y-2">
                 <p className="text-white/80 text-sm">
-                  Mobile (Rectangle / Square)
+                  Mobile (Rectangle / Square)<span className="text-red-500">*</span>
                 </p>
                 <label className="relative w-full h-40 border border-dashed border-white/30 flex items-center justify-center rounded-lg cursor-pointer hover:bg-white/5 transition">
                   <input
@@ -157,6 +160,7 @@ function PromoBannerPage() {
                     className="hidden"
                     accept="image/*"
                     onChange={handleMobileUpload}
+                    required
                   />
                   {mobilePreview ? (
                     <Image
@@ -166,7 +170,7 @@ function PromoBannerPage() {
                       className="object-cover rounded-lg"
                     />
                   ) : (
-                    <span className="text-white/60 text-sm">Choose file</span>
+                    <span className="text-white/60 text-sm">Choose file (Required)</span>
                   )}
                 </label>
                 {editMode && (
@@ -223,115 +227,170 @@ function PromoBannerPage() {
               options={ISPOPUP_OPTIONS}
               disabled={loading}
             />
-
-            {/* <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
-                {loading
-                  ? "Saving..."
-                  : editMode
-                  ? "Update Banner"
-                  : "Save Banner"}
-              </Button>
-            </div> */}
           </section>
         )}
 
-        {/* GALLERY LIST */}
-        <section className="bg-white/10 rounded-lg p-4 space-y-4">
-          {loading && banners.length === 0 ? (
-            <p className="text-white/50 text-sm">Loading banners...</p>
+        {/* GALLERY LIST - TABLE VIEW */}
+        <section className="bg-white/10 rounded-lg p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-mainColor" />
+              <span className="ml-2 text-white/50">Loading banners...</span>
+            </div>
           ) : banners.length === 0 ? (
-            <p className="text-white/50 text-sm">No banners uploaded.</p>
+            <p className="text-center py-10 text-white/50">
+              No banners uploaded.
+            </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {banners.map((banner) => (
-                <div
-                  key={banner.id}
-                  className="w-fit relative bg-white/5 rounded-lg overflow-hidden border border-white/10 p-3"
-                >
-                  <div className="grid grid-cols-2 gap-3">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Desktop
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Mobile
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Name
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    URL
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Popup
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Created At
+                  </th>
+                  <th className="text-left text-sm font-medium text-white p-2">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {banners.map((banner) => (
+                  <tr
+                    key={banner.id}
+                    className="border-b border-white/10 hover:bg-white/5 transition"
+                  >
                     {/* Desktop */}
-                    <div className="space-y-1">
-                      <div className="w-full aspect-video relative">
-                        <Image
-                          src={banner.url_desktop} // Fixed typo
-                          alt={banner.alt}
-                          fill
-                          className="object-cover rounded-md"
-                        />
+                    <td className="p-2">
+                      <div className="w-32 aspect-video relative rounded-md overflow-hidden bg-neutral-800">
+                        {banner.url_desktop ? (
+                          <Image
+                            fill
+                            src={banner.url_desktop}
+                            alt={banner.alt}
+                            className="object-cover"
+                            sizes="128px"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-white/40 text-sm">
+                            No Image
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-white/60">Desktop</p>
-                    </div>
+                    </td>
 
                     {/* Mobile */}
-                    <div className="space-y-1">
-                      <div className="h-19 w-19 relative">
+                    <td className="p-2">
+                      <div className="w-20 h-20 relative rounded-md overflow-hidden bg-neutral-800">
                         <Image
+                          fill
                           src={banner.url_mobile}
                           alt={banner.alt}
-                          fill
-                          className="object-cover rounded-md"
+                          className="object-cover"
                         />
                       </div>
-                      <p className="text-xs text-white/60">Mobile</p>
-                    </div>
-                  </div>
+                    </td>
 
-                  {/* Banner Info */}
-                  <div className="mt-3 space-y-1">
-                    <p className="text-sm text-white font-medium">
+                    {/* Alt */}
+                    <td className="p-2 text-white text-sm font-medium">
                       {banner.alt}
-                    </p>
-                    <p className="text-xs text-white/60 break-all">
-                      {banner.url.slice(0, 50) + "...."}
-                    </p>
-                  </div>
+                    </td>
 
-                  {/* Actions */}
-                  <div className="flex items-end justify-between">
-                    <div className="flex gap-1 mt-4">
-                      <button
-                        onClick={() => editBanner(banner)}
-                        className="p-2 bg-darkColor/50 hover:bg-darkColor/50 rounded-md transition"
-                        disabled={loading}
-                      >
-                        <FiEdit className="text-sm text-white" />
-                      </button>
-                      <button
-                        onClick={() => deleteBanner(banner.id)}
-                        className="p-2 bg-red-800/80 rounded-md hover:bg-red-500/80 transition"
-                        disabled={loading}
-                      >
-                        <FiTrash2 className="text-sm text-white" />
-                      </button>
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <p className="text-xs text-white/40">
-                        Created:{" "}
-                        {new Date(banner.createdAt).toLocaleDateString()}
-                      </p>
+                    {/* URL */}
+                    <td className="p-2 text-white/60 text-xs max-w-[200px] break-all">
+                      {banner?.url.slice(0, 25) + "..."}
+                    </td>
 
-                      {/* Conditional badge untuk popup */}
-                      {banner.isPopup && (
-                        <div className="bg-yellow-500/30 drop-shadow-xl border-yellow-500 py-1 px-2 rounded-full text-xs">
-                          <p>popup</p>
-                        </div>
+                    {/* Popup Badge */}
+                    <td className="p-2">
+                      {banner.isPopup ? (
+                        <span className="px-2 py-1 text-xs bg-yellow-500/30 border border-yellow-500 rounded-full">
+                          Popup
+                        </span>
+                      ) : (
+                        <span className="text-white/40 text-xs">-</span>
                       )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </td>
+
+                    {/* Created At */}
+                    <td className="p-2 text-white/60 text-sm">
+                      {new Date(banner.createdAt).toLocaleDateString()}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="p-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => editBanner(banner)}
+                          disabled={loading}
+                        >
+                          <FiEdit className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:text-red-600"
+                          onClick={() => deleteBanner(banner)}
+                          disabled={loading}
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </section>
       </Wrapper>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={closeDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the banner "{bannerToDelete?.alt}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => bannerToDelete && confirmDelete(bannerToDelete.id)}
+              disabled={loading}
+            >
+              {loading ? "Deleting..." : "Delete Banner"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
