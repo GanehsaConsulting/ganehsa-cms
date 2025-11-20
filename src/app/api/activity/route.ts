@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search");
     const showTitleParam = searchParams.get("showTitle");
+    const isPromoParam = searchParams.get("isPromo")
     const statusParam = searchParams.get("status");
     const skip = (page - 1) * limit;
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
       desc,
       longDesc,
       date,
+      isPromo,
       showTitle,
       instaUrl,
       status,
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
       desc,
       longDesc,
       date,
+      isPromo: isPromo ?? false, 
       showTitle: showTitle ?? false,
       status: status ?? "DRAFT",
       author: {

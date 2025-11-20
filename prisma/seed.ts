@@ -287,6 +287,35 @@ const socialMediaPackagesData = [
 const PTPackagesData = [
   {
     serviceId: 1,
+    type: "PT PMA (Penanaman Modal Asing)",
+    highlight: true,
+    price: 8500000,
+    link: "https://api.whatsapp.com/send?phone=628887127000&text=Halo%20MinGans!%20Aku%20mau%20konsultasi%20terkait%20Pembuatan%20PT%20PMA%20nih!%20",
+    discount: 36,
+    features: [
+      { feature: "Free Konsultasi", status: true },
+      { feature: "Akta Pendirian Perusahaan", status: true },
+      { feature: "Surat Keputusan Kemenkumham", status: true },
+      { feature: "NPWP Badan", status: true },
+      { feature: "Surat Keterangan Terdaftar Pajak ( SKT )", status: true },
+      { feature: "Coretax Badan", status: true },
+      { feature: "Nomor Induk Berusaha ( NIB )", status: true },
+      { feature: "Pernyataan Mandiri OSS ( K3L dan  SPPL )", status: true },
+      {
+        feature: "KKKPR ( Konfirmasi Kesesuaian Kegiatan Pemanfaatan Ruang )",
+        status: true,
+      },
+      {
+        feature: "Sertifikat Standar ( Jika resiko KBLI Menengah Rendah )",
+        status: true,
+      },
+      { feature: "Hak Akses OSS", status: true },
+      { feature: "Free Stempel Nama Perusahaan", status: true },
+      { feature: "Free Template Laporan Keuangan", status: true },
+    ],
+  },
+  {
+    serviceId: 1,
     type: "PT DASAR",
     highlight: true,
     price: 4500000,
@@ -2216,10 +2245,10 @@ async function main() {
   // ==============================
   // await seedPackages(websitePackagesData, "Website Development");
   // await seedPackages(socialMediaPackagesData, "Social Media Management");
-  // await seedPackages(PTPackagesData, "PT");
+  await seedPackages(PTPackagesData, "PT");
   // await seedPackages(CVPackagesData, "CV");
   // await seedPackages(VirtualOfficePackagesData, "Virtual Office");
-  await seedPackages(KonsultanPajakPackagesData, "Konsultan Pajak");
+  // await seedPackages(KonsultanPajakPackagesData, "Konsultan Pajak");
   // await seedPackages(BadanUsahaPackagesData, "Badan Usaha");
   // await seedPackages(HakiPackagesData, "HAKI");
   // await seedPackages(goSpacePackagesData, "Go Space");

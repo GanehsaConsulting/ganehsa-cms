@@ -67,19 +67,20 @@ model Article {
 }
 
 model Activity {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   title     String
   desc      String
-  longDesc  String   @db.Text
+  longDesc  String      @db.Text
   date      String
-  showTitle   Boolean  @default(false)
+  showTitle   Boolean   @default(false)
   instaUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  status    Status   @default(DRAFT)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  status    Status      @default(DRAFT)
+  isPromo   Boolean     @default(false)
 
   authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User        @relation(fields: [authorId], references: [id])
 
   medias    ActivityMedia[]
 }
@@ -234,7 +235,6 @@ model Promo {
   url_mobile    String
   url           String
   alt           String
-  isPopup       Boolean          @default(false)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }

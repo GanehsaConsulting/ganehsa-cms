@@ -141,6 +141,7 @@ export async function PATCH(
       longDesc,
       date,
       showTitle,
+      isPromo,
       instaUrl,
       status,
       mediaIds,
@@ -154,6 +155,7 @@ export async function PATCH(
     if (longDesc !== undefined) updateData.longDesc = longDesc;
     if (date !== undefined) updateData.date = date;
     if (showTitle !== undefined) updateData.showTitle = showTitle;
+    if (isPromo !== undefined) updateData.isPromo = isPromo
     if (instaUrl !== undefined) updateData.instaUrl = instaUrl;
     if (status !== undefined) {
       if (!["DRAFT", "PUBLISH", "ARCHIVE"].includes(status)) {
