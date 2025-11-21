@@ -46,7 +46,6 @@ export async function PATCH(
     const mobileImage = formData.get("mobile_image") as File | null;
     const url = (formData.get("url") as string) || null;
     const alt = (formData.get("alt") as string) || null;
-    const isPopup = (formData.get("isPopup") as string) || null;
 
     let url_desktop = existingPromo.url_desktop;
     let url_mobile = existingPromo.url_mobile;
@@ -106,7 +105,6 @@ export async function PATCH(
       url_mobile: string;
       url?: string;
       alt?: string;
-      isPopup?: boolean;
     } = {
       url_desktop: url_desktop || existingPromo.url_desktop,
       url_mobile: url_mobile || existingPromo.url_mobile,
@@ -114,7 +112,6 @@ export async function PATCH(
 
     if (url !== null) updateData.url = url;
     if (alt !== null) updateData.alt = alt;
-    if (isPopup !== null) updateData.isPopup = isPopup === "true";
 
     // --- UPDATE DATABASE ---
     const updatedPromo = await prisma.promo.update({

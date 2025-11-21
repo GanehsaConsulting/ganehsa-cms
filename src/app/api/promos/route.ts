@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
     const mobileImage = formData.get("mobile_image") as File;
     const url = formData.get("url") as string;
     const alt = formData.get("alt") as string;
-    const isPopup = formData.get("isPopup") as string;
 
     // Validation - hanya mobile image yang required
     if (!mobileImage || !url || !alt) {

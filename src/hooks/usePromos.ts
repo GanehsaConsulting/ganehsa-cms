@@ -9,7 +9,7 @@ export interface PromoBanner {
   url_mobile: string;
   url: string;
   alt: string;
-  isPopup: boolean;
+  // isPopup: boolean;
   createdAt: string;
 }
 
@@ -27,7 +27,7 @@ export function usePromos() {
 
   const [alt, setAlt] = useState("");
   const [url, setUrl] = useState("");
-  const [isPopup, setIsPopup] = useState("inactive");
+  // const [isPopup, setIsPopup] = useState("inactive");
 
   const [desktopFile, setDesktopFile] = useState<File | null>(null);
   const [mobileFile, setMobileFile] = useState<File | null>(null);
@@ -94,7 +94,7 @@ export function usePromos() {
     setMobilePreview(null);
     setAlt("");
     setUrl("");
-    setIsPopup("inactive");
+    // setIsPopup("inactive");
     setCurrentBanner(null);
     setEditMode(false);
     setError("");
@@ -130,7 +130,7 @@ export function usePromos() {
 
       formData.append("alt", alt);
       formData.append("url", url);
-      formData.append("isPopup", isPopup === "active" ? "true" : "false");
+      // formData.append("isPopup", isPopup === "active" ? "true" : "false");
 
       const endpoint =
         editMode && currentBanner
@@ -194,7 +194,7 @@ export function usePromos() {
     setCurrentBanner(banner);
     setAlt(banner.alt);
     setUrl(banner.url);
-    setIsPopup(banner.isPopup ? "active" : "inactive");
+    // setIsPopup(banner.isPopup ? "active" : "inactive");
     setDesktopPreview(banner.url_desktop);
     setMobilePreview(banner.url_mobile);
     setEditMode(true);
@@ -229,8 +229,8 @@ export function usePromos() {
     setAlt,
     url,
     setUrl,
-    isPopup,
-    setIsPopup,
+    // isPopup,
+    // setIsPopup,
 
     desktopFile,
     mobileFile,

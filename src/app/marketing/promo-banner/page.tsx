@@ -26,10 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const ISPOPUP_OPTIONS = [
-  { label: "Active", value: "active", color: "green" as const },
-  { label: "Inactive", value: "inactive", color: "gray" as const },
-];
+// const ISPOPUP_OPTIONS = [
+//   { label: "Active", value: "active", color: "green" as const },
+//   { label: "Inactive", value: "inactive", color: "gray" as const },
+// ];
 
 function PromoBannerPage() {
   const {
@@ -40,8 +40,8 @@ function PromoBannerPage() {
     setAlt,
     url,
     setUrl,
-    isPopup,
-    setIsPopup,
+    // isPopup,
+    // setIsPopup,
     desktopPreview,
     mobilePreview,
     handleDesktopUpload,
@@ -219,14 +219,14 @@ function PromoBannerPage() {
             </div>
 
             {/* Radio Group untuk isPopup */}
-            <RadioGroupField
+            {/* <RadioGroupField
               id="isPopup"
               label="Jadikan Popup Image Ads"
               value={isPopup}
               onChange={setIsPopup}
               options={ISPOPUP_OPTIONS}
               disabled={loading}
-            />
+            /> */}
           </section>
         )}
 
@@ -317,7 +317,7 @@ function PromoBannerPage() {
                     </td>
 
                     {/* Popup Badge */}
-                    <td className="p-2">
+                    {/* <td className="p-2">
                       {banner.isPopup ? (
                         <span className="px-2 py-1 text-xs bg-yellow-500/30 border border-yellow-500 rounded-full">
                           Popup
@@ -325,7 +325,7 @@ function PromoBannerPage() {
                       ) : (
                         <span className="text-white/40 text-xs">-</span>
                       )}
-                    </td>
+                    </td> */}
 
                     {/* Created At */}
                     <td className="p-2 text-white/60 text-sm">
