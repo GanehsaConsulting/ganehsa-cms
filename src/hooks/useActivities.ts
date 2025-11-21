@@ -17,9 +17,10 @@ interface ActivityMediaItem {
 }
 
 export function useActivities() {
-  const showTitleArr = ["All", "Showing Title", "Not Showing Title"];
+  // Ganti showTitleArr dengan filterStatusArr yang lebih general
+  const filterStatusArr = ["All", "Showing Title", "Not Showing Title", "Activity", "Promo"];
   const pageLength = ["10", "20", "100"];
-  const [showTitleFilter, setShowTitleFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All"); // Ganti showTitleFilter dengan statusFilter
 
   const [isLoading, setIsLoading] = useState(false);
   const [activities, setActivities] = useState<TableActivity[]>([]);
@@ -38,7 +39,7 @@ export function useActivities() {
       page: number = 1,
       limit: number = 10,
       search: string = "",
-      showTitle: string = ""
+      status: string = "" // Ganti parameter showTitle dengan status
     ) => {
       if (!token) {
         toast.error("Token tidak ditemukan");
@@ -53,13 +54,17 @@ export function useActivities() {
           ...(search && { search }),
         });
 
-        // Add showTitle filter based on selection
-        if (showTitle === "Showing Title") {
+        // Update filter logic untuk handle status yang lebih general
+        if (status === "Showing Title") {
           params.append("showTitle", "true");
-        } else if (showTitle === "Not Showing Title") {
+        } else if (status === "Not Showing Title") {
           params.append("showTitle", "false");
+        } else if (status === "Activity") {
+          params.append("isPromo", "false");
+        } else if (status === "Promo") {
+          params.append("isPromo", "true");
         }
-        // If showTitle is "All", don't add any showTitle filter
+        // Jika status "All", tidak perlu tambah filter apapun
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/activity?${params}`,
@@ -111,16 +116,16 @@ export function useActivities() {
         page,
         limit,
         debouncedSearchQuery,
-        showTitleFilter
+        statusFilter // Ganti showTitleFilter dengan statusFilter
       );
     }
   }, [
     page,
     limit,
     debouncedSearchQuery,
-    showTitleFilter,
+    statusFilter, // Ganti showTitleFilter dengan statusFilter
     fetchActivities,
-    token, // Added token to dependencies
+    token,
   ]);
 
   return {
@@ -132,9 +137,9 @@ export function useActivities() {
     limit,
     setLimit,
     searchQuery,
-    showTitleArr,
-    showTitleFilter,
-    setShowTitleFilter,
+    filterStatusArr, // Ganti showTitleArr dengan filterStatusArr
+    statusFilter, // Ganti showTitleFilter dengan statusFilter
+    setStatusFilter, // Ganti setShowTitleFilter dengan setStatusFilter
     total,
     totalPages,
     pageLength,

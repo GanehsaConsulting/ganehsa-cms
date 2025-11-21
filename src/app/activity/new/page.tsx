@@ -22,10 +22,35 @@ import { toast } from "sonner";
 import { combineDateAndTime } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
 import Image from "next/image";
+import { MdInsertPhoto } from "react-icons/md";
+import { AiFillDollarCircle } from "react-icons/ai";
 
 const SHOW_TITLE = [
   { label: "active", value: "active", color: "green" as const },
   { label: "in active", value: "inActive", color: "gray" as const },
+];
+
+const PROMO_STATUS = [
+  {
+    label: (
+      <div className="flex items-center gap-1 font-semibold">
+        <AiFillDollarCircle />
+        <p>Promo</p>
+      </div>
+    ),
+    value: "promo",
+    color: "red" as const,
+  },
+  {
+    label: (
+      <div className="flex items-center gap-1 font-semibold">
+        <MdInsertPhoto />
+        <p>Activity</p>
+      </div>
+    ),
+    value: "activity",
+    color: "yellow" as const,
+  },
 ];
 
 export default function AddNewActivity() {
@@ -33,16 +58,18 @@ export default function AddNewActivity() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
+  const [activityType, setActivityType] = useState("activity");
   const [title, setTitle] = useState("");
   const [longDesc, setLongDesc] = useState("");
+  // const [isPromo, setIsPromo] = useState(false);
   const [showTitle, setshowTitle] = useState("inActive");
   const [instaUrl, setInstaUrl] = useState("");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState("00:00:00"); 
+  const [time, setTime] = useState("00:00:00");
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const { getMedias, token, medias, setLimit} = useMedias()
+  const { getMedias, token, medias, setLimit } = useMedias();
 
   // Handle select images - now using media IDs
   const handleSelectImages = (mediaId: number) => {
@@ -70,11 +97,6 @@ export default function AddNewActivity() {
       return;
     }
 
-    // if (!desc.trim()) {
-    //   toast.error("Description wajib diisi!");
-    //   return;
-    // }
-
     if (!longDesc.trim()) {
       toast.error("Long description wajib diisi!");
       return;
@@ -93,7 +115,9 @@ export default function AddNewActivity() {
     // Combine date and time
     const combinedDateTime = combineDateAndTime(date, time);
     if (!combinedDateTime) {
-      toast.error("Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!");
+      toast.error(
+        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!"
+      );
       return;
     }
 
@@ -107,15 +131,18 @@ export default function AddNewActivity() {
 
     setIsLoading(true);
     try {
+      const isPromoBoolean = activityType === "promo";
+
       const requestBody = {
         title: title.trim(),
         desc: longDesc.trim(),
         longDesc: longDesc.trim(),
-        date: combinedDateTime, // Use combined date and time
+        date: combinedDateTime,
         showTitle: showTitleBoolean,
+        isPromo: isPromoBoolean, // Gunakan boolean di sini
         instaUrl: instaUrl.trim(),
-        status: "DRAFT", // Default status as per endpoint
-        mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined, // Only include if media selected
+        status: "DRAFT",
+        mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined,
       };
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activity`, {
@@ -207,7 +234,7 @@ export default function AddNewActivity() {
           {/* Title */}
           <div className="space-y-3">
             <Label htmlFor="title" className="text-white">
-              Judul Activity *
+              {activityType == "promo" ? "Judul Promo *" : "Judul Activity *"}
             </Label>
             <Input
               id="title"
@@ -242,7 +269,7 @@ export default function AddNewActivity() {
                 onBlur={(newContent) => setLongDesc(newContent)}
                 onChange={() => {}}
                 config={{
-                  minHeight: 400
+                  minHeight: 400,
                 }}
                 ref={editor}
               />
@@ -310,9 +337,20 @@ export default function AddNewActivity() {
             disabled={isLoading}
           />
 
+          {/* Promo Status */}
+          <RadioGroupField
+            id="activityType"
+            label="Status"
+            value={activityType} // string - "activity" atau "promo"
+            onChange={setActivityType} // (value: string) => void
+            options={PROMO_STATUS}
+            disabled={isLoading}
+          />
+          
           <div className="space-y-3">
             <Label htmlFor="instaUrl" className="text-white">
-              Instagram URL {showTitle === "active" && "*"}
+              {activityType === "promo" ? "Link URL" : "Instagram URL"}{" "}
+              {showTitle === "active" && "*"}
             </Label>
             <Input
               id="instaUrl"
@@ -326,7 +364,9 @@ export default function AddNewActivity() {
 
           {/* Image Picker */}
           <div className="space-y-3">
-            <Label className="text-white">Gambar Activity</Label>
+            <Label className="text-white">
+              {activityType === "promo" ? "Promo" : "Activity"} Image
+            </Label>
             <div className="space-y-3">
               {/* Selected Images Preview */}
               {getSelectedMediaUrls().length > 0 && (
@@ -360,7 +400,7 @@ export default function AddNewActivity() {
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
                 onClick={() => {
                   getMedias();
-                  setLimit(100)
+                  setLimit(100);
                   setShowMediaModal(true);
                 }}
               >

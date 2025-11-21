@@ -22,10 +22,35 @@ import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
 import Image from "next/image"; // Added Image import
+import { AiFillDollarCircle } from "react-icons/ai";
+import { MdInsertPhoto } from "react-icons/md";
 
 const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
   { label: "Inactive", value: "inactive", color: "gray" as const },
+];
+
+const PROMO_STATUS = [
+  {
+    label: (
+      <div className="flex items-center gap-1 font-semibold">
+        <AiFillDollarCircle />
+        <p>Promo</p>
+      </div>
+    ),
+    value: "promo",
+    color: "red" as const,
+  },
+  {
+    label: (
+      <div className="flex items-center gap-1 font-semibold">
+        <MdInsertPhoto />
+        <p>Activity</p>
+      </div>
+    ),
+    value: "activity",
+    color: "yellow" as const,
+  },
 ];
 
 interface Activity {
@@ -35,6 +60,7 @@ interface Activity {
   longDesc: string;
   date: string;
   showTitle: boolean;
+  isPromo: boolean;
   instaUrl: string;
   status: string;
   createdAt: string;
@@ -65,12 +91,14 @@ export default function EditActivityPage() {
   const [isFetching, setIsFetching] = useState(true);
 
   // Form State
+  const [activityType, setActivityType] = useState("activity");
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("00:00:00");
   const [showTitle, setShowTitle] = useState("inactive");
+  // const [isPromo, setIsPromo] = useState(false);
   const [instaUrl, setInstaUrl] = useState("");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
 
@@ -138,6 +166,9 @@ export default function EditActivityPage() {
         setTitle(activity.title);
         setDesc(activity.desc);
         setLongDesc(activity.longDesc);
+
+        // PERBAIKAN: Convert boolean to proper radio button value
+        setActivityType(activity.isPromo ? "promo" : "activity"); // <-- Ini yang diperbaiki
 
         // Set date and time from existing activity date
         const activityDate = new Date(activity.date);
@@ -235,11 +266,14 @@ export default function EditActivityPage() {
 
     setIsLoading(true);
     try {
+      const isPromoBoolean = activityType === "promo";
+
       const requestBody = {
         title: title.trim(),
         desc: desc.trim(),
         longDesc: longDesc.trim(),
         date: combinedDateTime,
+        isPromo: isPromoBoolean,
         showTitle: showTitleBoolean,
         instaUrl: instaUrl.trim(),
         mediaIds: selectedMediaIds,
@@ -398,7 +432,7 @@ export default function EditActivityPage() {
           {/* Title */}
           <div className="space-y-3">
             <Label htmlFor="title" className="text-white">
-              Judul Activity *
+              Judul {activityType === "promo" ? "Promo" : "Activity"} *
             </Label>
             <Input
               id="title"
@@ -427,14 +461,14 @@ export default function EditActivityPage() {
 
           {/* Content Editor */}
           <div className="space-y-3">
-            <Label className="text-white">Long Description *</Label>
+            <Label className="text-white">Description *</Label>
             <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
               <JoditEditor
                 value={longDesc}
                 onBlur={(newContent) => setLongDesc(newContent)}
                 onChange={() => {}}
                 config={{
-                  minHeight: 400
+                  minHeight: 400,
                 }}
               />
             </div>
@@ -501,10 +535,20 @@ export default function EditActivityPage() {
             disabled={isLoading}
           />
 
+          {/* Promo Status */}
+          <RadioGroupField
+            id="activityType"
+            label="Status"
+            value={activityType} // string - "activity" atau "promo"
+            onChange={setActivityType} // (value: string) => void
+            options={PROMO_STATUS}
+            disabled={isLoading}
+          />
+
           {/* Instagram URL */}
           <div className="space-y-3">
             <Label htmlFor="instaUrl" className="text-white">
-              Instagram URL *
+              {activityType === "promo" ? "Link" : "Promo"} URL *
             </Label>
             <Input
               id="instaUrl"
@@ -518,7 +562,9 @@ export default function EditActivityPage() {
 
           {/* Image Picker */}
           <div className="space-y-3">
-            <Label className="text-white">Gambar Activity</Label>
+            <Label className="text-white">
+              {activityType === "promo" ? "Promo" : "Activity"} Image
+            </Label>
             <div className="space-y-3">
               {/* Selected Images Preview */}
               {getSelectedMediaUrls().length > 0 && (
@@ -559,7 +605,7 @@ export default function EditActivityPage() {
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
                 onClick={() => {
                   getMedias();
-                  setLimit(100)
+                  setLimit(100);
                   setShowMediaModal(true);
                 }}
               >

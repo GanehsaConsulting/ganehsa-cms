@@ -3,18 +3,9 @@ import { Prisma, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-// GET ACTIVITIES
+// GET API
 export async function GET(req: NextRequest) {
   try {
-    // const user = await verifyAuth(req);
-
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Unauthorized", data: [] },
-    //     { status: 401 }
-    //   );
-    // }
-
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -35,7 +26,12 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // ShowTitle filter
+    // Filter isPromo - ini yang digunakan untuk status "Activity" dan "Promo"
+    if (isPromoParam === "true"  || isPromoParam === "false"){
+      where.isPromo = isPromoParam === "true"
+    }
+
+    // ShowTitle filter - ini yang digunakan untuk status "Showing Title" dan "Not Showing Title"
     if (showTitleParam === "true" || showTitleParam === "false") {
       where.showTitle = showTitleParam === "true";
     }

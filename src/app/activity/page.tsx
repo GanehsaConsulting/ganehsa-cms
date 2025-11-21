@@ -19,12 +19,13 @@ import clsx from "clsx";
 import { useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
-import { MdOutlineLoop } from "react-icons/md";
+import { MdInsertPhoto, MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken } from "@/lib/helpers";
 import { useActivities } from "@/hooks/useActivities";
+import { AiFillDollarCircle } from "react-icons/ai";
 import Image from "next/image"; // Import Next.js Image component
 
 export interface TableActivity {
@@ -34,6 +35,7 @@ export interface TableActivity {
   longDesc: string;
   date: string;
   showTitle: boolean;
+  isPromo: boolean;
   instaUrl: string;
   medias: string[];
   status: string;
@@ -50,6 +52,23 @@ const activityColumns: Column<TableActivity>[] = [
   { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
   // { key: "desc", label: "Description", className: "min-w-[180px]" },
   { key: "longDesc", label: "Description", className: "min-w-[180px]" },
+  {
+    key: "isPromo",
+    label: "Status Image",
+    className: "w-[130px]",
+    render: (row) =>
+      row.isPromo ? (
+        <div className="flex items-center gap-1 font-semibold w-fit py-1 px-2 rounded-full text-red-700 dark:text-white/80 bg-red-200/20 ">
+          <AiFillDollarCircle/>
+          <p>Promo</p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 font-semibold w-fit py-1 px-2 rounded-full text-yellow-700 dark:text-white/80 bg-yellow-200/20 ">
+          <MdInsertPhoto />
+          <p>Activity</p>
+        </div>
+      ),
+  },
   {
     key: "date",
     label: "Date & Time",
@@ -105,7 +124,7 @@ const activityColumns: Column<TableActivity>[] = [
               onError={(e) => {
                 // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
+                target.style.display = "none";
               }}
             />
           </div>
@@ -120,6 +139,8 @@ const activityColumns: Column<TableActivity>[] = [
   },
 ];
 
+// ... imports tetap sama
+
 export default function ActivityPage() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
@@ -132,9 +153,9 @@ export default function ActivityPage() {
     limit,
     setLimit,
     searchQuery,
-    showTitleArr,
-    showTitleFilter,
-    setShowTitleFilter,
+    filterStatusArr, 
+    statusFilter, 
+    setStatusFilter, 
     total,
     totalPages,
     pageLength,
@@ -153,19 +174,20 @@ export default function ActivityPage() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleSearchSubmit();
     }
   };
 
   const handleRefresh = () => {
     if (token) {
-      fetchActivities(token, page, limit, searchQuery, showTitleFilter);
+      fetchActivities(token, page, limit, searchQuery, statusFilter); // Ganti showTitleFilter dengan statusFilter
     }
   };
 
-  const handleShowTitleFilter = (value: string) => {
-    setShowTitleFilter(value);
+  // Ganti handleShowTitleFilter dengan handleStatusFilter
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value); // Ganti setShowTitleFilter dengan setStatusFilter
     setPage(1);
   };
 
@@ -217,7 +239,7 @@ export default function ActivityPage() {
             page,
             limit,
             searchQuery,
-            showTitleFilter
+            statusFilter // Ganti showTitleFilter dengan statusFilter
           );
         }
       } else {
@@ -287,9 +309,9 @@ export default function ActivityPage() {
               <SelectComponent
                 label="Filter By"
                 placeholder="Filter By"
-                value={showTitleFilter}
-                onChange={handleShowTitleFilter}
-                options={showTitleArr.map((s) => ({ label: s, value: s }))}
+                value={statusFilter} // Ganti showTitleFilter dengan statusFilter
+                onChange={handleStatusFilter} // Ganti handleShowTitleFilter dengan handleStatusFilter
+                options={filterStatusArr.map((s) => ({ label: s, value: s }))} // Ganti showTitleArr dengan filterStatusArr
               />
             </div>
             <Button onClick={handleRefresh} disabled={isLoading}>
