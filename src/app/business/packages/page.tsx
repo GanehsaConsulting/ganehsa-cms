@@ -263,7 +263,7 @@ export default function PriceList() {
 
         // Set page ke 1 dan refresh data
         setPage(1);
-        window.location.reload
+        window.location.reload()
       } else {
         toast.error(data.message || "Gagal menghapus package");
       }

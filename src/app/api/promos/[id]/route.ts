@@ -3,29 +3,9 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
+import { getPublicIdFromUrl } from "@/lib/helpers";
 
-// Helper function to extract public ID from Cloudinary URL
-function getPublicIdFromUrl(url: string): string {
-  try {
-    const parts = url.split('/');
-    const filename = parts[parts.length - 1];
-    return filename.split('.')[0];
-  } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : "unknown error"
-    console.error('Error extracting public ID from URL:', errMsg);
-    return '';
-  }
-}
-
-// Type for promo update data
-interface PromoUpdateData {
-  url_desktop: string;
-  url_mobile: string;
-  url?: string;
-  alt?: string;
-  isPopup?: boolean;
-}
-
+// PATCH - Update promo
 // PATCH - Update promo
 export async function PATCH(
   req: NextRequest,
@@ -41,7 +21,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const promoId = parseInt(id);
+    const promoId = Number(id);
 
     if (isNaN(promoId)) {
       return NextResponse.json(
@@ -50,7 +30,6 @@ export async function PATCH(
       );
     }
 
-    // Check if promo exists
     const existingPromo = await prisma.promo.findUnique({
       where: { id: promoId },
     });
@@ -65,74 +44,79 @@ export async function PATCH(
     const formData = await req.formData();
     const desktopImage = formData.get("desktop_image") as File | null;
     const mobileImage = formData.get("mobile_image") as File | null;
-    const url = formData.get("url") as string | null;
-    const alt = formData.get("alt") as string | null;
-    const isPopup = formData.get("isPopup") as string | null;
+    const url = (formData.get("url") as string) || null;
+    const alt = (formData.get("alt") as string) || null;
+    const isPopup = (formData.get("isPopup") as string) || null;
 
     let url_desktop = existingPromo.url_desktop;
     let url_mobile = existingPromo.url_mobile;
 
-    // Upload new desktop image if provided
+    // --- DESKTOP IMAGE UPLOAD ---
     if (desktopImage && desktopImage.size > 0) {
-      // Delete old image from Cloudinary jika ada
       if (existingPromo.url_desktop) {
-        const oldDesktopPublicId = getPublicIdFromUrl(existingPromo.url_desktop);
-        if (oldDesktopPublicId) {
-          await cloudinary.uploader.destroy(`ganesha_cms_promos/desktop/${oldDesktopPublicId}`).catch(console.error);
+        const oldId = getPublicIdFromUrl(existingPromo.url_desktop);
+        if (oldId) {
+          await cloudinary.uploader
+            .destroy(`ganesha_cms_promos/desktop/${oldId}`)
+            .catch(console.error);
         }
       }
 
-      // Upload new image
-      const desktopBuffer = Buffer.from(await desktopImage.arrayBuffer());
-      const desktopBase64 = `data:${desktopImage.type};base64,${desktopBuffer.toString("base64")}`;
-      
-      const desktopUpload = await cloudinary.uploader.upload(desktopBase64, {
+      const buffer = Buffer.from(await desktopImage.arrayBuffer());
+      const base64 = `data:${desktopImage.type};base64,${buffer.toString(
+        "base64"
+      )}`;
+
+      const upload = await cloudinary.uploader.upload(base64, {
         folder: "ganesha_cms_promos/desktop",
         resource_type: "image",
       });
 
-      url_desktop = desktopUpload.secure_url;
+      url_desktop = upload.secure_url;
     }
-    // Jika desktopImage tidak disediakan, biarkan url_desktop tetap (tidak diubah)
 
-    // Upload new mobile image if provided
+    // --- MOBILE IMAGE UPLOAD ---
     if (mobileImage && mobileImage.size > 0) {
-      // Delete old image from Cloudinary
-      const oldMobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
-      if (oldMobilePublicId) {
-        await cloudinary.uploader.destroy(`ganesha_cms_promos/mobile/${oldMobilePublicId}`).catch(console.error);
+      if (existingPromo.url_mobile) {
+        const oldId = getPublicIdFromUrl(existingPromo.url_mobile);
+        if (oldId) {
+          await cloudinary.uploader
+            .destroy(`ganesha_cms_promos/mobile/${oldId}`)
+            .catch(console.error);
+        }
       }
 
-      // Upload new image
-      const mobileBuffer = Buffer.from(await mobileImage.arrayBuffer());
-      const mobileBase64 = `data:${mobileImage.type};base64,${mobileBuffer.toString("base64")}`;
-      
-      const mobileUpload = await cloudinary.uploader.upload(mobileBase64, {
+      const buffer = Buffer.from(await mobileImage.arrayBuffer());
+      const base64 = `data:${mobileImage.type};base64,${buffer.toString(
+        "base64"
+      )}`;
+
+      const upload = await cloudinary.uploader.upload(base64, {
         folder: "ganesha_cms_promos/mobile",
         resource_type: "image",
       });
 
-      url_mobile = mobileUpload.secure_url;
+      url_mobile = upload.secure_url;
     }
 
-    // Prepare update data with proper typing
-    const updateData: any = {
-      url_desktop,
-      url_mobile,
+    // --- UPDATE PAYLOAD ---
+    // Prisma expects ALL string fields (tidak boleh null)
+    const updateData: {
+      url_desktop: string;
+      url_mobile: string;
+      url?: string;
+      alt?: string;
+      isPopup?: boolean;
+    } = {
+      url_desktop: url_desktop || existingPromo.url_desktop,
+      url_mobile: url_mobile || existingPromo.url_mobile,
     };
 
-    // Add optional fields if provided
-    if (url) {
-      updateData.url = url;
-    }
-    if (alt) {
-      updateData.alt = alt;
-    }
-    if (isPopup !== null) {
-      updateData.isPopup = isPopup === "true";
-    }
+    if (url !== null) updateData.url = url;
+    if (alt !== null) updateData.alt = alt;
+    if (isPopup !== null) updateData.isPopup = isPopup === "true";
 
-    // Update database
+    // --- UPDATE DATABASE ---
     const updatedPromo = await prisma.promo.update({
       where: { id: promoId },
       data: updateData,
@@ -147,12 +131,10 @@ export async function PATCH(
       data: updatedPromo,
     });
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : "Unknown error";
-    console.error("❌ PATCH promo error:", errMsg);
-    return NextResponse.json(
-      { success: false, message: errMsg },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("❌ PATCH promo error:", message);
+
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
 
@@ -197,8 +179,16 @@ export async function DELETE(
     const mobilePublicId = getPublicIdFromUrl(existingPromo.url_mobile);
 
     await Promise.all([
-      url_desktopPublicId ? cloudinary.uploader.destroy(`ganesha_cms_promos/url_desktop/${url_desktopPublicId}`).catch(console.error) : Promise.resolve(),
-      mobilePublicId ? cloudinary.uploader.destroy(`ganesha_cms_promos/mobile/${mobilePublicId}`).catch(console.error) : Promise.resolve(),
+      url_desktopPublicId
+        ? cloudinary.uploader
+            .destroy(`ganesha_cms_promos/url_desktop/${url_desktopPublicId}`)
+            .catch(console.error)
+        : Promise.resolve(),
+      mobilePublicId
+        ? cloudinary.uploader
+            .destroy(`ganesha_cms_promos/mobile/${mobilePublicId}`)
+            .catch(console.error)
+        : Promise.resolve(),
     ]);
 
     // Delete from database

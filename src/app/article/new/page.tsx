@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
@@ -41,14 +41,6 @@ const HIGHLIGHT_OPTIONS = [
   { label: "Active", value: "active", color: "green" as const },
   { label: "Inactive", value: "inactive", color: "gray" as const },
 ];
-
-interface Media {
-  id: number;
-  url: string;
-  type: string;
-  title: string | null;
-  alt: string | null;
-}
 
 export default function NewArticlePage() {
   const router = useRouter();

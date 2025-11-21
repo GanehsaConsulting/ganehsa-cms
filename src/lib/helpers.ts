@@ -178,3 +178,17 @@ export async function processRequirements(packageId: number, requirements: strin
 
   console.log("✅ All requirements processed successfully");
 }
+
+
+// Helper function to extract public ID from Cloudinary URL
+export function getPublicIdFromUrl(url: string): string {
+  try {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    return filename.split('.')[0];
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : "unknown error"
+    console.error('Error extracting public ID from URL:', errMsg);
+    return '';
+  }
+}

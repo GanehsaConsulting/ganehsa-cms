@@ -369,7 +369,7 @@ function PromoBannerPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the banner "{bannerToDelete?.alt}"? 
+              Are you sure you want to delete the banner {bannerToDelete?.alt}? 
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>

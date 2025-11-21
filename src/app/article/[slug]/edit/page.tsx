@@ -100,7 +100,7 @@ export default function EditArticlePage() {
   } | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const { dataCategories } = useCategory();
-  const { getMedias, setLimit, medias } = useMedias({ limit: 100 });
+  const { getMedias, medias } = useMedias({ limit: 100 });
 
   // Fetch article data - PERBAIKAN: Simpan data thumbnail lengkap
   useEffect(() => {

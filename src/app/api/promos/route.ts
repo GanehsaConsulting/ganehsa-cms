@@ -89,7 +89,6 @@ export async function POST(req: NextRequest) {
         url_mobile: mobileUrl,
         url,
         alt,
-        isPopup: isPopup === "true",
       },
     });
 
