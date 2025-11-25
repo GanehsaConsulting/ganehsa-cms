@@ -12,6 +12,7 @@ type WrapperProps = {
     withHeader?: string;
     header?: ReactNode; // Tambahkan prop untuk header
     headerClassName?: string; // Custom class untuk header
+    useBaseClases?: boolean; // Custom class untuk header
 };
 
 export const Wrapper = ({
@@ -24,16 +25,26 @@ export const Wrapper = ({
     margin = "my-2 mr-2",
     withHeader = "h-[calc(100vh-5rem)]",
     header,
-    headerClassName = ""
+    headerClassName = "",
+    useBaseClases = true
 }: WrapperProps) => {
     const baseClasses = `
         ${margin} 
         bg-lightColor/15 dark:bg-darkColor/40
-        mb-2
         backdrop-blur-2xl
+        mb-2
         rounded-main 
         shadow-mainShadow
         border border-lightColor/15 dark:border-darkColor/20
+        relative
+    `;
+
+    const transparentClasses = `
+        ${margin} 
+        bg-transparent
+        mb-2
+        rounded-main 
+        shadow-mainShadow
         relative
     `;
 
@@ -49,7 +60,7 @@ export const Wrapper = ({
     // Jika ada header, pisahkan struktur
     if (header) {
         return (
-            <div className={`${baseClasses} ${layoutClasses} overflow-hidden ${className} ${withHeader}`}>
+            <div className={`${useBaseClases && baseClasses}  ${layoutClasses} overflow-hidden ${className} ${withHeader}`}>
                 {/* Header area - tidak scroll */}
                 <div className={`flex-shrink-0 ${headerClassName}`}>
                     {header}
@@ -65,7 +76,7 @@ export const Wrapper = ({
 
     // Struktur default tanpa header
     return (
-        <div className={`${baseClasses} ${layoutClasses} ${scrollClasses} ${padding} ${spacing} ${className} ${withHeader}`}>
+        <div className={`${useBaseClases ? baseClasses : transparentClasses } ${layoutClasses} ${scrollClasses} ${padding} ${spacing} ${className} ${withHeader}`}>
             {children}
         </div>
     );
