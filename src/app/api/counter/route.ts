@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { Prisma, Status } from "@prisma/client";
-import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET - ambil semua counter
@@ -33,14 +32,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAuth(req);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
 
     const body = await req.json();
     const { refId, type } = body;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectComponent } from "@/components/ui/select";
@@ -16,54 +16,37 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { formatDate, getToken } from "@/lib/helpers";
+import { formatDate } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
+import { useProjects, Project } from "@/hooks/useProjects";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { TablePackages } from "@/app/business/packages/page";
 
-interface Project {
-  id: number;
-  name: string;
-  companyName: string;
-  link: string;
-  preview: string;
-  previewPublicId?: string;
-  createdAt: string;
-  updatedAt: string;
-  packages: {
-    package: {
-      id: number;
-      type: string;
-      service: {
-        id: number;
-        name: string;
-      };
-    };
-  }[];
-}
-
 function WebProjectPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPackage, setSelectedPackage] = useState("");
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    totalPages: 0,
-    currentPage: 1,
-    limit: 10,
-  });
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // ✅ Use the fixed usePackages hook with serviceId=3
-  const { 
-    packages: websitePackages, 
+  // ✅ Use the useProjects hook with serviceId=3 for website projects
+  const {
+    projects,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    selectedPackage,
+    page,
+    setPage,
+    pagination,
+    deleteProject,
+    handleSubmitSearch,
+    handlePackageFilterChange,
+  } = useProjects({ serviceId: 3 });
+
+  // ✅ Use the usePackages hook with serviceId=3
+  const {
+    packages: websitePackages,
     isLoading: packagesLoading,
-    setServiceIdFilter 
+    setServiceIdFilter,
   } = usePackages();
 
   // Set serviceId filter to 3 when component mounts
@@ -71,109 +54,10 @@ function WebProjectPage() {
     setServiceIdFilter(3);
   }, [setServiceIdFilter]);
 
-  // Fixed fetchProjects function
-  const fetchProjects = useCallback(async () => {
-    setLoading(true);
-    try {
-      const token = getToken();
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "10",
-        serviceId: "3", // Filter by serviceId=3
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedPackage && { packageId: selectedPackage }),
-      });
-
-      console.log("Fetching projects with params:", params.toString());
-
-      const res = await fetch(`/api/projects?${params}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-
-      const data = await res.json();
-
-      if (data.success) {
-        console.log("Fetched projects data:", data.data);
-
-        // Additional client-side filtering to ensure only website projects (service ID 3)
-        const filteredProjects = data.data.filter((project: Project) =>
-          project.packages.some((pkg) => pkg.package.service.id === 3)
-        );
-
-        setProjects(filteredProjects);
-        setPagination(
-          data.pagination || {
-            total: filteredProjects.length,
-            totalPages: Math.ceil(filteredProjects.length / 10),
-            currentPage: page,
-            limit: 10,
-          }
-        );
-      } else {
-        throw new Error(data.message || "Failed to fetch projects");
-      }
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      toast.error("Failed to fetch projects");
-      setProjects([]);
-      setPagination({
-        total: 0,
-        totalPages: 0,
-        currentPage: 1,
-        limit: 10,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchTerm, selectedPackage]);
-
-  // Fetch projects when dependencies change
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
-  // Debounced search - trigger fetch when searchTerm changes after delay
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm !== "" || page === 1) {
-        fetchProjects();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, page, fetchProjects]);
-
-  const token = getToken();
-
   const handleDelete = async (project: Project) => {
-    try {
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success("Project deleted successfully");
-        setShowAlertDelete(false);
-        setSelectedProject(null);
-        fetchProjects();
-      } else {
-        toast.error(data.message || "Failed to delete project");
-      }
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error("Failed to delete project");
-    }
+    await deleteProject(project);
+    setShowAlertDelete(false);
+    setSelectedProject(null);
   };
 
   const getPackageLabels = (project: Project) => {
@@ -205,17 +89,6 @@ function WebProjectPage() {
         ))}
       </div>
     );
-  };
-
-  const handleSubmitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    // fetchProjects will be triggered by the useEffect
-  };
-
-  const handlePackageFilterChange = (value: string) => {
-    setSelectedPackage(value);
-    setPage(1);
   };
 
   return (
@@ -270,10 +143,9 @@ function WebProjectPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-20 text-neutral-400">
-            {searchTerm || selectedPackage 
-              ? "No website projects match your search criteria" 
-              : "No website projects found"
-            }
+            {searchTerm || selectedPackage
+              ? "No website projects match your search criteria"
+              : "No website projects found"}
           </div>
         ) : (
           <>

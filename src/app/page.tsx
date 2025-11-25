@@ -6,7 +6,7 @@ import { AiFillPicture } from "react-icons/ai";
 import { IoIosPricetags } from "react-icons/io";
 import { PiBookOpenTextFill } from "react-icons/pi";
 import { FaRegFolderOpen, FaRegImages } from "react-icons/fa6";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Bar } from "react-chartjs-2";
 import {
@@ -21,6 +21,10 @@ import {
 import { HiCursorClick } from "react-icons/hi";
 import { GiClick } from "react-icons/gi";
 import { LuCalendarDays } from "react-icons/lu";
+import { useArticles } from "@/hooks/useArticles";
+import { useActivities } from "@/hooks/useActivities";
+import { usePackages } from "@/hooks/usePackages";
+import { useProjects } from "@/hooks/useProjects";
 
 ChartJS.register(
   CategoryScale,
@@ -34,10 +38,29 @@ ChartJS.register(
 const bgImage =
   "https://i.pinimg.com/736x/52/60/48/52604891adadb505eb5592afe0e57497.jpg";
 
-const stats = [
+function Home() {
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const { articles } = useArticles()
+  const { activities, setLimit: limitActivity } = useActivities()
+  const { packages, setLimit: limitPackages } = usePackages()
+  const { projects: webProject } = useProjects({ serviceId: 3, initialLimit: 100 }) // web
+  const { projects: socmedProject } = useProjects({ serviceId: 7, initialLimit: 100 }) // sosmed
+
+  const totalProjects = webProject.length + socmedProject.length
+  
+  useEffect(() => {
+    
+    limitActivity(100)
+    limitPackages(100)
+  }, [activities, packages])
+
+  // console.log("ACTIVITIES AJG:", activities);
+  // console.log("PACKAGES AJG:", packages);
+
+  const stats = [
   {
     title: "Articles Data",
-    value: 17,
+    value: articles ? Number(articles.length) : 0,
     desc: "updated last 30 days",
     icon: <PiBookOpenTextFill />,
     stats: 8,
@@ -45,7 +68,7 @@ const stats = [
   },
   {
     title: "Activities Data",
-    value: 14,
+    value: activities ? Number(activities.length) : 0 ,
     desc: "updated last 30 days",
     icon: <AiFillPicture />,
     stats: 4,
@@ -53,7 +76,7 @@ const stats = [
   },
   {
     title: "Packages Data",
-    value: 43,
+    value: packages ? Number(packages.length) : 0 ,
     desc: "updated last 30 days",
     icon: <IoIosPricetags />,
     stats: 2,
@@ -61,16 +84,13 @@ const stats = [
   },
   {
     title: "Projects Data",
-    value: 24,
+    value: totalProjects,
     desc: "updated last 30 days",
     icon: <FaRegFolderOpen />,
     stats: 2,
     isIncrease: false,
   },
 ];
-
-function Home() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
 
   // 5 bulan terakhir
   const labels = ["July", "Aug", "sep", "oct", "dec"];
