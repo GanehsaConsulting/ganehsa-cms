@@ -25,6 +25,7 @@ import { useArticles } from "@/hooks/useArticles";
 import { useActivities } from "@/hooks/useActivities";
 import { usePackages } from "@/hooks/usePackages";
 import { useProjects } from "@/hooks/useProjects";
+import { useCounters } from "@/hooks/useCounters";
 
 ChartJS.register(
   CategoryScale,
@@ -40,57 +41,72 @@ const bgImage =
 
 function Home() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const { articles } = useArticles()
-  const { activities, setLimit: limitActivity } = useActivities()
-  const { packages, setLimit: limitPackages } = usePackages()
-  const { projects: webProject } = useProjects({ serviceId: 3, initialLimit: 100 }) // web
-  const { projects: socmedProject } = useProjects({ serviceId: 7, initialLimit: 100 }) // sosmed
+  const { articles, isLoading: loadingArticles } = useArticles();
+  const {
+    activities,
+    setLimit: limitActivity,
+    isLoading: loadingActivities,
+  } = useActivities();
+  const {
+    packages,
+    setLimit: limitPackages,
+    isLoading: loadingPackages,
+  } = usePackages();
+  const { projects: webProject, loading: loadingWeb } = useProjects({
+    serviceId: 3,
+    initialLimit: 100,
+  }); // web
+  const { projects: socmedProject, loading: loadingSocmed } = useProjects({
+    serviceId: 7,
+    initialLimit: 100,
+  }); // sosmed
 
-  const totalProjects = webProject.length + socmedProject.length
-  
+  const totalProjects = webProject.length + socmedProject.length;
+  const loadingProjects = loadingWeb || loadingSocmed;
+
   useEffect(() => {
-    
-    limitActivity(100)
-    limitPackages(100)
-  }, [activities, packages])
-
-  // console.log("ACTIVITIES AJG:", activities);
-  // console.log("PACKAGES AJG:", packages);
+    limitActivity(100);
+    limitPackages(100);
+  }, [activities, packages]);
 
   const stats = [
-  {
-    title: "Articles Data",
-    value: articles ? Number(articles.length) : 0,
-    desc: "updated last 30 days",
-    icon: <PiBookOpenTextFill />,
-    stats: 8,
-    isIncrease: true,
-  },
-  {
-    title: "Activities Data",
-    value: activities ? Number(activities.length) : 0 ,
-    desc: "updated last 30 days",
-    icon: <AiFillPicture />,
-    stats: 4,
-    isIncrease: true,
-  },
-  {
-    title: "Packages Data",
-    value: packages ? Number(packages.length) : 0 ,
-    desc: "updated last 30 days",
-    icon: <IoIosPricetags />,
-    stats: 2,
-    isIncrease: false,
-  },
-  {
-    title: "Projects Data",
-    value: totalProjects,
-    desc: "updated last 30 days",
-    icon: <FaRegFolderOpen />,
-    stats: 2,
-    isIncrease: false,
-  },
-];
+    {
+      title: "Articles Data",
+      value: articles ? Number(articles.length) : 0,
+      desc: "updated last 30 days",
+      icon: <PiBookOpenTextFill />,
+      stats: 8,
+      isIncrease: true,
+      loading: loadingArticles,
+    },
+    {
+      title: "Activities Data",
+      value: activities ? Number(activities.length) : 0,
+      desc: "updated last 30 days",
+      icon: <AiFillPicture />,
+      stats: 4,
+      isIncrease: true,
+      loading: loadingActivities,
+    },
+    {
+      title: "Packages Data",
+      value: packages ? Number(packages.length) : 0,
+      desc: "updated last 30 days",
+      icon: <IoIosPricetags />,
+      stats: 2,
+      isIncrease: false,
+      loading: loadingPackages,
+    },
+    {
+      title: "Projects Data",
+      value: totalProjects,
+      desc: "updated last 30 days",
+      icon: <FaRegFolderOpen />,
+      stats: 2,
+      isIncrease: false,
+      loading: loadingProjects,
+    },
+  ];
 
   // 5 bulan terakhir
   const labels = ["July", "Aug", "sep", "oct", "dec"];
@@ -115,7 +131,6 @@ function Home() {
           topRight: 5,
         },
       },
-      // insert similar in dataset object for making multi bar chart
     ],
   };
   const options = {
@@ -123,7 +138,6 @@ function Home() {
       y: {
         title: {
           display: false,
-          // text: "Y-axis Lable",
         },
         display: true,
         beginAtZero: true,
@@ -138,6 +152,20 @@ function Home() {
       },
     },
   };
+
+  const { counters, loading: loadingCounters } = useCounters();
+
+  // ARTICLE
+  const articleCounters = counters
+    ?.filter((c) => c.type === "ARTICLE")
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // ACTIVITY
+  const activityCounters = counters
+    ?.filter((c) => c.type === "ACTIVITY" || c.type === "PROMO")
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   return (
     <>
@@ -158,9 +186,16 @@ function Home() {
                 <div className="grid grid-cols-2">
                   <div className="flex flex-col gap-1">
                     <p className="text-neutral-400 text-xs">{item.title}</p>
-                    <p className="text-white font-bold text-4xl">
-                      {item.value}
-                    </p>
+                    {item.loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                        <p className="text-white text-sm">Loading...</p>
+                      </div>
+                    ) : (
+                      <p className="text-white font-bold text-4xl">
+                        {item.value}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex justify-end">
@@ -171,7 +206,16 @@ function Home() {
                 </div>
 
                 <div className="space-y-3 text-xs text-neutral-300 flex flex-col justify-end">
-                  <p className={`italic ${item.isIncrease === true ? "text-green-500" : "text-red-400" }`} >{item.isIncrease === true ? "(+)" : "(-)"} {item.stats} data from last month</p>
+                  <p
+                    className={`italic ${
+                      item.isIncrease === true
+                        ? "text-green-500"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {item.isIncrease === true ? "(+)" : "(-)"} {item.stats} data
+                    from last month
+                  </p>
                   <p className="text-[10px] italic">{item.desc}</p>
                 </div>
               </div>
@@ -201,21 +245,35 @@ function Home() {
                 <span>
                   <LuCalendarDays />
                 </span>
-                <span>December</span>
+                <span>last 3 month</span>
               </div>
             </div>
-            {/* list scrollable */}
-            <div className="bg-black/10 h-full rounded-third px-3 py-1">
-              <ul className="overflow-y-auto text-xs text-white">
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  1. Panduan Mudah Mengurus Izin Usaha UMKM
-                </li>
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  2. Tips Mengurus Izin Usaha dengan Biaya Yang Murah
-                </li>
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  3. Perbedaan PT dan CV Lengkap!
-                </li>
+            {/* list scrollable - FIXED */}
+            <div className="bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
+              <ul className="overflow-y-auto text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+                {loadingCounters || loadingArticles ? (
+                  <li className="flex items-center justify-center h-full gap-2 text-white/60">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
+                    <span>Loading articles data...</span>
+                  </li>
+                ) : articleCounters && articleCounters.length > 0 ? (
+                  articleCounters.map((item, index) => {
+                    const article = articles.find((a) => a.id === item.refId);
+                    return (
+                      <li
+                        key={item.refId}
+                        className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200"
+                      >
+                        {index + 1}. {article?.title?.slice(0, 40) + "....."} (
+                        {item.count})
+                      </li>
+                    );
+                  })
+                ) : (
+                  <li className="flex items-center justify-center h-full text-white/60">
+                    No clicked articles
+                  </li>
+                )}
               </ul>
             </div>
           </div>
@@ -233,21 +291,40 @@ function Home() {
                 <span>
                   <LuCalendarDays />
                 </span>
-                <span>December</span>
+                <span>last 3 month</span>
               </div>
             </div>
-            {/* list scrollable */}
-            <div className="bg-black/10 h-full rounded-third px-3 py-1">
-              <ul className="overflow-y-auto text-xs text-white">
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  1. Pendirian 44 CV Martabak Orins
-                </li>
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  2. Survei Virtual Office
-                </li>
-                <li className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20">
-                  3. Pendirian PT Gratis Virtual Office
-                </li>
+            {/* list scrollable - FIXED */}
+            <div className="bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
+              <ul className="overflow-y-auto text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+                {loadingCounters || loadingActivities ? (
+                  <li className="flex items-center justify-center h-full gap-2 text-white/60">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
+                    <span>Loading activities data...</span>
+                  </li>
+                ) : activityCounters && activityCounters.length > 0 ? (
+                  activityCounters.map((item, index) => {
+                    const activity = activities.find(
+                      (a) => a.id === item.refId
+                    );
+                    return (
+                      <li
+                        key={item.refId}
+                        className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200"
+                      >
+                        {index + 1}. {activity?.title?.slice(0, 35) + "....."} (
+                        {item.count}) -{" "}
+                        <span className="bg-black/20 dark:bg-white/10 py-1 px-2 rounded-full">
+                          {item.type.toLowerCase()}
+                        </span>
+                      </li>
+                    );
+                  })
+                ) : (
+                  <li className="flex items-center justify-center h-full text-white/60">
+                    No clicked activities
+                  </li>
+                )}
               </ul>
             </div>
           </div>
