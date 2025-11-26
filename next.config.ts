@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "**", // Allow all HTTPS domains
+      },
+      {
+        protocol: "http",
+        hostname: "**", // Allow all HTTP domains (if needed)
+      },
+      {
+        protocol: "https",
         hostname: "picsum.photos",
       },
       {
@@ -35,9 +43,13 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.pinimg.com",
       },
-       {
+      {
         protocol: "https",
         hostname: "i.pravatar.cc",
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com",
       },
     ],
   },

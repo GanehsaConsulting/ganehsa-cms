@@ -80,7 +80,7 @@ export const navigationItems = {
     contents: [
       {
         label: "Pengaturan",
-        path: "/pengaturan",
+        path: "/settings",
         icon: <HiCog />,
         subs: []
       },
