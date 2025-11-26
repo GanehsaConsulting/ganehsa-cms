@@ -3,41 +3,20 @@
 import { Wrapper } from "@/components/wrapper";
 import Image from "next/image";
 import { AiFillPicture } from "react-icons/ai";
-import { IoIosPricetags } from "react-icons/io";
+import { IoIosPricetags, IoMdImages } from "react-icons/io";
 import { PiBookOpenTextFill } from "react-icons/pi";
-import { FaRegFolderOpen, FaRegImages } from "react-icons/fa6";
+import { FaRegEye, FaRegFolderOpen, FaRegImages } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
 import { HiCursorClick } from "react-icons/hi";
 import { GiClick } from "react-icons/gi";
-import { LuCalendarDays } from "react-icons/lu";
 import { useArticles } from "@/hooks/useArticles";
 import { useActivities } from "@/hooks/useActivities";
 import { usePackages } from "@/hooks/usePackages";
 import { useProjects } from "@/hooks/useProjects";
 import { useCounters } from "@/hooks/useCounters";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const bgImage =
-  "https://i.pinimg.com/736x/52/60/48/52604891adadb505eb5592afe0e57497.jpg";
+import { useMedias } from "@/hooks/useMedias";
+import Link from "next/link";
 
 function Home() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -71,7 +50,7 @@ function Home() {
 
   const stats = [
     {
-      title: "Articles Data",
+      title: "Articles",
       value: articles ? Number(articles.length) : 0,
       desc: "updated last 30 days",
       icon: <PiBookOpenTextFill />,
@@ -80,7 +59,7 @@ function Home() {
       loading: loadingArticles,
     },
     {
-      title: "Activities Data",
+      title: "Activities",
       value: activities ? Number(activities.length) : 0,
       desc: "updated last 30 days",
       icon: <AiFillPicture />,
@@ -89,7 +68,7 @@ function Home() {
       loading: loadingActivities,
     },
     {
-      title: "Packages Data",
+      title: "Packages",
       value: packages ? Number(packages.length) : 0,
       desc: "updated last 30 days",
       icon: <IoIosPricetags />,
@@ -98,7 +77,7 @@ function Home() {
       loading: loadingPackages,
     },
     {
-      title: "Projects Data",
+      title: "Projects",
       value: totalProjects,
       desc: "updated last 30 days",
       icon: <FaRegFolderOpen />,
@@ -108,64 +87,31 @@ function Home() {
     },
   ];
 
-  // 5 bulan terakhir
-  const labels = ["July", "Aug", "sep", "oct", "dec"];
-  const datasets = [45, 67, 43, 89, 60];
-  const data = {
-    labels: labels,
-    datasets: [
-      {
-        // Title of Graph
-        label: "Grafik Akses Data",
-        data: datasets,
-        backgroundColor: [
-          "#C9CDCF",
-          "#C9CDCF",
-          "#C9CDCF",
-          "#C9CDCF",
-          "#441752",
-        ],
-        barPercentage: 1,
-        borderRadius: {
-          topLeft: 5,
-          topRight: 5,
-        },
-      },
-    ],
-  };
-  const options = {
-    scales: {
-      y: {
-        title: {
-          display: false,
-        },
-        display: true,
-        beginAtZero: true,
-        max: 100,
-      },
-      x: {
-        title: {
-          display: false,
-          text: "x-axis Lable",
-        },
-        display: true,
-      },
-    },
-  };
-
   const { counters, loading: loadingCounters } = useCounters();
 
   // ARTICLE
   const articleCounters = counters
     ?.filter((c) => c.type === "ARTICLE")
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .sort((a, b) => b.count - a.count);
+  // .slice(0, 6);
 
   // ACTIVITY
   const activityCounters = counters
     ?.filter((c) => c.type === "ACTIVITY" || c.type === "PROMO")
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .sort((a, b) => b.count - a.count);
+  // .slice(0, 6);
+
+  // MEDIA DISPLAY
+  const { medias } = useMedias();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!medias || medias.length === 0) return;
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % medias.length);
+    }, 5000); // 3 detik ganti
+    return () => clearInterval(interval);
+  }, [medias]);
 
   return (
     <>
@@ -186,6 +132,7 @@ function Home() {
                 <div className="grid grid-cols-2">
                   <div className="flex flex-col gap-1">
                     <p className="text-neutral-400 text-xs">{item.title}</p>
+                    <p className="text-neutral-400 text-xs">Data</p>
                     {item.loading ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
@@ -241,16 +188,17 @@ function Home() {
                 </span>
                 <span>Most Clicked Article</span>
               </div>
-              <div className="text-xs bg-mainColor/60 text-white font-semibold py-1 px-3 rounded-secondary flex items-center gap-2">
+              <div className="text-xs bg-mainColor/60 text-white font-semibold py-1 px-3 rounded-secondary flex items-center gap-2 cursor-pointer hover:bg-mainColor transition-all">
                 <span>
-                  <LuCalendarDays />
+                  <FaRegEye />
                 </span>
-                <span>last 3 month</span>
+                {/* <span>last 3 month</span> */}
+                <Link href={"/article"}>see page</Link>
               </div>
             </div>
-            {/* list scrollable - FIXED */}
-            <div className="bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
-              <ul className="overflow-y-auto text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+            {/* LIST SCROLLABLE */}
+            <div className="h-80 overflow-y-auto no-scrollbar bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
+              <ul className=" text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
                 {loadingCounters || loadingArticles ? (
                   <li className="flex items-center justify-center h-full gap-2 text-white/60">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
@@ -258,7 +206,7 @@ function Home() {
                   </li>
                 ) : articleCounters && articleCounters.length > 0 ? (
                   articleCounters.map((item, index) => {
-                    const article = articles.find((a) => a.id === item.refId);
+                    const article = articles?.find((a) => a.id === item.refId);
                     return (
                       <li
                         key={item.refId}
@@ -287,35 +235,42 @@ function Home() {
                 </span>
                 <span>Most Clicked Activity/Promo</span>
               </div>
-              <div className="text-xs bg-mainColor/60 text-white font-semibold py-1 px-3 rounded-secondary flex items-center gap-2">
+              <div className="text-xs bg-mainColor/60 text-white font-semibold py-1 px-3 rounded-secondary flex items-center gap-2 cursor-pointer hover:bg-mainColor transition-all">
                 <span>
-                  <LuCalendarDays />
+                  <FaRegEye />
                 </span>
-                <span>last 3 month</span>
+                {/* <span>last 3 month</span> */}
+                <Link href={"/activity"}>see page</Link>
               </div>
             </div>
-            {/* list scrollable - FIXED */}
-            <div className="bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
-              <ul className="overflow-y-auto text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+            {/* LIST SCROLLABLE */}
+            <div className=" bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
+              <ul className="h-80 overflow-y-auto no-scrollbar text-xs text-white scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
                 {loadingCounters || loadingActivities ? (
                   <li className="flex items-center justify-center h-full gap-2 text-white/60">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
                     <span>Loading activities data...</span>
                   </li>
                 ) : activityCounters && activityCounters.length > 0 ? (
-                  activityCounters.map((item, index) => {
+                  activityCounters?.map((item, index) => {
                     const activity = activities.find(
                       (a) => a.id === item.refId
                     );
                     return (
                       <li
                         key={item.refId}
-                        className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200"
+                        className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200 flex justify-between items-center"
                       >
-                        {index + 1}. {activity?.title?.slice(0, 35) + "....."} (
-                        {item.count}) -{" "}
-                        <span className="bg-black/20 dark:bg-white/10 py-1 px-2 rounded-full">
-                          {item.type.toLowerCase()}
+                        <span>
+                          {index + 1}.{" "}
+                          {activity?.title &&
+                            (activity.title.length > 30
+                              ? activity.title.slice(0, 30) + "....."
+                              : activity.title + ".....")}
+                          ({item.count})
+                        </span>
+                        <span className="text-white/70">
+                          {item.type?.toLowerCase()}
                         </span>
                       </li>
                     );
@@ -329,9 +284,33 @@ function Home() {
             </div>
           </div>
 
-          <div className=" col-span-3 bg-white/90 backdrop-blur-2xl rounded-main shadow-mainShadow border border-lightColor/15 dark:border-darkColor/20 flex items-center justify-center h-full w-full p-3 drop-shadow-2xl">
-            <div className="text-white w-full h-full rounded-xl flex justify-center items-center">
-              <Bar data={data} options={options} />
+          {/* MEDIA GALLERY PREVIEW */}
+          <div className="relative overflow-hidden col-span-3 bg-white/15 backdrop-blur-2xl rounded-main shadow-mainShadow border border-lightColor/15 dark:border-darkColor/20 flex items-center  h-45 w-full">
+            {medias && medias.length > 0 && (
+              <Image
+                key={medias[index].url} // supaya animasi jalan
+                src={medias[index].url}
+                alt="media display"
+                width={1000}
+                height={1000}
+                className="object-cover object-top w-full h-full rounded-main transition-all duration-700 ease-in-out"
+              />
+            )}
+            <div className="absolute bottom-0 w-full h-[70%] bg-gradient-to-t from-black/90 to-transparent"></div>
+            <div className="absolute bottom-0  px-3 pb-2 text-white">
+              <Link
+                href={"/media-library"}
+                className="text-xs italic text-neutral-300 hover:text-neutral-400"
+              >
+                click here to see more..
+              </Link>
+
+              <div className="flex items-center gap-2 font-semibold">
+                <span>
+                  <IoMdImages />
+                </span>
+                <span>Media Gallery</span>
+              </div>
             </div>
           </div>
         </section>

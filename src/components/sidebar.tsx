@@ -60,7 +60,6 @@ export const Sidebar = () => {
         }
 
         if (data) {
-          // console.log("user login:", data);
           setCurrentUser(data.user);
         }
       } catch (err) {
@@ -78,13 +77,12 @@ export const Sidebar = () => {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // atau sesuaikan key token kamu (misalnya "accessToken")
+    localStorage.removeItem("token");
     localStorage.removeItem("openSubmenus");
     toast.success("Berhasil logout");
     router.push("/login");
   };
 
-  // Function to check if a menu item should be active
   type NavigationSubItem = {
     path: string;
     name: string;
@@ -99,20 +97,16 @@ export const Sidebar = () => {
 
   const isMenuItemActive = (item: NavigationItem) => {
     if (!item.subs || item.subs.length === 0) {
-      // For simple menu items without submenu, use exact match
       return path === item.path;
     } else {
-      // For menu items with submenu, check if current path matches any submenu item exactly
       return item.subs.some((sub: NavigationSubItem) => path === sub.path);
     }
   };
 
-  // Function to check if a submenu item should be active
   const isSubmenuItemActive = (subPath: string) => {
     return path === subPath;
   };
 
-  // Get valid menu labels from navigationItems
   const getValidMenuLabels = () => {
     const validLabels: string[] = [];
     Object.values(navigationItems).forEach((section) => {
@@ -125,7 +119,6 @@ export const Sidebar = () => {
     return validLabels;
   };
 
-  // Clean localStorage from invalid menu entries
   const cleanLocalStorage = useCallback(() => {
     const validLabels = getValidMenuLabels();
     const storedSubmenus = localStorage.getItem("openSubmenus");
@@ -134,7 +127,6 @@ export const Sidebar = () => {
       const parsed = JSON.parse(storedSubmenus);
       const cleanedSubmenus: { [key: string]: boolean } = {};
 
-      // Only keep valid menu labels
       validLabels.forEach((label) => {
         cleanedSubmenus[label] = parsed[label] || false;
       });
@@ -159,13 +151,11 @@ export const Sidebar = () => {
   };
 
   useEffect(() => {
-    // Clean and load valid submenu states
     const cleanedSubmenus = cleanLocalStorage();
     setOpenSubmenus(cleanedSubmenus);
   }, [cleanLocalStorage]);
 
   useEffect(() => {
-    // Re-clean on path change if needed
     const cleanedSubmenus = cleanLocalStorage();
     setOpenSubmenus(cleanedSubmenus);
   }, [path, cleanLocalStorage]);
@@ -176,7 +166,7 @@ export const Sidebar = () => {
         noNavigation.includes(path) && "hidden"
       } sticky top-0 h-screen flex transition-all duration-300 z-40`}
     >
-      <div className="relative w-full grow m-2 rounded-main bg-lightColor/15 dark:bg-darkColor/40 border border-lightColor/15 dark:border-darkColor/15 backdrop-blur-2xl flex flex-col">
+      <div className="relative w-full grow m-2 rounded-main bg-lightColor/15 dark:bg-darkColor/40 border border-lightColor/15 dark:border-darkColor/15 backdrop-blur-2xl flex flex-col overflow-hidden">
         {/* Header/Logo - Fixed */}
         <div className="flex-shrink-0 bg-black/20 dark:bg-white/20 duration-300 rounded-secondary py-2 px-2 m-2 mb-0">
           <div
@@ -188,7 +178,7 @@ export const Sidebar = () => {
           >
             <TbBrandSnowflake className="group-hover:opacity-0 opacity-100 text-lightColor " />
             <div
-              className="absolute inset-0 group-hover:opacity-100 opacity-0 text-lightColor  cursor-pointer"
+              className="absolute inset-0 group-hover:opacity-100 opacity-0 text-lightColor cursor-pointer"
               onClick={toggleSidebar}
             >
               <IoChevronForwardOutline />
@@ -212,7 +202,7 @@ export const Sidebar = () => {
             {isExpanded && (
               <div
                 onClick={toggleSidebar}
-                className="text-lightColor w-8 h-8 flex items-center rotate-180 justify-center rounded-full hover:bg-mainColor/20 duration-300"
+                className="text-lightColor w-8 h-8 flex items-center rotate-180 justify-center rounded-full hover:bg-mainColor/20 duration-300 cursor-pointer"
               >
                 <IoChevronForwardOutline />
               </div>
@@ -220,9 +210,9 @@ export const Sidebar = () => {
           </div>
         </div>
 
-        {/* Scrollable Menu Area */}
+        {/* Scrollable Menu Area - Fixed height calculation */}
         <div
-          className={`${isExpanded && "overflow-y-auto no-scrollbar"} 
+          className={`${isExpanded ? "overflow-y-auto" : "overflow-y-auto"} no-scrollbar
                     ${
                       isExpanded &&
                       Object.values(openSubmenus).filter(Boolean).length > 1
@@ -230,7 +220,6 @@ export const Sidebar = () => {
                         : ""
                     }
                     flex-1 mx-2 my-2 py-2 rounded-secondary duration-300`}
-          style={{ height: "calc(100vh - 180px)" }}
         >
           {/* Navigation Sections */}
           {Object.entries(navigationItems).map(([key, section]) => (
@@ -309,7 +298,6 @@ export const Sidebar = () => {
                           </Link>
                         )
                       ) : (
-                        // Menu item with submenu
                         <>
                           <button
                             onClick={(e) => {
@@ -401,7 +389,7 @@ export const Sidebar = () => {
 
                           {/* Minimized Mode Dropdown */}
                           {item.subs.length > 0 && !isExpanded && (
-                            <ul className=" dropdown-content menu bg-lightColor dark:bg-darkColor rounded-secondary !z-[999] w-56 p-1 shadow-lg border border-neutral-200 dark:border-neutral-700">
+                            <ul className="dropdown-content menu bg-lightColor dark:bg-darkColor rounded-secondary !z-[999] w-56 p-1 shadow-lg border border-neutral-200 dark:border-neutral-700">
                               <li className="mb-2">
                                 <div className="px-3 py-2 bg-mainColor/20 border border-white/50 dark:border-neutral-500/50 rounded-lg capitalize font-bold text-sm text-darkColor dark:text-lightColor pointer-events-none">
                                   {item.label}
@@ -433,41 +421,32 @@ export const Sidebar = () => {
         </div>
 
         {/* Footer/Profile - Fixed */}
-        <div className="flex-shrink-0 pb-2 px-2 space-y-2">
+        <div className="flex-shrink-0 pb-2 px-2 space-y-2 ">
           <div
             className={`${
               isExpanded
-                ? "py-3 px-2 rounded-secondary "
-                : "flex items-center justify-center rounded-full aspect-square"
-            } bg-white/10 hover:bg-white/30 duration-300 mt-0`}
+                ? "py-3 px-2 rounded-secondary"
+                : "flex items-center justify-center rounded-full w-11 h-11 mx-auto"
+            } bg-white/10 hover:bg-white/30 duration-300 cursor-pointer`}
+            onClick={toggleSidebar}
           >
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={toggleSidebar}
-            >
-              {/* <Image
-                width={50}
-                height={50}
-                className="w-10 h-10 aspect-square object-cover rounded-full"
-                src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="Profile Photo"
-              /> */}
-              <div className="h-11 w-15 rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center">
-                <span className="font-bold uppercase">
+            <div className="flex items-center gap-3">
+              <div className={`${!isExpanded ? "h-11 w-11" : "h-11 w-11 flex-shrink-0"} rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center`}>
+                <span className="font-bold uppercase text-sm">
                   {currentUser?.name.split("").slice(0, 2).join("")}
                 </span>
               </div>
               {isExpanded && (
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <h2 className="text-white font-semibold text-sm">
+                <div className="flex items-center justify-between w-full overflow-hidden">
+                  <div className="overflow-hidden">
+                    <h2 className="text-white font-semibold text-sm truncate">
                       {loading ? "memuat..." : currentUser?.name}
                     </h2>
-                    <p className="text-white/70 text-xs">
+                    <p className="text-white/70 text-xs truncate">
                       {loading ? "memuat..." : currentUser?.role}
                     </p>
                   </div>
-                  <div className="text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300">
+                  <div className="text-white w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300">
                     <TbDotsVertical />
                   </div>
                 </div>
