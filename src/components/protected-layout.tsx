@@ -36,7 +36,7 @@ const ProtectedRoutes = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/whoAmI`, {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

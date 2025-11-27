@@ -97,12 +97,12 @@ export const navigationItems = {
         icon: <HiPhoto />,
         subs: []
       },
-      {
-        label: "Logout",
-        path: "/login",
-        icon: <LuLogOut />,
-        subs: []
-      }
+      // {
+      //   label: "Logout",
+      //   path: "/login",
+      //   icon: <LuLogOut />,
+      //   subs: []
+      // }
     ]
   }
 };

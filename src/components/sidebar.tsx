@@ -12,8 +12,18 @@ import { useSidebar } from "@/app/contexts/sidebar-context";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem, // Add this import
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { BsPersonFillGear } from "react-icons/bs";
+import { LuLogOut } from "react-icons/lu";
 
-interface UserLoggedIn {
+export interface UserLoggedIn {
   id: number;
   email: string;
   name: string;
@@ -40,7 +50,7 @@ export const Sidebar = () => {
 
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/whoAmI`,
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
           {
             method: "GET",
             headers: {
@@ -81,6 +91,12 @@ export const Sidebar = () => {
     localStorage.removeItem("openSubmenus");
     toast.success("Berhasil logout");
     router.push("/login");
+  };
+
+  const handleEditProfile = () => {
+    // Add your edit profile logic here
+    // toast.info("Fitur edit profile akan segera tersedia");
+    router.push("/settings");
   };
 
   type NavigationSubItem = {
@@ -212,7 +228,9 @@ export const Sidebar = () => {
 
         {/* Scrollable Menu Area - Fixed height calculation */}
         <div
-          className={`${isExpanded ? "overflow-y-auto" : "overflow-y-auto"} no-scrollbar
+          className={`${
+            isExpanded ? "overflow-y-auto" : "overflow-y-auto"
+          } no-scrollbar
                     ${
                       isExpanded &&
                       Object.values(openSubmenus).filter(Boolean).length > 1
@@ -431,7 +449,11 @@ export const Sidebar = () => {
             onClick={toggleSidebar}
           >
             <div className="flex items-center gap-3">
-              <div className={`${!isExpanded ? "h-11 w-11" : "h-11 w-11 flex-shrink-0"} rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center`}>
+              <div
+                className={`${
+                  !isExpanded ? "h-11 w-11" : "h-11 w-11 flex-shrink-0"
+                } rounded-full bg-gradient-to-tr from-darkColor to-mainColor text-white flex justify-center items-center`}
+              >
                 <span className="font-bold uppercase text-sm">
                   {currentUser?.name.split("").slice(0, 2).join("")}
                 </span>
@@ -446,9 +468,39 @@ export const Sidebar = () => {
                       {loading ? "memuat..." : currentUser?.role}
                     </p>
                   </div>
-                  <div className="text-white w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300">
-                    <TbDotsVertical />
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="text-white w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-mainColor/20 duration-300"
+                      >
+                        <TbDotsVertical />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-fit p-2" align="start">
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem
+                          onClick={handleEditProfile}
+                          className="cursor-pointer"
+                        >
+                          <span >
+                            <BsPersonFillGear className="text-white focus:text-neutral-700" />
+                          </span>
+                          <span>Edit Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleLogout}
+                          className="cursor-pointer"
+                          variant="destructive"
+                        >
+                          <span  >
+                            <LuLogOut className="text-red-400" />
+                          </span>
+                          <span className="font-semibold text-red-400 " >Logout</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
             </div>
