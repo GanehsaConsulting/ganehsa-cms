@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi";
 import { LuLogOut } from "react-icons/lu";
 import { HiPhoto } from "react-icons/hi2";
+import { MdBusinessCenter } from "react-icons/md";
 
 export const navigationItems = {
   menu: {
@@ -54,7 +55,7 @@ export const navigationItems = {
       {
         label: "Business Information",
         path: "/business",
-        icon: <HiCurrencyDollar />,
+        icon: <MdBusinessCenter  />,
         subs: [
           { name: "Packages", path: "/business/packages" },
           { name: "Services", path: "/business/services" },
