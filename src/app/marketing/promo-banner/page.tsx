@@ -11,7 +11,6 @@ import { usePromos } from "@/hooks/usePromos";
 import Image from "next/image";
 import { FiEdit } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
-import { RadioGroupField } from "@/components/radio-group-field";
 import { RiWhatsappLine } from "react-icons/ri";
 import { toast } from "sonner";
 import { useEffect } from "react";

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 // GET - ambil semua counter
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const counters = await prisma.counter.findMany({
       orderBy: { createdAt: "desc" },

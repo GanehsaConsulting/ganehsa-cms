@@ -1,13 +1,20 @@
-// app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
+
+interface UpdateUserData {
+  email: string;
+  name: string;
+  role: Role; // Use the Role enum type instead of string
+  password?: string;
+}
 
 // GET user by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -18,8 +25,11 @@ export async function GET(
       );
     }
 
+    const { id } = await params
+    const userIds = Number(id)
+
     const userData = await prisma.user.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: userIds },
       select: {
         id: true,
         email: true,
@@ -38,7 +48,7 @@ export async function GET(
         activities: {
           select: {
             id: true,
-            title: true, // Diperbaiki dari 'action' ke 'title'
+            title: true,
             desc: true,
             date: true,
             createdAt: true,
@@ -56,7 +66,7 @@ export async function GET(
         wallpaper: {
           select: {
             id: true,
-            name: true, // Diperbaiki dari 'title' ke 'name'
+            name: true,
             url: true,
             publicId: true,
           },
@@ -87,7 +97,7 @@ export async function GET(
 // UPDATE user
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -98,10 +108,13 @@ export async function PUT(
       );
     }
 
+    const { id } = await params
+    const userIds = Number(id)
+
     const { email, name, password, role } = await req.json();
 
     const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: userIds },
     });
 
     if (!existingUser) {
@@ -111,10 +124,11 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {
+    // Use proper typing with Role enum
+    const updateData: UpdateUserData = {
       email,
       name,
-      role,
+      role: role as Role, // Cast to Role enum type
     };
 
     if (password) {
@@ -122,7 +136,7 @@ export async function PUT(
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: parseInt(params.id) },
+      where: { id: userIds },
       data: updateData,
       select: {
         id: true,
@@ -151,7 +165,7 @@ export async function PUT(
 // DELETE user
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = verifyAuth(req);
@@ -162,8 +176,11 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params
+    const userIds = Number(id)
+
     const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: userIds },
     });
 
     if (!existingUser) {
@@ -174,7 +191,7 @@ export async function DELETE(
     }
 
     // Check if user is trying to delete themselves
-    if (Number(user.id) === Number(params.id)) { // Diperbaiki dari user.userId ke user.id
+    if (Number(user.id) === userIds) {
       return NextResponse.json(
         { success: false, message: "Cannot delete your own account" },
         { status: 400 }
@@ -182,26 +199,15 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: parseInt(params.id) },
+      where: { id: userIds },
     });
 
     return NextResponse.json({
       success: true,
       message: "User deleted successfully",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Error deleting user:", err);
-    
-    // Handle foreign key constraint errors
-    if (err.code === "P2003") {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: "Cannot delete user because they have related records. Please delete associated data first." 
-        },
-        { status: 400 }
-      );
-    }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },

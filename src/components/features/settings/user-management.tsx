@@ -5,13 +5,33 @@ import { toast } from "sonner";
 import { FaTrash, FaPlus, FaLock } from "react-icons/fa6";
 import { AiFillEdit } from "react-icons/ai";
 
+// Define proper types
+interface User {
+  id: number;
+  email: string;
+  name: string | null;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    articles: number;
+  };
+}
+
+interface FormData {
+  email: string;
+  name: string;
+  password: string;
+  role: string;
+}
+
 export const UserManagement = ({ token }: { token: string }) => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState<FormData>({
     email: "",
     name: "",
     password: "",
@@ -20,12 +40,9 @@ export const UserManagement = ({ token }: { token: string }) => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    setUnauthorized(false); // Reset unauthorized state
+    setUnauthorized(false); 
     
     try {
-    //   console.log("Fetching users with token:", token ? "Token exists" : "No token");
-    //   console.log("Token value:", token?.substring(0, 20) + "...");
-      
       const res = await fetch("/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -33,18 +50,12 @@ export const UserManagement = ({ token }: { token: string }) => {
         cache: 'no-store' 
       });
       
-    //   console.log("Response status:", res.status);
-    //   console.log("Response headers:", res.headers);
-      
-      // Parse response body
       const data = await res.json();
       console.log("Response data:", data);
       
-      // Check HTTP status code
       if (res.status === 401 || res.status === 403) {
         console.log("❌ Unauthorized - status", res.status);
         setUnauthorized(true);
-        // toast.error(data.message || "Unauthorized access");
         return;
       }
 
@@ -53,32 +64,26 @@ export const UserManagement = ({ token }: { token: string }) => {
         throw new Error(data.message || `HTTP error! status: ${res.status}`);
       }
 
-      // Check success flag
       if (data.success) {
         console.log("✅ Successfully fetched users:", data.data?.length || 0);
         setUsers(data.data || []);
         setUnauthorized(false);
       } else {
         console.log("❌ API returned success: false", data.message);
-        // Only set unauthorized for specific messages
         if (data.message?.toLowerCase().includes("unauthorized") || 
             data.message?.toLowerCase().includes("super admin")) {
           setUnauthorized(true);
         }
-        // toast.error(data.message || "Failed to fetch users");
       }
     } catch (err) {
       console.error("❌ Error in fetchUsers:", err);
       const errMsg = err instanceof Error ? err.message : "Unknown error";
       
-      // Don't automatically set unauthorized on network errors
       if (errMsg.toLowerCase().includes("unauthorized") || 
           errMsg.toLowerCase().includes("401") ||
           errMsg.toLowerCase().includes("403")) {
         setUnauthorized(true);
       }
-      
-    //   toast.error("Failed to fetch users: " + errMsg);
     } finally {
       setLoading(false);
     }
@@ -103,8 +108,8 @@ export const UserManagement = ({ token }: { token: string }) => {
 
       console.log("Submitting form to:", url, "Method:", method);
       
-      // Don't send empty password on edit
-      const submitData: any = { ...formData };
+      // Use proper typing instead of any
+      const submitData: Partial<FormData> = { ...formData };
       if (editingUser && !submitData.password) {
         delete submitData.password;
       }
@@ -152,12 +157,12 @@ export const UserManagement = ({ token }: { token: string }) => {
     }
   };
 
-  const handleEdit = (user: any) => {
+  const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
       email: user.email,
       name: user.name || "",
-      password: "", // Password dikosongkan saat edit
+      password: "",
       role: user.role,
     });
     setShowModal(true);
@@ -344,7 +349,7 @@ export const UserManagement = ({ token }: { token: string }) => {
           <h1 className="text-white/80 text-9xl font-bold opacity-20 mb-4">401</h1>
           <h2 className="text-3xl text-white/80 font-semibold mb-4">Unauthorized</h2>
           <p className="text-lightColor/70 mb-8">
-            This feature only works for "super admin" roles
+            This feature only works for <span className="italic bold" >super admin</span> roles
           </p>
         </div>
       )}

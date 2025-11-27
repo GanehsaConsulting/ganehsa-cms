@@ -140,7 +140,7 @@ export const BackgroundImage = () => {
         unoptimized // Disable Next.js image optimization to avoid external URL issues
         className=" object-cover"
         style={{ objectFit: "cover" }}
-        onError={(e) => {
+        onError={() => {
           console.error("Image failed to load:", bgSrc);
           // Fallback ke default jika gambar error
           setImageError(true);

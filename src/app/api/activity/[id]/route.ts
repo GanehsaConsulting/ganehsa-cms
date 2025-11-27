@@ -1,5 +1,3 @@
-// File: app/api/activity/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";

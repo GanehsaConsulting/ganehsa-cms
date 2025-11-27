@@ -5,7 +5,7 @@ import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
 
 // GET - Get all promos
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const promos = await prisma.promo.findMany({
       orderBy: {
