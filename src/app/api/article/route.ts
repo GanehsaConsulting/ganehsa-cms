@@ -2,19 +2,23 @@ import { NextResponse } from "next/server";
 import { Prisma, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getArticlesCached } from "@/lib/cache/article.cache";
+
+export const revalidate = 60;
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
-    const sort = searchParams.get("sort") || "DESC";
+    const rawSort = (searchParams.get("sort") || "DESC").toLowerCase();
+    const sort: "asc" | "desc" = rawSort === "asc" ? "asc" : "desc";
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
     const where: Prisma.ArticleWhereInput = {};
 
     if (search) {
@@ -28,23 +32,16 @@ export async function GET(request: Request) {
       where.status = status.toUpperCase() as Status;
     }
 
-    // Fetch articles with pagination
-    const articles = await prisma.article.findMany({
+    const params = {
       where,
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        category: { select: { id: true, name: true, slug: true } },
-        thumbnail: { select: { id: true, url: true, title: true, alt: true } },
-      },
-      orderBy: {
-        createdAt: sort.toLowerCase() === "asc" ? "asc" : "desc",
-      },
       skip,
-      take: limit,
-    });
+      limit,
+      sort
+    };
 
-    const totalItems = await prisma.article.count({ where });
-    const totalPages = Math.ceil(totalItems / limit);
+    const { articles, totalItems, totalPages } = await getArticlesCached(
+      params
+    );
 
     return NextResponse.json({
       success: true,
@@ -58,6 +55,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching articles:", error);
+
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

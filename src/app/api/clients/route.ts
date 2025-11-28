@@ -5,6 +5,61 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
+import { getCachedClients } from "@/lib/cache/clients.cache";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const search = searchParams.get("search") || "";
+    const serviceFilter = searchParams.get("serviceFilter") || "All Services";
+
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.TestimonialWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { clientName: { contains: search, mode: "insensitive" } },
+        { companyName: { contains: search, mode: "insensitive" } },
+        { clientReview: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (serviceFilter !== "All Services") {
+      where.serviceId = parseInt(serviceFilter);
+    }
+
+    // ⬇⬇⬇ AMBIL DATA DARI CACHE
+    const { clients, total } = await getCachedClients(where, skip, limit);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      message: "Get clients information successfully!",
+      data: clients,
+      total,
+      totalPages,
+      page,
+      limit,
+    });
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : "unknown error";
+    console.error(errMsg);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: errMsg,
+      },
+      { status: 500 }
+    );
+  }
+}
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,65 +143,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "unknown error";
     console.error("❌ Cloudinary upload error:", errMsg);
-    return NextResponse.json({
-      status: 500,
-      success: false,
-      message: errMsg,
-    });
-  }
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
-    const serviceFilter = searchParams.get('serviceFilter') || 'All Services';
-
-    const skip = (page - 1) * limit;
-
-    // Build where condition
-    const where: Prisma.TestimonialWhereInput = {};
-    
-    if (search) {
-      where.OR = [
-        { clientName: { contains: search, mode: 'insensitive' } },
-        { companyName: { contains: search, mode: 'insensitive' } },
-        { clientReview: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (serviceFilter && serviceFilter !== 'All Services') {
-      where.serviceId = parseInt(serviceFilter);
-    }
-
-    const [clients, total] = await Promise.all([
-      prisma.testimonial.findMany({
-        where,
-        include: { service: true },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.testimonial.count({ where }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return NextResponse.json({
-      status: 200,
-      success: true,
-      message: "Get clients information successfully!",
-      data: clients,
-      total,
-      totalPages,
-      page,
-      limit,
-    });
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : "unknown error";
-    console.log(errMsg);
     return NextResponse.json({
       status: 500,
       success: false,

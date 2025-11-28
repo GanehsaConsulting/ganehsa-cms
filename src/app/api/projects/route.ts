@@ -5,6 +5,73 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
+import { getCachedProjects } from "@/lib/cache/projects.cache";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const packageId = searchParams.get("packageId");
+    const serviceIdParams = searchParams.get("serviceId");
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.ProjectWhereInput = {
+      packages: {
+        some: {
+          package: {
+            serviceId: Number(serviceIdParams),
+          },
+        },
+      },
+    };
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { companyName: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (packageId) {
+      whereClause.packages = {
+        some: {
+          packageId: Number(packageId),
+          package: { serviceId: Number(serviceIdParams) },
+        },
+      };
+    }
+
+    // ⬇⬇⬇ AMBIL DATA DARI CACHE (not query DB lagi)
+    const { projects, total } = await getCachedProjects(
+      whereClause,
+      skip,
+      limit
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      message: "Get projects data successfully",
+      data: projects,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error("GET PROJECTS ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Internal server error", data: [] },
+      { status: 500 }
+    );
+  }
+}
+
 
 // POST create new project
 export async function POST(req: Request) {
@@ -125,92 +192,6 @@ export async function POST(req: Request) {
         message: "Internal server error",
         error: err instanceof Error ? err.message : "Unknown error",
       },
-      { status: 500 }
-    );
-  }
-}
-
-// GET all projects with pagination and search
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") || "";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
-    const packageId = searchParams.get("packageId");
-    const skip = (page - 1) * limit;
-    const serviceIdParams = searchParams.get("serviceId");
-    
-
-    // Default filter untuk service ID 3
-    const whereClause: Prisma.ProjectWhereInput = {
-      packages: {
-        some: {
-          package: {
-            serviceId: Number(serviceIdParams), // Default filter service ID 3
-          },
-        },
-      },
-    };
-
-    // Tambahkan search filter jika ada
-    if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { companyName: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    // Filter tambahan by packageId jika provided
-    if (packageId) {
-      whereClause.packages = {
-        some: {
-          packageId: parseInt(packageId, 10),
-          package: {
-            serviceId: Number(serviceIdParams), // Tetap pastikan service ID 3
-          },
-        },
-      };
-    }
-
-    const [projects, total] = await Promise.all([
-      prisma.project.findMany({
-        where: whereClause,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          packages: {
-            include: {
-              package: {
-                include: {
-                  service: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      prisma.project.count({ where: whereClause }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return NextResponse.json({
-      success: true,
-      message: "Get projects data successfully",
-      data: projects,
-      pagination: {
-        total,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    });
-  } catch (err) {
-    console.error("GET PROJECTS ERROR:", err);
-    return NextResponse.json(
-      { success: false, message: "Internal server error", data: [] },
       { status: 500 }
     );
   }

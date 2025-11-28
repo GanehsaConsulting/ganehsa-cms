@@ -25,7 +25,8 @@ function Home() {
   const { articles, isLoading: loadingArticles } = useArticles();
   const {
     activities,
-    setLimit: limitActivity,
+    token: activityToken,
+    fetchActivities,
     isLoading: loadingActivities,
   } = useActivities();
   const {
@@ -44,20 +45,20 @@ function Home() {
   const { counters, loading: loadingCounters } = useCounters();
   const { medias } = useMedias();
 
-  // Set limit hanya sekali saat mount
+  // Fetch activities dengan limit 100 saat component mount
   useEffect(() => {
-    limitActivity(100);
+    if (activityToken && fetchActivities) {
+      fetchActivities(activityToken, 1, 100, "", "All");
+    }
     limitPackages(100);
-  }, []); // Removed dependencies
+  }, []);
 
-  // Memoize computed values untuk menghindari recalculation
   const totalProjects = useMemo(() => {
     return webProject.length + socmedProject.length;
   }, [webProject.length, socmedProject.length]);
 
   const loadingProjects = loadingWeb || loadingSocmed;
 
-  // data yang semisal pertama kali di fetch. dimasukkin ke local storage agar ala2 caching. lalu dihapus dan difetch lagi stlah 5 menit kemudian
   const stats = useMemo(() => [
     {
       title: "Articles",
@@ -121,6 +122,11 @@ function Home() {
     return () => clearInterval(interval);
   }, [medias]);
 
+  // Check if activities data is ready
+  const isActivitiesReady = !loadingActivities && activities && activities.length > 0;
+  const isCountersReady = !loadingCounters && counters && counters.length > 0;
+  const isActivityCountersReady = isCountersReady && activityCounters.length > 0;
+
   return (
     <Wrapper
       padding="p-1"
@@ -160,16 +166,6 @@ function Home() {
               </div>
 
               <div className="space-y-3 text-xs text-neutral-300 flex flex-col justify-end">
-                {/* <p
-                  className={`italic ${
-                    item.isIncrease === true
-                      ? "text-green-500"
-                      : "text-red-400"
-                  }`}
-                >
-                  {item.isIncrease === true ? "(+)" : "(-)"} {item.stats} data
-                  from last month
-                </p> */}
                 <p className="text-[10px] italic">{item.desc}</p>
               </div>
             </div>
@@ -231,7 +227,7 @@ function Home() {
           </div>
         </div>
 
-        {/* MOST CLICKED ACTIVITY */}
+        {/* MOST CLICKED ACTIVITY - FIXED VERSION */}
         <div className="row-span-2 col-span-4 bg-lightColor/20 dark:bg-darkColor/40 backdrop-blur-2xl rounded-main shadow-mainShadow border border-lightColor/15 dark:border-darkColor/20 p-3 flex flex-col">
           <div className="flex justify-between items-center mb-2 mx-1">
             <div className="flex items-center gap-2 text-white/80 text-sm">
@@ -249,35 +245,35 @@ function Home() {
           </div>
           <div className=" bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
             <ul className="h-80 overflow-y-auto no-scrollbar text-xs text-white scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
-              {loadingCounters || loadingActivities ? (
+              {(loadingCounters || loadingActivities) ? (
                 <li className="flex items-center justify-center h-full gap-2 text-white/60">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
                   <span>Loading activities data...</span>
                 </li>
-              ) : activityCounters?.length > 0 ? (
-                activityCounters?.map((item, index) => {
-                  const activity = activities?.find(
-                    (a) => a.id === item.refId
-                  );
+              ) : (isActivityCountersReady && isActivitiesReady) ? (
+                activityCounters.map((item, index) => {
+                  const activity = activities.find((a) => a.id === item.refId);
+                  // Pastikan activity dan title ada sebelum render
+                  if (!activity || !activity.title) return null;
+                  
+                  const displayTitle = activity.title.length > 30
+                    ? activity.title.slice(0, 30) + "....."
+                    : activity.title;
+                  
                   return (
                     <li
-                      key={item.refId}
+                      key={`${item.refId}-${index}`}
                       className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200 flex justify-between items-center"
                     >
                       <span>
-                        {index + 1}.{" "}
-                        {activity?.title &&
-                          (activity?.title?.length > 30
-                            ? activity.title.slice(0, 30) + "....."
-                            : activity.title + ".....")}
-                        ({item.count})
+                        {index + 1}. {displayTitle} ({item.count})
                       </span>
                       <span className="text-white/70">
                         {item.type?.toLowerCase()}
                       </span>
                     </li>
                   );
-                })
+                }).filter(Boolean)
               ) : (
                 <li className="flex items-center justify-center h-full text-white/60">
                   No clicked activities

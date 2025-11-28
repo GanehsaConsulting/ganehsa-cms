@@ -3,6 +3,60 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
+import { getCachedMedias } from "@/lib/cache/media.cache";
+import { Prisma } from "@prisma/client";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.MediaWhereInput = search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              alt: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ],
+        }
+      : {};
+
+    const { medias, total } = await getCachedMedias(where, skip, limit);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      message: "Get medias data successfully",
+      data: medias,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error("MEDIA ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Internal server error", data: [] },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +73,7 @@ export async function POST(req: Request) {
     const file = formData.get("file") as File;
     const title = formData.get("title") as string;
     const type = formData.get("type") as string;
-    const alt = formData.get("alt") as string || title;
+    const alt = (formData.get("alt") as string) || title;
 
     if (!file || !title || !type) {
       return NextResponse.json(
@@ -29,7 +83,16 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'application/pdf'];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "video/mp4",
+      "video/quicktime",
+      "application/pdf",
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { success: false, message: "File type not allowed" },
@@ -38,7 +101,9 @@ export async function POST(req: Request) {
     }
 
     // Validate file size
-    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    const maxSize = file.type.startsWith("video/")
+      ? 50 * 1024 * 1024
+      : 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
         { success: false, message: "File size too large" },
@@ -53,9 +118,9 @@ export async function POST(req: Request) {
 
     // Determine resource type for Cloudinary
     let resourceType: "image" | "video" | "raw" = "image";
-    if (file.type.startsWith('video/')) {
+    if (file.type.startsWith("video/")) {
       resourceType = "video";
-    } else if (file.type === 'application/pdf') {
+    } else if (file.type === "application/pdf") {
       resourceType = "raw";
     }
 
@@ -92,79 +157,14 @@ export async function POST(req: Request) {
       message: "File uploaded to Cloudinary successfully",
       data: media,
     });
-
   } catch (err) {
     console.error("UPLOAD ERROR:", err);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Internal server error",
-        error: err instanceof Error ? err.message : "Unknown error"
+        error: err instanceof Error ? err.message : "Unknown error",
       },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    // const user = await verifyAuth(req);
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Unauthorized", data: [] },
-    //     { status: 401 }
-    //   );
-    // }
-
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") || "";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
-    const skip = (page - 1) * limit;
-
-    const [medias, total] = await Promise.all([
-      prisma.media.findMany({
-        where: search
-          ? {
-              OR: [
-                { title: { contains: search, mode: "insensitive" } },
-                { alt: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {},
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.media.count({
-        where: search
-          ? {
-              OR: [
-                { title: { contains: search, mode: "insensitive" } },
-                { alt: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {},
-      }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return NextResponse.json({
-      success: true,
-      message: "Get medias data successfully",
-      data: medias,
-      pagination: {
-        total,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { success: false, message: "Internal server error", data: [] },
       { status: 500 }
     );
   }

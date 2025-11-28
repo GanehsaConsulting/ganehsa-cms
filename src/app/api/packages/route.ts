@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import { calculateOriginalPrice } from "@/lib/helpers";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { getPackagesCached } from "@/lib/cache/packages.cache";
 
 // Interfaces
 interface PackageFeature {
@@ -44,17 +46,19 @@ interface TransformedPackage {
   updatedAt: Date;
 }
 
-// ===================== GET ALL =====================
+export const revalidate = 60;
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const type = searchParams.get("type") || "";
     const highlight = searchParams.get("highlight");
     const serviceId = searchParams.get("serviceId");
-    const serviceSlug = searchParams.get("serviceSlug"); // Tambahan untuk filter by slug
+    const serviceSlug = searchParams.get("serviceSlug");
 
     if (page < 1 || limit < 1 || limit > 100) {
       return NextResponse.json(
@@ -63,61 +67,35 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const where: WhereClause = {};
-    
-    // Filter by search (type contains)
+    const where: Prisma.PackageWhereInput = {};
+
     if (search) {
       where.type = { contains: search, mode: "insensitive" };
     }
-    
-    // Filter by exact type
+
     if (type) {
       where.type = type;
     }
-    
-    // Filter by highlight status
+
     if (highlight) {
       where.highlight = highlight === "true";
     }
-    
-    // Filter by serviceId (exact number)
+
     if (serviceId && !isNaN(Number(serviceId))) {
       where.serviceId = Number(serviceId);
     }
-    
-    // Filter by serviceSlug (recommended untuk frontend)
+
     if (serviceSlug && serviceSlug !== "All") {
       where.service = { slug: serviceSlug };
     }
 
-    const totalItems = await prisma.package.count({ where });
-    const skip = (page - 1) * limit;
+    // PARAMS UNTUK CACHE
+    const params = { where, page, limit };
 
-    const packages = await prisma.package.findMany({
-      where,
-      skip,
-      take: limit,
-      include: {
-        service: { 
-          select: { 
-            id: true, 
-            name: true, 
-            slug: true 
-          } 
-        },
-        features: { 
-          include: { feature: true }, 
-          orderBy: { feature: { name: "asc" } } 
-        },
-        requirements: { 
-          include: { requirement: true }, 
-          orderBy: { requirement: { name: "asc" } } 
-        },
-      },
-      orderBy: [{ highlight: "desc" }, { createdAt: "desc" }],
-    });
+    const { packages, totalItems, totalPages } = await getPackagesCached(params);
 
-    const transformed: TransformedPackage[] = packages.map((pkg) => ({
+    // Transformasi tetap di sini (cache tetap pure)
+    const transformed = packages.map((pkg) => ({
       id: pkg.id,
       serviceId: pkg.serviceId,
       type: pkg.type,
@@ -126,9 +104,9 @@ export async function GET(req: NextRequest) {
       discount: pkg.discount,
       priceOriginal: pkg.priceOriginal,
       link: pkg.link,
-      features: pkg.features.map((f) => ({ 
-        feature: f.feature.name, 
-        status: f.status 
+      features: pkg.features.map((f) => ({
+        feature: f.feature.name,
+        status: f.status,
       })),
       requirements: pkg.requirements.map((r) => r.requirement.name),
       createdAt: pkg.createdAt,
@@ -136,31 +114,31 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({
-      status: 200,
       success: true,
       message: "Packages fetched successfully",
       data: transformed,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(totalItems / limit),
+        totalPages,
         totalItems,
         itemsPerPage: limit,
-        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
       },
     });
   } catch (err) {
     console.error("GET /api/packages error:", err);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Server error",
-        error: err instanceof Error ? err.message : "Unknown error"
-      }, 
+        error: err instanceof Error ? err.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
 }
+
 
 // ===================== POST (CREATE) =====================
 export async function POST(req: NextRequest) {

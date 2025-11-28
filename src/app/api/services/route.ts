@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getCachedServices } from "@/lib/cache/services.cache";
 
-// ✅ GET ALL SERVICES
 export async function GET() {
   try {
-    const services = await prisma.service.findMany({
-      include: {
-        packages: {
-          include: {
-            features: {
-              include: { feature: true },
-            },
-            requirements: {
-              include: { requirement: true },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const services = await getCachedServices();
 
     return NextResponse.json({
       success: true,
@@ -34,6 +20,7 @@ export async function GET() {
     );
   }
 }
+
 
 // ✅ ADD NEW SERVICE
 export async function POST(req: NextRequest) {

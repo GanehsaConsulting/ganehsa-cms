@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, Status } from "@prisma/client";
 import { verifyAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getActivitiesCached } from "@/lib/cache/activity.cache";
 
-// GET API
+export const revalidate = 60;
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -11,14 +13,12 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search");
     const showTitleParam = searchParams.get("showTitle");
-    const isPromoParam = searchParams.get("isPromo")
+    const isPromoParam = searchParams.get("isPromo");
     const statusParam = searchParams.get("status");
     const skip = (page - 1) * limit;
 
-    // Build filter conditions dynamically with proper Prisma type
     const where: Prisma.ActivityWhereInput = {};
 
-    // Search condition
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
@@ -26,45 +26,22 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Filter isPromo - ini yang digunakan untuk status "Activity" dan "Promo"
-    if (isPromoParam === "true"  || isPromoParam === "false"){
-      where.isPromo = isPromoParam === "true"
+    if (isPromoParam === "true" || isPromoParam === "false") {
+      where.isPromo = isPromoParam === "true";
     }
 
-    // ShowTitle filter - ini yang digunakan untuk status "Showing Title" dan "Not Showing Title"
     if (showTitleParam === "true" || showTitleParam === "false") {
       where.showTitle = showTitleParam === "true";
     }
 
-    // Status filter - validate it's a valid Status enum value
     if (statusParam && Object.values(Status).includes(statusParam as Status)) {
       where.status = statusParam as Status;
     }
 
-    const [activities, total] = await Promise.all([
-      prisma.activity.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          medias: {
-            include: {
-              media: true,
-            },
-          },
-        },
-      }),
-      prisma.activity.count({ where }),
-    ]);
-    
+    // cacheKey parameters
+    const params = { where, skip, limit };
+
+    const { activities, total } = await getActivitiesCached(params);
 
     return NextResponse.json({
       success: true,
@@ -78,17 +55,13 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : "unknown error";
-    console.log(errMsg);
     return NextResponse.json(
-      {
-        success: false,
-        message: errMsg,
-      },
+      { success: false, message: err instanceof Error ? err.message : "unknown" },
       { status: 500 }
     );
   }
 }
+
 
 // ADD NEW ACTIVITY
 export async function POST(req: NextRequest) {
@@ -132,7 +105,7 @@ export async function POST(req: NextRequest) {
       desc,
       longDesc,
       date,
-      isPromo: isPromo ?? false, 
+      isPromo: isPromo ?? false,
       showTitle: showTitle ?? false,
       status: status ?? "DRAFT",
       author: {
