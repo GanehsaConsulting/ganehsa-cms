@@ -87,7 +87,7 @@ export const navigationItems = {
       },
       {
         label: "Pemberitahuan",
-        path: "/pemberitahuan",
+        path: "/notification",
         icon: <HiBell />,
         subs: []
       },

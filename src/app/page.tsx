@@ -160,7 +160,7 @@ function Home() {
               </div>
 
               <div className="space-y-3 text-xs text-neutral-300 flex flex-col justify-end">
-                <p
+                {/* <p
                   className={`italic ${
                     item.isIncrease === true
                       ? "text-green-500"
@@ -169,7 +169,7 @@ function Home() {
                 >
                   {item.isIncrease === true ? "(+)" : "(-)"} {item.stats} data
                   from last month
-                </p>
+                </p> */}
                 <p className="text-[10px] italic">{item.desc}</p>
               </div>
             </div>
