@@ -70,11 +70,14 @@ export default function EditPackagePage() {
       }
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business/services/${packageId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/business/packages/${packageId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Gagal mengambil data package");
@@ -211,6 +214,7 @@ export default function EditPackagePage() {
 
   // Handle submit
   // Enhanced error handling in handleSubmit
+  // Update the handleSubmit function - change the API endpoint
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -231,8 +235,8 @@ export default function EditPackagePage() {
       const payload = {
         serviceId: parseInt(serviceId),
         type: type.trim(),
-        price: price ? parseFloat(price) : 0, // Handle empty price
-        discount: discount ? parseFloat(discount) : 0, // Handle empty discount
+        price: price ? parseFloat(price) : 0,
+        discount: discount ? parseFloat(discount) : 0,
         link: link.trim(),
         highlight,
         features: validFeatures,
@@ -241,20 +245,23 @@ export default function EditPackagePage() {
 
       console.log("📦 Updating package with payload:", payload);
 
-      const response = await fetch(`/api/business/services${packageId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      // FIX: Change the endpoint to match your backend API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/business/packages/${packageId}`, // Changed from /api/business/services/ to /business/packages/
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const responseData = await response.json();
       console.log("📩 API Response:", responseData);
 
       if (!response.ok) {
-        // More detailed error information
         throw new Error(
           responseData.message || `HTTP error! status: ${response.status}`
         );
@@ -270,7 +277,6 @@ export default function EditPackagePage() {
     } catch (error) {
       console.error("❌ Error updating package:", error);
 
-      // More specific error messages
       let errorMessage = "Terjadi kesalahan";
       if (error instanceof Error) {
         if (error.message.includes("Failed to fetch")) {
