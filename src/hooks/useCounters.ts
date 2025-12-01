@@ -14,7 +14,7 @@ export function useCounters() {
 
   const fetchCounters = async () => {
     try {
-      const res = await fetch("https://ganesha-cms.vercel.app/api/counter");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/counter`);
       const json = await res.json();
       setCounters(json.data || []);
       setLoading(false);

@@ -187,7 +187,7 @@ export default function MediaPage() {
       formData.append("type", type);
       formData.append("alt", alt);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/media`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -229,7 +229,7 @@ export default function MediaPage() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/media/${selectedMedia.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/media/${selectedMedia.id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

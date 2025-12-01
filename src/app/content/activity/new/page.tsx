@@ -145,7 +145,7 @@ export default function AddNewActivity() {
         mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined,
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activity`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/activity`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +158,7 @@ export default function AddNewActivity() {
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil ditambahkan!");
-        router.push("/activity");
+        router.push("/content/activity");
       } else {
         toast.error(data.message || "Gagal menambahkan activity");
       }
@@ -171,7 +171,7 @@ export default function AddNewActivity() {
   };
 
   const handleCancel = () => {
-    router.push("/activity");
+    router.push("/content/activity");
   };
 
   // Get selected media URLs for preview

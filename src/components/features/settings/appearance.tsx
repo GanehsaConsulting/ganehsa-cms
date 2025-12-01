@@ -28,7 +28,7 @@ export const AppearanceSettings = ({ token }: {token: string}) => {
     // Then fetch from API to ensure it's up to date
     const fetchWallpaper = async () => {
       try {
-        const response = await fetch("/api/wallpapers", {
+        const response = await fetch("/api/content/wallpapers", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export const AppearanceSettings = ({ token }: {token: string}) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/wallpapers", {
+      const response = await fetch("/api/content/wallpapers", {
         method: "POST",
         body: formData,
         headers: {
@@ -130,7 +130,7 @@ export const AppearanceSettings = ({ token }: {token: string}) => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/wallpapers", {
+      const response = await fetch("/api/content/wallpapers", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

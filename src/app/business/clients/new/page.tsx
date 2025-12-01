@@ -45,7 +45,7 @@ export default function NewClientPage() {
           return;
         }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business/services`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

@@ -68,7 +68,7 @@ export const usePackages = (initialServiceId?: number) => {
         params.append("highlight", "false");
       }
 
-      const apiUrl = `/api/packages?${params.toString()}`;
+      const apiUrl = `/api/business/packages?${params.toString()}`;
       
       console.log("🔍 Fetching packages with serviceId:", serviceId);
 

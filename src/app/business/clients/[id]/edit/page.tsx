@@ -67,7 +67,7 @@ export default function EditClientPage() {
 
         // Load client data
         const clientRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/clients/${clientId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/business/clients/${clientId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ export default function EditClientPage() {
         }
 
         // Load services
-        const servicesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+        const servicesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business/services`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -225,7 +225,7 @@ export default function EditClientPage() {
       }
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients/${clientId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/clients/${clientId}`,
         {
           method: "PATCH",
           headers: {

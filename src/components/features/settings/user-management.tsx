@@ -43,7 +43,7 @@ export const UserManagement = ({ token }: { token: string }) => {
     setUnauthorized(false); 
     
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/system/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -103,7 +103,7 @@ export const UserManagement = ({ token }: { token: string }) => {
     setLoading(true);
 
     try {
-      const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
+      const url = editingUser ? `/api/system/users/${editingUser.id}` : "/api/system/users";
       const method = editingUser ? "PUT" : "POST";
 
       console.log("Submitting form to:", url, "Method:", method);
@@ -173,7 +173,7 @@ export const UserManagement = ({ token }: { token: string }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/system/users/${userId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

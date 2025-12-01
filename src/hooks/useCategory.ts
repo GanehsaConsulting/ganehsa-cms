@@ -1,4 +1,4 @@
-import { Category, PaginationData } from "@/app/article/category/page";
+import { Category, PaginationData } from "@/app/content/articles/category/page";
 import { getToken } from "@/lib/helpers";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ export function useCategory() {
       });
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category?${params}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/category?${params}`,
         {
           method: "GET",
           headers: {

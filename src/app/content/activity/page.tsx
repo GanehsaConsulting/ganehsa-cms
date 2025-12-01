@@ -197,7 +197,7 @@ export default function ActivityPage() {
   };
 
   const handleEdit = (row: TableActivity) => {
-    router.push(`/activity/${row.id}/edit`);
+    router.push(`/content/activity/${row.id}/edit`);
   };
 
   const handleDeleteConfirm = async () => {
@@ -211,7 +211,7 @@ export default function ActivityPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/activity/${selectedActivity.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/activity/${selectedActivity.id}`,
         {
           method: "DELETE",
           headers: {
@@ -320,7 +320,7 @@ export default function ActivityPage() {
             </Button>
           </div>
           <div>
-            <Link href="/activity/new">
+            <Link href="/content/activity/new">
               <Button>
                 <Plus /> Activity Baru
               </Button>

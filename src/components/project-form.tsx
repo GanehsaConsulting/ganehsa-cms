@@ -131,7 +131,7 @@ export function ProjectForm({
     try {
       const token = getToken();
 
-      const res = await fetch(`/api/projects/${projectId}`, {
+      const res = await fetch(`/api/business/projects/${projectId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
@@ -278,7 +278,7 @@ export function ProjectForm({
       submitData.append("packageIds", JSON.stringify([selectedPackage]));
       if (previewFile) submitData.append("preview", previewFile);
 
-      const url = isEdit ? `/api/projects/${projectId}` : "/api/projects";
+      const url = isEdit ? `/api/business/projects/${projectId}` : "/api/business/projects";
       const method = isEdit ? "PATCH" : "POST";
 
       const res = await fetch(url, {

@@ -10,6 +10,9 @@ import {
 import { LuLogOut } from "react-icons/lu";
 import { HiPhoto } from "react-icons/hi2";
 import { MdBusinessCenter } from "react-icons/md";
+import { FaPhotoVideo } from "react-icons/fa";
+import { PiVideoConferenceFill } from "react-icons/pi";
+import { TbFoldersFilled } from "react-icons/tb";
 
 export const navigationItems = {
   menu: {
@@ -19,61 +22,46 @@ export const navigationItems = {
         label: "Dashboard",
         path: "/",
         icon: <HiHome />,
-        subs: []
+        subs: [],
       },
-
       {
-        label: "Article",
-        path: "/article",
-        icon: <HiBookOpen />,
+        label: "Content",
+        path: "/content",
+        icon: <TbFoldersFilled />,
         subs: [
-          { name: "Article List", path: "/article" },
-          { name: "Category Article", path: "/article/category" }
-        ]
+          { name: "Article List", path: "/content/articles" },
+          { name: "Category Article", path: "/content/articles/category" },
+          { name: "Activity List", path: "/content/activity" },
+        ],
       },
-
       {
-        label: "Activity",
-        path: "/activity",
-        icon: <HiCamera />,
-        subs: [
-          { name: "Activity List", path: "/activity" },
-          // { name: "Category Activity", path: "/activity/category" } 
-        ]
-      },
-
-      {
-        label: "Marketing & Promotion",
-        path: "/marketing",
-        icon: <HiSpeakerphone />,
-        subs: [
-          { name: "Promotional Banners", path: "/marketing/promo-banner" },
-          // { name: "Popup Image", path: "/popup" },
-        ]
-      },
-
-      {
-        label: "Business Information",
+        label: "Business",
         path: "/business",
-        icon: <MdBusinessCenter  />,
+        icon: <MdBusinessCenter />,
         subs: [
           { name: "Packages", path: "/business/packages" },
           { name: "Services", path: "/business/services" },
           { name: "Clients", path: "/business/clients" },
-        ]
+          { name: "Promo Banner", path: "/business/promos" },
+        ],
       },
 
-       {
+      {
         label: "Projects",
         path: "/projects",
         icon: <HiCurrencyDollar />,
         subs: [
-          { name: "Website Development", path: "/projects/website-development" },
-          { name: "Social Media Management", path: "/projects/socmed-management" },
-        ]
+          {
+            name: "Website Development",
+            path: "/projects/website-development",
+          },
+          {
+            name: "Social Media Management",
+            path: "/projects/socmed-management",
+          },
+        ],
       },
-
-    ]
+    ],
   },
 
   settings: {
@@ -83,19 +71,19 @@ export const navigationItems = {
         label: "Pengaturan",
         path: "/settings",
         icon: <HiCog />,
-        subs: []
+        subs: [],
       },
       {
         label: "Pemberitahuan",
         path: "/notification",
         icon: <HiBell />,
-        subs: []
+        subs: [],
       },
       {
         label: "Media Library",
         path: "/media-library",
         icon: <HiPhoto />,
-        subs: []
+        subs: [],
       },
       // {
       //   label: "Logout",
@@ -103,7 +91,6 @@ export const navigationItems = {
       //   icon: <LuLogOut />,
       //   subs: []
       // }
-    ]
-  }
+    ],
+  },
 };
-

@@ -153,7 +153,7 @@ export default function ArticlePage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${articleSlug}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/${articleSlug}`,
         {
           method: "DELETE",
           headers: {
@@ -198,7 +198,7 @@ export default function ArticlePage() {
 
   const handleEdit = (row: TableArticle) => {
     // Langsung redirect ke edit page dengan slug yang benar
-    router.push(`/article/${row.slug}/edit`);
+    router.push(`/content/articles/${row.slug}/edit`);
   };
 
   // Filter by status
@@ -299,7 +299,7 @@ export default function ArticlePage() {
             </Button>
           </div>
           <div>
-            <Link href="/article/new">
+            <Link href="/content/articles/new">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Artikel Baru

@@ -81,7 +81,7 @@ export function useProjects({
 
       console.log(`Fetching projects with params:`, params.toString());
 
-      const res = await fetch(`/api/projects?${params}`, {
+      const res = await fetch(`/api/business/projects?${params}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -147,7 +147,7 @@ export function useProjects({
   const deleteProject = async (project: Project) => {
     try {
       const token = getToken();
-      const res = await fetch(`/api/projects/${project.id}`, {
+      const res = await fetch(`/api/business/projects/${project.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

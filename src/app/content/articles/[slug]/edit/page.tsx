@@ -1,4 +1,4 @@
-// app/article/[slug]/edit/page.tsx
+// app/content/articles/[slug]/edit/page.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -106,7 +106,7 @@ export default function EditArticlePage() {
   useEffect(() => {
     if (!articleSlug) {
       toast.error("Slug artikel tidak ditemukan");
-      router.push("/article");
+      router.push("/content/articles");
       return;
     }
 
@@ -114,7 +114,7 @@ export default function EditArticlePage() {
       const token = getToken();
       if (!token) {
         toast.error("Anda belum login!");
-        router.push("/article");
+        router.push("/content/articles");
         return;
       }
 
@@ -123,7 +123,7 @@ export default function EditArticlePage() {
         console.log("Fetching article dengan slug:", articleSlug);
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/article/${articleSlug}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/content/articles/${articleSlug}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -174,12 +174,12 @@ export default function EditArticlePage() {
           });
         } else {
           toast.error(data.message || "Gagal mengambil data artikel");
-          router.push("/article");
+          router.push("/content/articles");
         }
       } catch (err) {
         console.error("Error fetching article:", err);
         toast.error("Gagal mengambil data artikel");
-        router.push("/article");
+        router.push("/content/articles");
       } finally {
         setIsFetching(false);
       }
@@ -239,7 +239,7 @@ export default function EditArticlePage() {
       });
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/${originalSlug}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/${originalSlug}`,
         {
           method: "PATCH",
           headers: {
@@ -264,7 +264,7 @@ export default function EditArticlePage() {
 
       if (res.ok && data.success) {
         toast.success("Artikel berhasil diperbarui!");
-        router.push("/article");
+        router.push("/content/articles");
       } else {
         if (data.message === "Slug already exists") {
           toast.error(
@@ -283,7 +283,7 @@ export default function EditArticlePage() {
   };
 
   const handleCancel = () => {
-    router.push("/article");
+    router.push("/content/articles");
   };
 
   // PERBAIKAN: Handle select thumbnail dengan data lengkap

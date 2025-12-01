@@ -16,7 +16,7 @@ export const useWallpaper = () => {
 
   const fetchWallpaper = async () => {
     try {
-      const response = await fetch("/api/wallpapers", {
+      const response = await fetch("/api/content/wallpapers", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export const useWallpaper = () => {
     if (name) formData.append("name", name);
 
     try {
-      const response = await fetch("/api/wallpapers", {
+      const response = await fetch("/api/content/wallpapers", {
         method: "POST",
         body: formData,
       });
@@ -63,7 +63,7 @@ export const useWallpaper = () => {
 
   const deleteWallpaper = async (): Promise<boolean> => {
     try {
-      const response = await fetch("/api/wallpapers", {
+      const response = await fetch("/api/content/wallpapers", {
         method: "DELETE",
       });
 

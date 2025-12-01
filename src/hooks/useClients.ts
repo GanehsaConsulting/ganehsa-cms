@@ -40,7 +40,7 @@ export function useClients() {
         });
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/clients?${queryParams}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/business/clients?${queryParams}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

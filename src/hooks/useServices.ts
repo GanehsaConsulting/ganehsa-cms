@@ -29,7 +29,7 @@ export const useServices = () => {
       });
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/services?${queryParams}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/services?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

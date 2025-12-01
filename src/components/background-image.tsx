@@ -36,7 +36,7 @@ export const BackgroundImage = () => {
 
       try {
         setLoading(true);
-        const response = await fetch("/api/wallpapers", {
+        const response = await fetch("/api/content/wallpapers", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

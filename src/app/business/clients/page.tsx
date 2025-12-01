@@ -208,7 +208,7 @@ export default function ClientsPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients/${selectedClient.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/clients/${selectedClient.id}`,
         {
           method: "DELETE",
           headers: {

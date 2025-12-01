@@ -143,7 +143,7 @@ export default function EditActivityPage() {
     setIsFetching(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/activity/${activityId}`,
         {
           method: "GET",
           headers: {
@@ -184,12 +184,12 @@ export default function EditActivityPage() {
         setSelectedMediaIds(mediaIds);
       } else {
         toast.error(data.message || "Gagal mengambil data activity");
-        router.push("/activity");
+        router.push("/content/activity");
       }
     } catch (err) {
       console.error("Error fetching activity:", err);
       toast.error("Gagal mengambil data activity");
-      router.push("/activity");
+      router.push("/content/activity");
     } finally {
       setIsFetching(false);
     }
@@ -280,7 +280,7 @@ export default function EditActivityPage() {
       };
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/activity/${activityId}`,
         {
           method: "PATCH",
           headers: {
@@ -295,7 +295,7 @@ export default function EditActivityPage() {
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil diupdate!");
-        router.push("/activity");
+        router.push("/content/activity");
       } else {
         toast.error(data.message || "Gagal mengupdate activity");
       }
@@ -308,7 +308,7 @@ export default function EditActivityPage() {
   };
 
   const handleCancel = () => {
-    router.push("/activity");
+    router.push("/content/activity");
   };
 
   // Handle delete
@@ -322,7 +322,7 @@ export default function EditActivityPage() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/activity/${activityId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/activity/${activityId}`,
         {
           method: "DELETE",
           headers: {
@@ -335,7 +335,7 @@ export default function EditActivityPage() {
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil dihapus!");
-        router.push("/activity");
+        router.push("/content/activity");
       } else {
         toast.error(data.message || "Gagal menghapus activity");
       }

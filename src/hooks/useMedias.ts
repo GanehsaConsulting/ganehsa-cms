@@ -54,7 +54,7 @@ export function useMedias({ limit: initialLimit = 10 }: UseMediasProps = {}): Us
       });
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/media?${params}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/media?${params}`,
         {
           method: 'GET',
           headers: {

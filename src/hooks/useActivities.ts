@@ -1,4 +1,4 @@
-import { TableActivity } from "@/app/activity/page";
+import { TableActivity } from "@/app/content/activity/page";
 import { getToken } from "@/lib/helpers";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -67,7 +67,7 @@ export function useActivities() {
         // Jika status "All", tidak perlu tambah filter apapun
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/activity?${params}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/content/activity?${params}`,
           {
             method: "GET",
             headers: {

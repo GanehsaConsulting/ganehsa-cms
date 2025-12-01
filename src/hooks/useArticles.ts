@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
-import { TableArticle } from "@/app/article/page";
+import { TableArticle } from "@/app/content/articles/page";
 
 interface ArticleFromAPI {
   id: number;
@@ -60,8 +60,8 @@ export const useArticles = () => {
     setIsLoading(true);
     try {
       const url = searchTerm
-        ? `${process.env.NEXT_PUBLIC_API_URL}/article?search=${encodeURIComponent(searchTerm)}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/article`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}/content/articles?search=${encodeURIComponent(searchTerm)}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/content/articles`;
 
       const res = await fetch(url, {
         method: "GET",

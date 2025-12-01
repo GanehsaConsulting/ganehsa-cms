@@ -105,7 +105,7 @@ export default function NewArticlePage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/article`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/articles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export default function NewArticlePage() {
 
       if (res.ok && data.success) {
         toast.success("Artikel berhasil ditambahkan!");
-        router.push("/article");
+        router.push("/content/articles");
       } else {
         toast.error(data.message || "Gagal menambahkan artikel");
       }
@@ -143,7 +143,7 @@ export default function NewArticlePage() {
   const editor = useRef(null);
 
   const handleCancel = () => {
-    router.push("/article");
+    router.push("/content/articles");
   };
 
   // Handler untuk memilih thumbnail

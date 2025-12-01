@@ -256,9 +256,7 @@ function PromoBannerPage() {
                   <th className="text-left text-sm font-medium text-white p-2">
                     URL
                   </th>
-                  <th className="text-left text-sm font-medium text-white p-2">
-                    Popup
-                  </th>
+                  
                   <th className="text-left text-sm font-medium text-white p-2">
                     Created At
                   </th>

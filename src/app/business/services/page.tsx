@@ -145,7 +145,7 @@ export default function ServicesPage() {
     try {
       console.log("Creating service with token:", token); // Debug
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business/services`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,7 +183,7 @@ export default function ServicesPage() {
       console.log("Updating service with token:", token); // Debug
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/services/${selectedRow.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/services/${selectedRow.id}`,
         {
           method: "PATCH",
           headers: {
@@ -221,7 +221,7 @@ export default function ServicesPage() {
       console.log("Deleting service with token:", token); // Debug
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/services/${row.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/services/${row.id}`,
         {
           method: "DELETE",
           headers: {

@@ -1,4 +1,4 @@
-import { PackageFeature } from "@/app/api/packages/[id]/route";
+import { PackageFeature } from "@/app/api/business/packages/[id]/route";
 import prisma from "./prisma";
 
 export const combineDateAndTime = (

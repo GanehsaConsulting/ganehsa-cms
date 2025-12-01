@@ -70,7 +70,7 @@ export default function EditPackagePage() {
       }
 
       try {
-        const response = await fetch(`/api/packages/${packageId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business/services/${packageId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -241,7 +241,7 @@ export default function EditPackagePage() {
 
       console.log("📦 Updating package with payload:", payload);
 
-      const response = await fetch(`/api/packages/${packageId}`, {
+      const response = await fetch(`/api/business/services${packageId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,

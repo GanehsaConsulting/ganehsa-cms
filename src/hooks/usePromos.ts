@@ -45,7 +45,7 @@ export function usePromos() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch("/api/promos", {
+      const response = await fetch("/api/business/promos", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -134,8 +134,8 @@ export function usePromos() {
 
       const endpoint =
         editMode && currentBanner
-          ? `/api/promos/${currentBanner.id}`
-          : "/api/promos";
+          ? `/api/business/promos/${currentBanner.id}`
+          : "/api/business/promos";
 
       const method = editMode ? "PATCH" : "POST";
 
@@ -167,7 +167,7 @@ export function usePromos() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`/api/promos/${id}`, {
+      const response = await fetch(`/api/business/promos/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

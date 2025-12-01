@@ -133,7 +133,7 @@ export default function ArticleCategoryPage() {
   async function handleNewCategory(values: Partial<Category>) {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/category`,
         {
           method: "POST",
           headers: {
@@ -158,7 +158,7 @@ export default function ArticleCategoryPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${selectedRow.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/category/${selectedRow.id}`,
         {
           method: "PATCH",
           headers: {
@@ -181,7 +181,7 @@ export default function ArticleCategoryPage() {
   async function handleDeleteCategory(row: Category) {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/article/category/${row.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/content/articles/category/${row.id}`,
         {
           method: "DELETE",
           headers: {

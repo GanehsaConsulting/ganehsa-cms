@@ -195,7 +195,7 @@ function Home() {
               <span>
                 <FaRegEye />
               </span>
-              <Link href={"/article"}>see page</Link>
+              <Link href={"/content/articles"}>see page</Link>
             </div>
           </div>
           <div className="h-80 overflow-y-auto no-scrollbar bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
@@ -240,7 +240,7 @@ function Home() {
               <span>
                 <FaRegEye />
               </span>
-              <Link href={"/activity"}>see page</Link>
+              <Link href={"/content/activity"}>see page</Link>
             </div>
           </div>
           <div className=" bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
