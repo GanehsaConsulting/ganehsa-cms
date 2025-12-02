@@ -6,7 +6,6 @@ import prisma from "@/lib/prisma";
 import { getPublicIdFromUrl } from "@/lib/helpers";
 
 // PATCH - Update promo
-// PATCH - Update promo
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
