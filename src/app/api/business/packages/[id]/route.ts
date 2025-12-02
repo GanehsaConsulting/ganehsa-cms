@@ -1,144 +1,224 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyAuth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import {
-  calculateOriginalPrice,
-  processFeatures,
-  processRequirements,
-} from "@/lib/helpers";
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+import { verifyAuth } from '@/lib/auth';
 
-export interface PackageFeature {
-  feature: string;
-  status: boolean;
-}
+// Konfigurasi Prisma dengan timeout yang lebih panjang
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+  // Increase timeouts untuk operasi besar
+  transactionOptions: {
+    maxWait: 45000, // 45 detik
+    timeout: 90000, // 90 detik
+  },
+  // Logging hanya di development
+  log: process.env.NODE_ENV === 'development' 
+    ? ['query', 'info', 'warn', 'error']
+    : ['error'],
+});
 
-interface UpdatePackageBody {
+// Helper untuk menghitung harga original
+const calculateOriginalPrice = (price: number, discount: number): number => {
+  if (discount <= 0 || discount >= 100) return price;
+  return Math.round(price / (1 - discount / 100));
+};
+
+// Interface untuk update data
+interface UpdatePackageData {
   serviceId?: number;
   type?: string;
-  highlight?: boolean;
   price?: number;
   discount?: number;
   link?: string;
-  features?: PackageFeature[];
+  highlight?: boolean;
+  features?: Array<{ feature: string; status: boolean }>;
   requirements?: string[];
 }
 
-interface PackageUpdateData {
-  serviceId?: number;
-  type?: string;
-  highlight?: boolean;
-  price?: number;
-  discount?: number;
-  link?: string;
-  priceOriginal?: number;
-  updatedAt: Date;
-}
-
-// ===================== GET BY ID =====================
-// Temporary debugging endpoint - remove after fixing
+// GET endpoint untuk mengambil data package
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  
   try {
-    console.log("🔍 GET package request for:", await params);
+    console.log(`🔍 GET package request for ID:`, (await params).id);
 
     const { id } = await params;
     const packageIdInt = Number(id);
 
-    if (isNaN(packageIdInt)) {
+    if (isNaN(packageIdInt) || packageIdInt <= 0) {
+      console.warn(`❌ Invalid package ID: ${id}`);
       return NextResponse.json(
-        { success: false, message: "Invalid package ID" },
+        { 
+          success: false, 
+          message: "ID package tidak valid",
+          code: "INVALID_ID"
+        },
         { status: 400 }
       );
     }
 
-    const pkg = await prisma.package.findUnique({
-      where: { id: packageIdInt },
-      include: {
-        service: { select: { id: true, name: true, slug: true } },
-        features: {
-          include: { feature: true },
-          orderBy: { feature: { name: "asc" } },
+    // Ambil data package dengan timeout
+    const pkg = await Promise.race([
+      prisma.package.findUnique({
+        where: { id: packageIdInt },
+        include: {
+          service: { 
+            select: { 
+              id: true, 
+              name: true, 
+              slug: true 
+            } 
+          },
+          features: {
+            include: { 
+              feature: true 
+            },
+            orderBy: { 
+              feature: { name: "asc" } 
+            },
+          },
+          requirements: {
+            include: { 
+              requirement: true 
+            },
+            orderBy: { 
+              requirement: { name: "asc" } 
+            },
+          },
         },
-        requirements: {
-          include: { requirement: true },
-          orderBy: { requirement: { name: "asc" } },
-        },
-      },
-    });
-
-    console.log("📦 Found package:", pkg ? `ID: ${pkg.id}` : "Not found");
+      }),
+      new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error("Database timeout")), 15000)
+      )
+    ]) as any;
 
     if (!pkg) {
+      console.log(`❌ Package not found: ${packageIdInt}`);
       return NextResponse.json(
-        { success: false, message: "Package not found" },
+        { 
+          success: false, 
+          message: "Package tidak ditemukan",
+          code: "NOT_FOUND"
+        },
         { status: 404 }
       );
     }
 
+    // Format response
+    const responseData = {
+      id: pkg.id,
+      serviceId: pkg.serviceId,
+      type: pkg.type,
+      price: pkg.price,
+      discount: pkg.discount,
+      priceOriginal: pkg.priceOriginal,
+      link: pkg.link,
+      highlight: pkg.highlight,
+      createdAt: pkg.createdAt,
+      updatedAt: pkg.updatedAt,
+      features: pkg.features.map((f: any) => ({
+        feature: f.feature.name,
+        status: f.status,
+      })),
+      requirements: pkg.requirements.map((r: any) => r.requirement.name),
+      service: pkg.service,
+    };
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ GET package ${packageIdInt} success in ${duration}ms`);
+
     return NextResponse.json({
       status: 200,
       success: true,
-      message: "Package fetched successfully",
-      data: {
-        ...pkg,
-        features: pkg.features.map((f) => ({
-          feature: f.feature.name,
-          status: f.status,
-        })),
-        requirements: pkg.requirements.map((r) => r.requirement.name),
+      message: "Package berhasil diambil",
+      data: responseData,
+      meta: {
+        took: duration,
+        featuresCount: responseData.features.length,
+        requirementsCount: responseData.requirements.length,
       },
     });
-  } catch (err) {
-    console.error("❌ GET /api/packages/[id] error:", err);
+  } catch (err: any) {
+    const duration = Date.now() - startTime;
+    console.error(`❌ GET /api/packages/[id] error (${duration}ms):`, err);
 
-    // More detailed error information
+    let status = 500;
+    let message = "Server error";
+    let code = "SERVER_ERROR";
+
+    if (err.message.includes("timeout") || err.message.includes("Timeout")) {
+      status = 504;
+      message = "Database timeout. Silakan coba lagi.";
+      code = "TIMEOUT";
+    } else if (err.message.includes("Invalid") || err.message.includes("valid")) {
+      status = 400;
+      message = err.message;
+      code = "VALIDATION_ERROR";
+    }
+
     return NextResponse.json(
       {
         success: false,
-        message: "Server error",
-        error: process.env.NODE_ENV === "development" ? String(err) : undefined,
-        stack:
-          process.env.NODE_ENV === "development"
-            ? (err as Error).stack
-            : undefined,
+        message,
+        code,
+        ...(process.env.NODE_ENV === "development" && { 
+          error: err.message,
+          stack: err.stack 
+        }),
       },
-      { status: 500 }
+      { status }
     );
   }
 }
 
-// ===================== PATCH (UPDATE) - OPTIMIZED =====================
+// PATCH endpoint untuk update package dengan optimasi
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    console.log("🔄 Starting optimized PATCH operation for package");
+  const startTime = Date.now();
+  let transaction: any = null;
 
+  try {
+    console.log("🔄 Starting PATCH operation for package");
+
+    // Verify authentication
     const user = await verifyAuth(req);
     if (!user) {
-      console.log("❌ Unauthorized access attempt");
+      console.warn("❌ Unauthorized access attempt");
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
+        { 
+          success: false, 
+          message: "Unauthorized",
+          code: "UNAUTHORIZED"
+        },
         { status: 401 }
       );
     }
 
     const { id } = await params;
     const packageIdInt = Number(id);
-    console.log("📦 Package ID to update:", packageIdInt);
+    console.log(`📦 Updating package ID: ${packageIdInt}`);
 
-    if (isNaN(packageIdInt)) {
-      console.log("❌ Invalid package ID:", id);
+    if (isNaN(packageIdInt) || packageIdInt <= 0) {
       return NextResponse.json(
-        { success: false, message: "Invalid package ID" },
+        { 
+          success: false, 
+          message: "ID package tidak valid",
+          code: "INVALID_ID"
+        },
         { status: 400 }
       );
     }
 
-    const body: UpdatePackageBody = await req.json();
+    // Parse request body
+    const body: UpdatePackageData = await req.json();
     const {
       serviceId,
       type,
@@ -152,194 +232,361 @@ export async function PATCH(
 
     console.log("📨 Received update data:", {
       serviceId,
-      type,
+      type: type?.substring(0, 50) + (type && type.length > 50 ? '...' : ''),
       highlight,
       price,
       discount,
-      link,
+      link: link?.substring(0, 50) + (link && link.length > 50 ? '...' : ''),
       featuresCount: features.length,
       requirementsCount: requirements.length,
     });
 
-    // Enhanced validation
+    // VALIDASI DATA
+    const validationErrors: string[] = [];
+
+    // Validasi serviceId
     if (serviceId !== undefined) {
       if (typeof serviceId !== "number" || serviceId <= 0) {
-        return NextResponse.json(
-          { success: false, message: "Invalid service ID" },
-          { status: 400 }
-        );
+        validationErrors.push("Service ID harus berupa angka positif");
+      } else {
+        // Cek apakah service exists (dilakukan dalam transaction)
       }
+    }
 
-      // Validate service exists
-      const serviceExists = await prisma.service.findUnique({
-        where: { id: serviceId },
+    // Validasi price
+    if (price !== undefined) {
+      if (typeof price !== "number" || price < 0) {
+        validationErrors.push("Price harus berupa angka positif");
+      }
+    }
+
+    // Validasi discount
+    if (discount !== undefined) {
+      if (typeof discount !== "number" || discount < 0 || discount > 100) {
+        validationErrors.push("Discount harus antara 0 dan 100");
+      }
+    }
+
+    // Validasi type
+    if (type !== undefined && (!type.trim() || type.trim().length > 100)) {
+      validationErrors.push("Type harus diisi dan maksimal 100 karakter");
+    }
+
+    // Validasi link
+    if (link !== undefined && (!link.trim() || link.trim().length > 500)) {
+      validationErrors.push("Link harus diisi dan maksimal 500 karakter");
+    }
+
+    // Validasi features
+    if (features.length > 100) {
+      validationErrors.push("Maksimal 100 features diperbolehkan");
+    }
+
+    // Validasi requirements
+    if (requirements.length > 50) {
+      validationErrors.push("Maksimal 50 requirements diperbolehkan");
+    }
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Validasi gagal",
+          errors: validationErrors,
+          code: "VALIDATION_FAILED"
+        },
+        { status: 400 }
+      );
+    }
+
+    // START TRANSACTION dengan timeout
+    console.log("💾 Starting database transaction...");
+    
+    transaction = await prisma.$transaction(async (tx) => {
+      // 1. Cek apakah package exists
+      const existingPackage = await tx.package.findUnique({
+        where: { id: packageIdInt },
+        select: { id: true, serviceId: true, price: true, discount: true }
       });
-      if (!serviceExists) {
-        return NextResponse.json(
-          { success: false, message: "Service not found" },
-          { status: 404 }
-        );
+
+      if (!existingPackage) {
+        throw new Error("Package tidak ditemukan");
       }
-    }
 
-    if (price !== undefined && (typeof price !== "number" || price < 0)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid price" },
-        { status: 400 }
-      );
-    }
+      // 2. Cek service jika serviceId diupdate
+      if (serviceId !== undefined && serviceId !== existingPackage.serviceId) {
+        const serviceExists = await tx.service.findUnique({
+          where: { id: serviceId },
+          select: { id: true }
+        });
+        
+        if (!serviceExists) {
+          throw new Error("Service tidak ditemukan");
+        }
+      }
 
-    if (
-      discount !== undefined &&
-      (typeof discount !== "number" || discount < 0 || discount > 100)
-    ) {
-      return NextResponse.json(
-        { success: false, message: "Discount must be between 0 and 100" },
-        { status: 400 }
-      );
-    }
+      // 3. Prepare update data untuk package
+      const updateData: any = {
+        updatedAt: new Date(),
+      };
 
-    // Check if package exists
-    const existingPackage = await prisma.package.findUnique({
-      where: { id: packageIdInt },
-    });
+      if (serviceId !== undefined) updateData.serviceId = serviceId;
+      if (type !== undefined) updateData.type = type.trim();
+      if (highlight !== undefined) updateData.highlight = highlight;
+      if (link !== undefined) updateData.link = link.trim();
+      if (price !== undefined) updateData.price = price;
+      if (discount !== undefined) updateData.discount = discount;
 
-    if (!existingPackage) {
-      console.log("❌ Package not found:", packageIdInt);
-      return NextResponse.json(
-        { success: false, message: "Package not found" },
-        { status: 404 }
-      );
-    }
+      // Calculate priceOriginal jika price atau discount berubah
+      const finalPrice = price !== undefined ? price : existingPackage.price;
+      const finalDiscount = discount !== undefined ? discount : existingPackage.discount;
+      updateData.priceOriginal = calculateOriginalPrice(finalPrice, finalDiscount);
 
-    console.log("✅ Package found, preparing update...");
+      // 4. Update package data
+      console.log("🔄 Updating package basic info...");
+      await tx.package.update({
+        where: { id: packageIdInt },
+        data: updateData,
+      });
 
-    // Prepare update data dengan type yang tepat
-    const updateData: PackageUpdateData = {
-      updatedAt: new Date(),
-    };
+      // 5. Handle features dengan batch processing
+      if (Array.isArray(features)) {
+        console.log(`🔄 Processing ${features.length} features...`);
+        
+        // Hapus semua features lama
+        await tx.packageFeature.deleteMany({
+          where: { packageId: packageIdInt },
+        });
 
-    if (serviceId !== undefined) updateData.serviceId = serviceId;
-    if (type !== undefined) updateData.type = type.trim();
-    if (highlight !== undefined) updateData.highlight = highlight;
-    if (link !== undefined) updateData.link = link.trim();
+        // Filter features yang valid
+        const validFeatures = features.filter(f => 
+          f && typeof f === 'object' && 
+          f.feature && f.feature.trim() !== ''
+        );
 
-    // Handle price calculations
-    const finalPrice = price !== undefined ? price : existingPackage.price;
-    const finalDiscount =
-      discount !== undefined ? discount : existingPackage.discount;
+        if (validFeatures.length > 0) {
+          // Process dalam batch untuk menghindari timeout
+          const batchSize = 50;
+          const batches = Math.ceil(validFeatures.length / batchSize);
 
-    if (price !== undefined) updateData.price = price;
-    if (discount !== undefined) updateData.discount = discount;
+          for (let i = 0; i < batches; i++) {
+            const batchStart = i * batchSize;
+            const batchEnd = batchStart + batchSize;
+            const batch = validFeatures.slice(batchStart, batchEnd);
 
-    updateData.priceOriginal = calculateOriginalPrice(
-      finalPrice,
-      finalDiscount
-    );
+            // Gunakan Promise.all untuk parallel processing dalam batch
+            const featureOperations = batch.map(async (feature) => {
+              try {
+                // Upsert feature (create if not exists)
+                const featureRecord = await tx.feature.upsert({
+                  where: { name: feature.feature.trim() },
+                  update: {},
+                  create: { name: feature.feature.trim() },
+                });
 
-    console.log("📊 Basic update data prepared");
+                // Connect feature to package
+                return tx.packageFeature.create({
+                  data: {
+                    packageId: packageIdInt,
+                    featureId: featureRecord.id,
+                    status: feature.status !== undefined ? feature.status : true,
+                  },
+                });
+              } catch (error) {
+                console.error(`Error processing feature: ${feature.feature}`, error);
+                throw error;
+              }
+            });
 
-    // **OPTIMISASI: Pisahkan operations untuk menghindari transaction timeout**
+            // Eksekusi batch
+            await Promise.all(featureOperations);
+            
+            console.log(`✅ Processed features batch ${i + 1}/${batches}`);
+          }
+        }
+      }
 
-    // 1. Update package basic info terlebih dahulu (tanpa transaction)
-    console.log("💾 Updating basic package info...");
-    await prisma.package.update({
-      where: { id: packageIdInt },
-      data: updateData,
-    });
-    console.log("✅ Basic package info updated");
+      // 6. Handle requirements dengan batch processing
+      if (Array.isArray(requirements)) {
+        console.log(`🔄 Processing ${requirements.length} requirements...`);
+        
+        // Hapus semua requirements lama
+        await tx.packageRequirement.deleteMany({
+          where: { packageId: packageIdInt },
+        });
 
-    // 2. Process features secara terpisah dengan batch operations
-    if (Array.isArray(features)) {
-      await processFeatures(packageIdInt, features);
-    }
+        // Filter requirements yang valid
+        const validRequirements = requirements.filter(r => 
+          r && typeof r === 'string' && r.trim() !== ''
+        );
 
-    // 3. Process requirements secara terpisah dengan batch operations
-    if (Array.isArray(requirements)) {
-      await processRequirements(packageIdInt, requirements);
-    }
+        if (validRequirements.length > 0) {
+          // Process dalam batch untuk menghindari timeout
+          const batchSize = 50;
+          const batches = Math.ceil(validRequirements.length / batchSize);
 
-    // 4. Fetch updated package data
-    console.log("🔍 Fetching final updated package...");
-    const updatedPackage = await prisma.package.findUnique({
-      where: { id: packageIdInt },
-      include: {
-        service: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+          for (let i = 0; i < batches; i++) {
+            const batchStart = i * batchSize;
+            const batchEnd = batchStart + batchSize;
+            const batch = validRequirements.slice(batchStart, batchEnd);
+
+            // Gunakan Promise.all untuk parallel processing dalam batch
+            const requirementOperations = batch.map(async (requirement) => {
+              try {
+                // Upsert requirement (create if not exists)
+                const requirementRecord = await tx.requirement.upsert({
+                  where: { name: requirement.trim() },
+                  update: {},
+                  create: { name: requirement.trim() },
+                });
+
+                // Connect requirement to package
+                return tx.packageRequirement.create({
+                  data: {
+                    packageId: packageIdInt,
+                    requirementId: requirementRecord.id,
+                  },
+                });
+              } catch (error) {
+                console.error(`Error processing requirement: ${requirement}`, error);
+                throw error;
+              }
+            });
+
+            // Eksekusi batch
+            await Promise.all(requirementOperations);
+            
+            console.log(`✅ Processed requirements batch ${i + 1}/${batches}`);
+          }
+        }
+      }
+
+      // 7. Fetch updated package untuk response
+      console.log("🔍 Fetching updated package data...");
+      const updatedPackage = await tx.package.findUnique({
+        where: { id: packageIdInt },
+        include: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          features: {
+            include: {
+              feature: true,
+            },
+            orderBy: {
+              feature: {
+                name: "asc",
+              },
+            },
+          },
+          requirements: {
+            include: {
+              requirement: true,
+            },
+            orderBy: {
+              requirement: {
+                name: "asc",
+              },
+            },
           },
         },
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-        requirements: {
-          include: {
-            requirement: true,
-          },
-        },
-      },
+      });
+
+      if (!updatedPackage) {
+        throw new Error("Failed to retrieve updated package");
+      }
+
+      // Format response
+      return {
+        ...updatedPackage,
+        features: updatedPackage.features.map((f) => ({
+          feature: f.feature.name,
+          status: f.status,
+        })),
+        requirements: updatedPackage.requirements.map((r) => r.requirement.name),
+      };
+    }, {
+      maxWait: 45000,
+      timeout: 90000,
     });
 
-    if (!updatedPackage) {
-      throw new Error("Failed to retrieve updated package data");
-    }
-
-    // Format response
-    const responseData = {
-      ...updatedPackage,
-      features: updatedPackage.features.map((f) => ({
-        feature: f.feature.name,
-        status: f.status,
-      })),
-      requirements: updatedPackage.requirements.map((r) => r.requirement.name),
-    };
-
-    console.log("✅ Package update completed successfully");
+    const duration = Date.now() - startTime;
+    console.log(`✅ Package ${packageIdInt} updated successfully in ${duration}ms`);
 
     return NextResponse.json({
       status: 200,
       success: true,
-      message: "Package updated successfully",
-      data: responseData,
+      message: "Package berhasil diupdate",
+      data: transaction,
+      meta: {
+        took: duration,
+        updatedAt: new Date().toISOString(),
+        featuresCount: transaction.features.length,
+        requirementsCount: transaction.requirements.length,
+      },
     });
-  } catch (err) {
-    console.error("❌ PATCH /api/packages/[id] error:", err);
+  } catch (err: any) {
+    const duration = Date.now() - startTime;
+    console.error(`❌ PATCH /api/packages/[id] error (${duration}ms):`, err);
 
-    let errorMessage = "Server error";
-    if (err instanceof Error) {
-      errorMessage = err.message;
-
-      // Handle specific errors
-      if (err.message.includes("Unique constraint")) {
-        errorMessage = "A package with similar features already exists";
-      } else if (err.message.includes("Foreign key constraint")) {
-        errorMessage = "Related service not found";
-      } else if (
-        err.message.includes("Database") ||
-        err.message.includes("transaction")
-      ) {
-        errorMessage =
-          "Database operation timed out. Please try again with less data.";
+    // Rollback transaction jika ada
+    if (transaction) {
+      try {
+        await prisma.$executeRaw`ROLLBACK`;
+      } catch (rollbackError) {
+        console.error("Rollback error:", rollbackError);
       }
+    }
+
+    let status = 500;
+    let message = "Server error";
+    let code = "SERVER_ERROR";
+
+    // Handle specific errors
+    if (err.message.includes("Package tidak ditemukan")) {
+      status = 404;
+      message = "Package tidak ditemukan";
+      code = "NOT_FOUND";
+    } else if (err.message.includes("Service tidak ditemukan")) {
+      status = 404;
+      message = "Service tidak ditemukan";
+      code = "SERVICE_NOT_FOUND";
+    } else if (err.message.includes("timeout") || err.message.includes("Timeout")) {
+      status = 504;
+      message = "Database operation timed out. Coba lagi dengan data yang lebih sedikit.";
+      code = "TIMEOUT";
+    } else if (err.message.includes("Unique constraint")) {
+      status = 409;
+      message = "Data dengan informasi yang sama sudah ada";
+      code = "DUPLICATE_DATA";
+    } else if (err.message.includes("Foreign key constraint")) {
+      status = 400;
+      message = "Data referensi tidak valid";
+      code = "FOREIGN_KEY_ERROR";
+    } else if (err.message.includes("Database") || err.message.includes("Prisma")) {
+      message = "Database error. Silakan coba lagi.";
+      code = "DATABASE_ERROR";
     }
 
     return NextResponse.json(
       {
         success: false,
-        message: errorMessage,
-        ...(process.env.NODE_ENV === "development" && {
-          error: String(err),
-        }),
+        message,
+        code,
+        details: process.env.NODE_ENV === "development" ? err.message : undefined,
+        meta: {
+          took: duration,
+          timestamp: new Date().toISOString(),
+        },
       },
-      { status: 500 }
+      { status }
     );
   }
 }
-
 // ===================== DELETE =====================
 export async function DELETE(
   req: NextRequest,
