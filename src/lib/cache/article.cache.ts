@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import prisma from "@/lib/prisma";
-import { Prisma, Status } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export const getArticlesCached = unstable_cache(
   async (params: {

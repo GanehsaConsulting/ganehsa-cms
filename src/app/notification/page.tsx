@@ -3,12 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Wrapper } from "@/components/wrapper";
 import React, { useState } from "react";
-import { IoNotifications, IoSearch } from "react-icons/io5";
+import { IoNotifications } from "react-icons/io5";
 import { LuSearchX } from "react-icons/lu";
 import { MdMarkChatRead } from "react-icons/md";
 import { GoDotFill } from "react-icons/go";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
 
 interface NotifCardProps {
   type: string;

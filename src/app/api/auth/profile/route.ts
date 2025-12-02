@@ -1,14 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-// interface EditProfileRequest {
-//   email: string;
-//   name: string;
-//   password: string;
-// }
 
 export async function GET(req: Request) {
   try {

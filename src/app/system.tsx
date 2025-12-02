@@ -1,17 +1,11 @@
 import {
   HiHome,
-  HiBookOpen,
-  HiCamera,
-  HiSpeakerphone,
   HiCurrencyDollar,
   HiCog,
   HiBell,
 } from "react-icons/hi";
-import { LuLogOut } from "react-icons/lu";
 import { HiPhoto } from "react-icons/hi2";
 import { MdBusinessCenter } from "react-icons/md";
-import { FaPhotoVideo } from "react-icons/fa";
-import { PiVideoConferenceFill } from "react-icons/pi";
 import { TbFoldersFilled } from "react-icons/tb";
 
 export const navigationItems = {

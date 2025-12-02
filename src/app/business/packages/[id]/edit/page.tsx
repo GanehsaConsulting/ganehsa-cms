@@ -32,6 +32,28 @@ interface PackageData {
   requirements: string[];
 }
 
+interface OriginalData {
+  type: string;
+  price: string;
+  discount: string;
+  link: string;
+  highlight: boolean;
+  serviceId: string;
+  features: Feature[];
+  requirements: string[];
+}
+
+interface OptimizedPayload {
+  serviceId: number;
+  type: string;
+  price: number;
+  discount: number;
+  link: string;
+  highlight: boolean;
+  features: Feature[];
+  requirements: string[];
+}
+
 // Constants untuk optimasi
 const MAX_FEATURES = 50;
 const MAX_REQUIREMENTS = 30;
@@ -60,7 +82,7 @@ export default function EditPackagePage() {
   const [requirements, setRequirements] = useState<string[]>([""]);
 
   // Refs untuk tracking
-  const originalDataRef = useRef<any>(null);
+  const originalDataRef = useRef<OriginalData | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Services hook
@@ -71,28 +93,43 @@ export default function EditPackagePage() {
   } = useServices();
 
   // Fungsi untuk mengoptimalkan data sebelum dikirim
-  const optimizePayload = (payload: any) => {
-    const optimized = { ...payload };
-    
+  const optimizePayload = (payload: {
+    serviceId: string;
+    type: string;
+    price: string;
+    discount: string;
+    link: string;
+    highlight: boolean;
+    features: Feature[];
+    requirements: string[];
+  }): OptimizedPayload => {
     // Remove empty features dan requirements
-    optimized.features = optimized.features.filter((f: Feature) => f.feature.trim() !== "");
-    optimized.requirements = optimized.requirements.filter((r: string) => r.trim() !== "");
+    const filteredFeatures = payload.features.filter(f => f.feature.trim() !== "");
+    const filteredRequirements = payload.requirements.filter(r => r.trim() !== "");
     
     // Trim semua string
-    optimized.type = optimized.type.trim();
-    optimized.link = optimized.link.trim();
-    optimized.features = optimized.features.map((f: Feature) => ({
+    const trimmedFeatures = filteredFeatures.map((f: Feature) => ({
       feature: f.feature.trim(),
       status: f.status
     }));
-    optimized.requirements = optimized.requirements.map((r: string) => r.trim());
+    
+    const trimmedRequirements = filteredRequirements.map((r: string) => r.trim());
     
     // Konversi tipe data
-    optimized.serviceId = parseInt(optimized.serviceId);
-    optimized.price = parseFloat(optimized.price) || 0;
-    optimized.discount = parseFloat(optimized.discount) || 0;
+    const serviceIdNum = parseInt(payload.serviceId);
+    const priceNum = parseFloat(payload.price) || 0;
+    const discountNum = parseFloat(payload.discount) || 0;
     
-    return optimized;
+    return {
+      serviceId: isNaN(serviceIdNum) ? 0 : serviceIdNum,
+      type: payload.type.trim(),
+      price: isNaN(priceNum) ? 0 : priceNum,
+      discount: isNaN(discountNum) ? 0 : discountNum,
+      link: payload.link.trim(),
+      highlight: payload.highlight,
+      features: trimmedFeatures,
+      requirements: trimmedRequirements,
+    };
   };
 
   // Fetch package data dengan retry
@@ -164,11 +201,11 @@ export default function EditPackagePage() {
         
         // Simpan original data untuk comparison
         originalDataRef.current = {
-          type: data.type,
+          type: data.type || "",
           price: data.price?.toString() || "0",
           discount: data.discount?.toString() || "0",
-          link: data.link,
-          highlight: data.highlight,
+          link: data.link || "",
+          highlight: data.highlight || false,
           serviceId: data.serviceId?.toString() || "",
           features: initialFeatures,
           requirements: initialRequirements,
@@ -178,25 +215,27 @@ export default function EditPackagePage() {
       } else {
         throw new Error(result.message || "Data package tidak valid");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error fetching package:", error);
       
+      const errorMessage = error instanceof Error ? error.message : "Gagal memuat data package";
+      
       // Retry logic
-      if (retryCount < 3 && !error.message?.includes("404")) {
+      if (retryCount < 3 && !errorMessage.includes("404")) {
         console.log(`🔄 Retrying fetch (${retryCount + 1}/3)...`);
         setTimeout(() => fetchPackageData(retryCount + 1), 1000 * (retryCount + 1));
         return;
       }
       
-      const errorMessage = error.name === "TimeoutError" 
+      const finalErrorMessage = errorMessage.includes("Timeout") 
         ? "Timeout: Server terlalu lama merespon"
-        : error.message || "Gagal memuat data package";
+        : errorMessage;
       
-      toast.error(errorMessage);
-      setErrorDetails(errorMessage);
+      toast.error(finalErrorMessage);
+      setErrorDetails(finalErrorMessage);
       
       // Don't redirect immediately, show error with retry option
-      if (error.message?.includes("404") || error.message?.includes("401")) {
+      if (errorMessage.includes("404") || errorMessage.includes("401")) {
         setTimeout(() => router.push("/business/packages"), 3000);
       }
     } finally {
@@ -379,7 +418,7 @@ export default function EditPackagePage() {
 
   // Update package dengan timeout dan retry
   const updatePackageWithRetry = async (
-    payload: any,
+    payload: OptimizedPayload,
     maxRetries = 3
   ): Promise<{ success: boolean; data?: any; error?: string }> => {
     const token = getToken();
@@ -432,12 +471,13 @@ export default function EditPackagePage() {
         } else {
           throw new Error(responseData.message || "Gagal mengupdate package");
         }
-      } catch (error: any) {
-        lastError = error;
-        console.error(`❌ Update attempt ${attempt + 1} failed:`, error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        lastError = err;
+        console.error(`❌ Update attempt ${attempt + 1} failed:`, err);
 
         // Jika bukan timeout atau abort, tidak usah retry
-        if (error.name === "AbortError" || error.message.includes("timeout")) {
+        if (err.name === "AbortError" || err.message.includes("timeout")) {
           // Coba lagi dengan timeout yang lebih pendek
           if (attempt < maxRetries - 1) {
             const delay = Math.pow(2, attempt) * 1000;
@@ -490,7 +530,7 @@ export default function EditPackagePage() {
       const validFeatures = features.filter(f => f.feature.trim() !== "");
       const validRequirements = requirements.filter(r => r.trim() !== "");
       
-      const payload = optimizePayload({
+      const rawPayload = {
         serviceId,
         type,
         price,
@@ -499,7 +539,9 @@ export default function EditPackagePage() {
         highlight,
         features: validFeatures,
         requirements: validRequirements,
-      });
+      };
+
+      const payload = optimizePayload(rawPayload);
 
       console.log("📦 Optimized payload:", {
         ...payload,
@@ -547,33 +589,35 @@ export default function EditPackagePage() {
       } else {
         throw new Error(result.error || "Gagal mengupdate package");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error updating package:", error);
       
       let errorMessage = "Terjadi kesalahan saat mengupdate package";
       let showRetry = true;
       
-      if (error.name === "AbortError") {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      if (errorMsg.includes("AbortError")) {
         errorMessage = "Request timeout. Server terlalu lama merespon.";
         setErrorDetails("Timeout setelah 30 detik. Coba lagi atau kurangi jumlah data.");
-      } else if (error.message.includes("timeout")) {
+      } else if (errorMsg.includes("timeout")) {
         errorMessage = "Koneksi timeout. Periksa jaringan Anda.";
-      } else if (error.message.includes("Failed to fetch")) {
+      } else if (errorMsg.includes("Failed to fetch")) {
         errorMessage = "Tidak dapat terhubung ke server.";
-      } else if (error.message.includes("401")) {
+      } else if (errorMsg.includes("401")) {
         errorMessage = "Sesi telah berakhir. Silakan login kembali.";
         showRetry = false;
-      } else if (error.message.includes("404")) {
+      } else if (errorMsg.includes("404")) {
         errorMessage = "Package tidak ditemukan.";
         showRetry = false;
-      } else if (error.message.includes("500")) {
+      } else if (errorMsg.includes("500")) {
         errorMessage = "Server error. Silakan coba lagi nanti.";
         setErrorDetails("Error internal server. Hubungi administrator.");
-      } else if (error.message.includes("Database")) {
+      } else if (errorMsg.includes("Database")) {
         errorMessage = "Database timeout. Coba lagi dengan data yang lebih sedikit.";
         setErrorDetails("Database operation timeout. Kurangi jumlah features/requirements.");
       } else {
-        errorMessage = error.message || errorMessage;
+        errorMessage = errorMsg || errorMessage;
       }
       
       toast.error(errorMessage, {
@@ -585,45 +629,10 @@ export default function EditPackagePage() {
         } : undefined,
       });
       
-      setErrorDetails(error.message);
+      setErrorDetails(errorMsg);
     } finally {
       setIsLoading(false);
       setTimeout(() => setUploadProgress(0), 1000);
-    }
-  };
-
-  // Clear all empty features/requirements
-  const cleanupEmptyFields = () => {
-    // Remove empty features
-    const cleanedFeatures = features.filter(f => f.feature.trim() !== "");
-    if (cleanedFeatures.length === 0) {
-      cleanedFeatures.push({ feature: "", status: true });
-    }
-    setFeatures(cleanedFeatures);
-    
-    // Remove empty requirements
-    const cleanedRequirements = requirements.filter(r => r.trim() !== "");
-    if (cleanedRequirements.length === 0) {
-      cleanedRequirements.push("");
-    }
-    setRequirements(cleanedRequirements);
-    
-    toast.success("Field kosong telah dibersihkan");
-  };
-
-  // Reset to original data
-  const resetToOriginal = () => {
-    if (originalDataRef.current) {
-      const original = originalDataRef.current;
-      setType(original.type || "");
-      setPrice(original.price || "0");
-      setDiscount(original.discount || "0");
-      setLink(original.link || "");
-      setHighlight(original.highlight || false);
-      setServiceId(original.serviceId || "");
-      setFeatures(original.features || [{ feature: "", status: true }]);
-      setRequirements(original.requirements || [""]);
-      toast.success("Data telah direset ke nilai awal");
     }
   };
 
@@ -709,7 +718,6 @@ export default function EditPackagePage() {
         {/* Header Actions kanan */}
         <HeaderActions position="right">
           <div className="flex items-center gap-3">
-           
             
             <Link href="/business/packages">
               <Button type="button" variant="outline" disabled={isLoading}>
