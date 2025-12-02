@@ -54,6 +54,18 @@ interface OptimizedPayload {
   requirements: string[];
 }
 
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  message?: string;
+  data?: T;
+}
+
+interface Service {
+  id: number;
+  name: string;
+  // Add other service properties as needed
+}
+
 // Constants untuk optimasi
 const MAX_FEATURES = 50;
 const MAX_REQUIREMENTS = 30;
@@ -85,15 +97,15 @@ export default function EditPackagePage() {
   const originalDataRef = useRef<OriginalData | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Services hook
+  // Services hook - type the hook return value
   const {
     dataServices,
     isLoading: servicesLoading,
     fetchDataService,
   } = useServices();
 
-  // Fungsi untuk mengoptimalkan data sebelum dikirim
-  const optimizePayload = (payload: {
+  // Type the raw payload
+  interface RawPayload {
     serviceId: string;
     type: string;
     price: string;
@@ -102,7 +114,10 @@ export default function EditPackagePage() {
     highlight: boolean;
     features: Feature[];
     requirements: string[];
-  }): OptimizedPayload => {
+  }
+
+  // Fungsi untuk mengoptimalkan data sebelum dikirim
+  const optimizePayload = (payload: RawPayload): OptimizedPayload => {
     // Remove empty features dan requirements
     const filteredFeatures = payload.features.filter(f => f.feature.trim() !== "");
     const filteredRequirements = payload.requirements.filter(r => r.trim() !== "");
@@ -162,7 +177,7 @@ export default function EditPackagePage() {
         throw new Error(`Gagal mengambil data (${response.status})`);
       }
 
-      const result = await response.json();
+      const result: ApiResponse<PackageData> = await response.json();
 
       if (result.success && result.data) {
         const data: PackageData = result.data;
@@ -417,10 +432,16 @@ export default function EditPackagePage() {
   };
 
   // Update package dengan timeout dan retry
+  interface UpdateResult {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+  }
+
   const updatePackageWithRetry = async (
     payload: OptimizedPayload,
     maxRetries = 3
-  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+  ): Promise<UpdateResult> => {
     const token = getToken();
     if (!token) {
       return { success: false, error: "Token tidak ditemukan" };
@@ -453,7 +474,7 @@ export default function EditPackagePage() {
 
         clearTimeout(timeoutId);
 
-        const responseData = await response.json();
+        const responseData: ApiResponse = await response.json();
         console.log(`📩 API Response (attempt ${attempt + 1}):`, {
           status: response.status,
           success: responseData.success,
@@ -530,7 +551,7 @@ export default function EditPackagePage() {
       const validFeatures = features.filter(f => f.feature.trim() !== "");
       const validRequirements = requirements.filter(r => r.trim() !== "");
       
-      const rawPayload = {
+      const rawPayload: RawPayload = {
         serviceId,
         type,
         price,
@@ -848,7 +869,7 @@ export default function EditPackagePage() {
                 </Label>
                 <SelectComponent
                   placeholder="Pilih Service"
-                  options={dataServices.map((service) => ({
+                  options={dataServices.map((service: Service) => ({
                     label: service.name,
                     value: String(service.id),
                   }))}
@@ -1143,51 +1164,6 @@ export default function EditPackagePage() {
                   </p>
                 </div>
               )}
-            </div>
-
-
-            {/* Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-black/20 rounded-xl border border-white/10">
-              <div className="text-sm text-gray-400">
-                {hasChanges() ? (
-                  <span className="text-yellow-300">
-                    ⚠️ Ada perubahan yang belum disimpan
-                  </span>
-                ) : (
-                  <span className="text-green-300">
-                    ✓ Semua perubahan telah disimpan
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                <Link href="/business/packages">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    disabled={isLoading}
-                    className="border-gray-500 text-gray-400 hover:bg-gray-500/10"
-                  >
-                    Kembali
-                  </Button>
-                </Link>
-                <Button
-                  type="submit"
-                  disabled={isLoading || !hasChanges()}
-                  className="min-w-[160px] bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      {uploadProgress > 0 ? `Menyimpan ${Math.round(uploadProgress)}%` : "Menyimpan..."}
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Simpan Perubahan
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
           </form>
         )}

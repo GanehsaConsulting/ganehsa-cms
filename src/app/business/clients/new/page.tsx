@@ -172,7 +172,7 @@ export default function NewClientPage() {
       }
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/clients`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/clients`,
         {
           method: "POST",
           headers: {

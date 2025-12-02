@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verifyAuth } from '@/lib/auth';
+import { calculateOriginalPrice } from '@/lib/helpers';
 
 // Konfigurasi Prisma dengan timeout yang lebih panjang
 const prisma = new PrismaClient({
@@ -20,12 +21,6 @@ const prisma = new PrismaClient({
     : ['error'],
 });
 
-// Helper untuk menghitung harga original
-const calculateOriginalPrice = (price: number, discount: number): number => {
-  if (discount <= 0 || discount >= 100) return price;
-  return Math.round(price / (1 - discount / 100));
-};
-
 // Interface untuk update data
 interface UpdatePackageData {
   serviceId?: number;
@@ -36,6 +31,32 @@ interface UpdatePackageData {
   highlight?: boolean;
   features?: Array<{ feature: string; status: boolean }>;
   requirements?: string[];
+}
+
+// Interface untuk Package dengan relasi
+interface PackageWithRelations {
+  id: number;
+  serviceId: number;
+  type: string;
+  price: number;
+  discount: number;
+  priceOriginal: number;
+  link: string;
+  highlight: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  service: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  features: Array<{
+    feature: { name: string };
+    status: boolean;
+  }>;
+  requirements: Array<{
+    requirement: { name: string };
+  }>;
 }
 
 // GET endpoint untuk mengambil data package
@@ -96,7 +117,7 @@ export async function GET(
       new Promise<null>((_, reject) => 
         setTimeout(() => reject(new Error("Database timeout")), 15000)
       )
-    ]) as any;
+    ]) as PackageWithRelations | null;
 
     if (!pkg) {
       console.log(`❌ Package not found: ${packageIdInt}`);
@@ -122,16 +143,15 @@ export async function GET(
       highlight: pkg.highlight,
       createdAt: pkg.createdAt,
       updatedAt: pkg.updatedAt,
-      features: pkg.features.map((f: any) => ({
+      features: pkg.features.map((f) => ({
         feature: f.feature.name,
         status: f.status,
       })),
-      requirements: pkg.requirements.map((r: any) => r.requirement.name),
+      requirements: pkg.requirements.map((r) => r.requirement.name),
       service: pkg.service,
     };
 
     const duration = Date.now() - startTime;
-    console.log(`✅ GET package ${packageIdInt} success in ${duration}ms`);
 
     return NextResponse.json({
       status: 200,
@@ -144,21 +164,22 @@ export async function GET(
         requirementsCount: responseData.requirements.length,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     const duration = Date.now() - startTime;
-    console.error(`❌ GET /api/packages/[id] error (${duration}ms):`, err);
+    const error = err as Error;
+    console.error(`❌ GET /api/packages/[id] error (${duration}ms):`, error);
 
     let status = 500;
     let message = "Server error";
     let code = "SERVER_ERROR";
 
-    if (err.message.includes("timeout") || err.message.includes("Timeout")) {
+    if (error.message.includes("timeout") || error.message.includes("Timeout")) {
       status = 504;
       message = "Database timeout. Silakan coba lagi.";
       code = "TIMEOUT";
-    } else if (err.message.includes("Invalid") || err.message.includes("valid")) {
+    } else if (error.message.includes("Invalid") || error.message.includes("valid")) {
       status = 400;
-      message = err.message;
+      message = error.message;
       code = "VALIDATION_ERROR";
     }
 
@@ -168,8 +189,8 @@ export async function GET(
         message,
         code,
         ...(process.env.NODE_ENV === "development" && { 
-          error: err.message,
-          stack: err.stack 
+          error: error.message,
+          stack: error.stack 
         }),
       },
       { status }
@@ -183,7 +204,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
-  let transaction: any = null;
+  let transactionResult: PackageWithRelations | null = null;
 
   try {
     console.log("🔄 Starting PATCH operation for package");
@@ -248,8 +269,6 @@ export async function PATCH(
     if (serviceId !== undefined) {
       if (typeof serviceId !== "number" || serviceId <= 0) {
         validationErrors.push("Service ID harus berupa angka positif");
-      } else {
-        // Cek apakah service exists (dilakukan dalam transaction)
       }
     }
 
@@ -302,7 +321,7 @@ export async function PATCH(
     // START TRANSACTION dengan timeout
     console.log("💾 Starting database transaction...");
     
-    transaction = await prisma.$transaction(async (tx) => {
+    transactionResult = await prisma.$transaction(async (tx) => {
       // 1. Cek apakah package exists
       const existingPackage = await tx.package.findUnique({
         where: { id: packageIdInt },
@@ -326,7 +345,7 @@ export async function PATCH(
       }
 
       // 3. Prepare update data untuk package
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
 
@@ -500,19 +519,20 @@ export async function PATCH(
         throw new Error("Failed to retrieve updated package");
       }
 
-      // Format response
-      return {
-        ...updatedPackage,
-        features: updatedPackage.features.map((f) => ({
-          feature: f.feature.name,
-          status: f.status,
-        })),
-        requirements: updatedPackage.requirements.map((r) => r.requirement.name),
-      };
+      return updatedPackage as PackageWithRelations;
     }, {
       maxWait: 45000,
       timeout: 90000,
     });
+
+    const formattedResult = {
+      ...transactionResult,
+      features: transactionResult.features.map((f) => ({
+        feature: f.feature.name,
+        status: f.status,
+      })),
+      requirements: transactionResult.requirements.map((r) => r.requirement.name),
+    };
 
     const duration = Date.now() - startTime;
     console.log(`✅ Package ${packageIdInt} updated successfully in ${duration}ms`);
@@ -521,53 +541,45 @@ export async function PATCH(
       status: 200,
       success: true,
       message: "Package berhasil diupdate",
-      data: transaction,
+      data: formattedResult,
       meta: {
         took: duration,
         updatedAt: new Date().toISOString(),
-        featuresCount: transaction.features.length,
-        requirementsCount: transaction.requirements.length,
+        featuresCount: formattedResult.features.length,
+        requirementsCount: formattedResult.requirements.length,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     const duration = Date.now() - startTime;
-    console.error(`❌ PATCH /api/packages/[id] error (${duration}ms):`, err);
-
-    // Rollback transaction jika ada
-    if (transaction) {
-      try {
-        await prisma.$executeRaw`ROLLBACK`;
-      } catch (rollbackError) {
-        console.error("Rollback error:", rollbackError);
-      }
-    }
+    const error = err as Error;
+    console.error(`❌ PATCH /api/packages/[id] error (${duration}ms):`, error);
 
     let status = 500;
     let message = "Server error";
     let code = "SERVER_ERROR";
 
     // Handle specific errors
-    if (err.message.includes("Package tidak ditemukan")) {
+    if (error.message.includes("Package tidak ditemukan")) {
       status = 404;
       message = "Package tidak ditemukan";
       code = "NOT_FOUND";
-    } else if (err.message.includes("Service tidak ditemukan")) {
+    } else if (error.message.includes("Service tidak ditemukan")) {
       status = 404;
       message = "Service tidak ditemukan";
       code = "SERVICE_NOT_FOUND";
-    } else if (err.message.includes("timeout") || err.message.includes("Timeout")) {
+    } else if (error.message.includes("timeout") || error.message.includes("Timeout")) {
       status = 504;
       message = "Database operation timed out. Coba lagi dengan data yang lebih sedikit.";
       code = "TIMEOUT";
-    } else if (err.message.includes("Unique constraint")) {
+    } else if (error.message.includes("Unique constraint")) {
       status = 409;
       message = "Data dengan informasi yang sama sudah ada";
       code = "DUPLICATE_DATA";
-    } else if (err.message.includes("Foreign key constraint")) {
+    } else if (error.message.includes("Foreign key constraint")) {
       status = 400;
       message = "Data referensi tidak valid";
       code = "FOREIGN_KEY_ERROR";
-    } else if (err.message.includes("Database") || err.message.includes("Prisma")) {
+    } else if (error.message.includes("Database") || error.message.includes("Prisma")) {
       message = "Database error. Silakan coba lagi.";
       code = "DATABASE_ERROR";
     }
@@ -577,7 +589,7 @@ export async function PATCH(
         success: false,
         message,
         code,
-        details: process.env.NODE_ENV === "development" ? err.message : undefined,
+        details: process.env.NODE_ENV === "development" ? error.message : undefined,
         meta: {
           took: duration,
           timestamp: new Date().toISOString(),
@@ -587,6 +599,7 @@ export async function PATCH(
     );
   }
 }
+
 // ===================== DELETE =====================
 export async function DELETE(
   req: NextRequest,
@@ -618,7 +631,8 @@ export async function DELETE(
       data: { id },
     });
   } catch (err) {
-    console.error("DELETE /api/packages/[id] error:", err);
+    const error = err as Error;
+    console.error("DELETE /api/packages/[id] error:", error);
     return NextResponse.json(
       { success: false, message: "Server error" },
       { status: 500 }
