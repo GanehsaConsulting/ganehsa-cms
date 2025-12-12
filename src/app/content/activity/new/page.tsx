@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/popover";
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
-import JoditEditor from "jodit-react";
 import { ChevronDownIcon, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { combineDateAndTime } from "@/lib/helpers";
@@ -189,8 +188,6 @@ export default function AddNewActivity() {
     setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
   };
 
-  const editor = useRef(null);
-
   return (
     <>
       <HeaderActions position="left">
@@ -263,17 +260,13 @@ export default function AddNewActivity() {
           {/* Content Editor */}
           <div className="space-y-3">
             <Label className="text-white">Description *</Label>
-            <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
-              <JoditEditor
-                value={longDesc}
-                onBlur={(newContent) => setLongDesc(newContent)}
-                onChange={() => {}}
-                config={{
-                  minHeight: 400,
-                }}
-                ref={editor}
-              />
-            </div>
+            <textarea
+              value={longDesc}
+              onChange={(e) => setLongDesc(e.target.value)}
+              className="w-full p-3 rounded-lg border bg-white dark:bg-gray-900 text-black dark:text-white min-h-[200px] resize-vertical"
+              placeholder="Enter description..."
+              rows={10}
+            />
           </div>
         </div>
 

@@ -23,7 +23,7 @@ import { MdInsertPhoto, MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
-import { getToken } from "@/lib/helpers";
+import { getToken, stripHtmlTags } from "@/lib/helpers";
 import { useActivities } from "@/hooks/useActivities";
 import { AiFillDollarCircle } from "react-icons/ai";
 import Image from "next/image"; // Import Next.js Image component
@@ -51,7 +51,21 @@ const activityColumns: Column<TableActivity>[] = [
   { key: "id", label: "ID", className: "font-semibold w-[30]" },
   { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
   // { key: "desc", label: "Description", className: "min-w-[180px]" },
-  { key: "longDesc", label: "Description", className: "min-w-[180px]" },
+   { 
+    key: "longDesc", 
+    label: "Description", 
+    className: "min-w-[190px]",
+    render: (row) => {
+      const plainText = stripHtmlTags(row.longDesc);
+      // Potong text jika terlalu panjang
+      const maxLength = 100;
+      const truncated = plainText.length > maxLength 
+        ? plainText.substring(0, maxLength) + "..." 
+        : plainText;
+      
+      return <span className="text-sm text-gray-700">{truncated}</span>;
+    }
+  },
   {
     key: "isPromo",
     label: "Status Image",
@@ -138,8 +152,6 @@ const activityColumns: Column<TableActivity>[] = [
     ),
   },
 ];
-
-// ... imports tetap sama
 
 export default function ActivityPage() {
   const router = useRouter();

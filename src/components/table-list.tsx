@@ -39,6 +39,9 @@ interface TableListProps<T> {
 const truncate = (str: string, max: number) =>
   str.length > max ? str.slice(0, max) + "..." : str;
 
+// helper strip HTML tags
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '');
+
 export const TableList = <T extends { id: number | string }>({
   columns,
   data,
@@ -173,7 +176,7 @@ export const TableList = <T extends { id: number | string }>({
                                 col.key === "slug" 
                                 // *truncate / line clamp manual
                                   ? typeof row[col.key] === "string"
-                                    ? truncate(row[col.key] as string, 20)
+                                    ? truncate(col.key === "longDesc" ? stripHtml(row[col.key] as string) : (row[col.key] as string), 20)
                                     : (row[col.key] as React.ReactNode)
                                   // *nampilin arr of string + count length array 
                                     : col.key === "imageUrl"

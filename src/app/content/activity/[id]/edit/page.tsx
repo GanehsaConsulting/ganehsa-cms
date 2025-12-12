@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/popover";
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
-import JoditEditor from "jodit-react";
 import { ChevronDownIcon, Save } from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react"; // Added useCallback
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
@@ -24,6 +23,7 @@ import { useMedias } from "@/hooks/useMedias";
 import Image from "next/image"; // Added Image import
 import { AiFillDollarCircle } from "react-icons/ai";
 import { MdInsertPhoto } from "react-icons/md";
+import { FiX } from "react-icons/fi";
 
 const SHOW_TITLE = [
   { label: "Active", value: "active", color: "green" as const },
@@ -120,8 +120,6 @@ export default function EditActivityPage() {
 
     return combinedDate.toISOString();
   };
-
-  const editor = useRef(null);
 
   // Function to extract time from ISO string
   const extractTimeFromISO = (isoString: string) => {
@@ -441,37 +439,19 @@ export default function EditActivityPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isLoading}
-              ref={editor}
             />
           </div>
-
-          {/* Description */}
-          {/* <div className="space-y-3">
-            <Label htmlFor="desc" className="text-white">
-              Description *
-            </Label>
-            <Textarea
-              id="desc"
-              placeholder="Masukkan description activity..."
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              disabled={isLoading}
-            />
-          </div> */}
 
           {/* Content Editor */}
           <div className="space-y-3">
             <Label className="text-white">Description *</Label>
-            <div className="rounded-lg border bg-white dark:bg-gray-900 overflow-hidden">
-              <JoditEditor
-                value={longDesc}
-                onBlur={(newContent) => setLongDesc(newContent)}
-                onChange={() => {}}
-                config={{
-                  minHeight: 400,
-                }}
-              />
-            </div>
+            <textarea
+              value={longDesc}
+              onChange={(e) => setLongDesc(e.target.value)}
+              className="w-full p-3 rounded-lg border bg-white dark:bg-gray-900 text-black dark:text-white min-h-[200px] resize-vertical"
+              placeholder="Enter description..."
+              rows={10}
+            />
           </div>
         </div>
 

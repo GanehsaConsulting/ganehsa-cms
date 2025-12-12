@@ -53,3 +53,14 @@ export function getPublicIdFromUrl(url: string): string {
     return '';
   }
 }
+
+export const stripHtmlTags = (html: string): string => {
+  if (!html) return "";
+  
+  // Buat temporary div element untuk parse HTML
+  const tmp = document.createElement("DIV");
+  tmp.innerHTML = html;
+  
+  // Ambil text content saja (otomatis menghapus semua tag HTML)
+  return tmp.textContent || tmp.innerText || "";
+};
