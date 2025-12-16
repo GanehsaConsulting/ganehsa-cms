@@ -411,39 +411,67 @@ export default function ClientsPage() {
                   />
                 </PaginationItem>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
+                {/* Generate page numbers with proper ellipsis logic */}
+                {(() => {
+                  const pages = [];
+                  const delta = 2; // Number of pages to show on each side of current page
+                  
+                  // Always show first page
+                  if (totalPages > 1) {
+                    pages.push(1);
                   }
-
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(pageNum);
-                        }}
-                        isActive={pageNum === page}
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-
-                {totalPages > 5 && (
-                  <PaginationItem>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                )}
+                  
+                  // Calculate range around current page
+                  const rangeStart = Math.max(2, page - delta);
+                  const rangeEnd = Math.min(totalPages - 1, page + delta);
+                  
+                  // Add ellipsis after first page if needed
+                  if (rangeStart > 2) {
+                    pages.push('ellipsis-start');
+                  }
+                  
+                  // Add pages in range
+                  for (let i = rangeStart; i <= rangeEnd; i++) {
+                    if (!pages.includes(i)) {
+                      pages.push(i);
+                    }
+                  }
+                  
+                  // Add ellipsis before last page if needed
+                  if (rangeEnd < totalPages - 1) {
+                    pages.push('ellipsis-end');
+                  }
+                  
+                  // Always show last page
+                  if (totalPages > 1 && !pages.includes(totalPages)) {
+                    pages.push(totalPages);
+                  }
+                  
+                  return pages.map((pageNum, index) => {
+                    if (pageNum === 'ellipsis-start' || pageNum === 'ellipsis-end') {
+                      return (
+                        <PaginationItem key={`ellipsis-${index}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(pageNum as number);
+                          }}
+                          isActive={pageNum === page}
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  });
+                })()}
 
                 <PaginationItem>
                   <PaginationNext

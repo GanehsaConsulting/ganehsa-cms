@@ -87,19 +87,19 @@ export function useClients() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [searchQuery, token, fetchClients]);
+  }, [searchQuery, token]); // Only depend on searchQuery and token
 
   // Fetch when page, limit, or service filter changes
   useEffect(() => {
     if (token) {
-      fetchClients();
+      fetchClients({ page, limit, serviceFilter });
     }
-  }, [page, limit, serviceFilter, token, fetchClients]);
+  }, [page, limit, serviceFilter, token]); // Removed fetchClients from dependencies
 
   // Function to refresh clients
   const refreshClients = useCallback(() => {
-    fetchClients();
-  }, [fetchClients]);
+    fetchClients({ page, limit, search: searchQuery, serviceFilter });
+  }, [fetchClients, page, limit, searchQuery, serviceFilter]);
 
   return {
     clients,
