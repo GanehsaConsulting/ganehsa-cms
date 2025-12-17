@@ -2,10 +2,48 @@ import { NextRequest, NextResponse } from "next/server";
 // import { Prisma, Status } from "@prisma/client";
 import prisma from "@/lib/prisma";
 
-// GET - ambil semua counter
-export async function GET() {
+// GET - ambil semua counter dengan filter periode
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get("period"); 
+
+    let startDate: Date | undefined;
+    const now = new Date();
+
+    if (period) {
+      switch (period) {
+        case "today":
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case "1week":
+          startDate = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case "1month":
+          startDate = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case "3month":
+          startDate = new Date(now.setMonth(now.getMonth() - 3));
+          break;
+        case "6month":
+          startDate = new Date(now.setMonth(now.getMonth() - 6));
+          break;
+        case "1year":
+          startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+          break;
+        default:
+          startDate = undefined;
+      }
+    }
+
     const counters = await prisma.counter.findMany({
+      where: startDate
+        ? {
+            createdAt: {
+              gte: startDate,
+            },
+          }
+        : undefined,
       orderBy: { createdAt: "desc" },
     });
 
@@ -14,6 +52,7 @@ export async function GET() {
       message: "Get Counters Successfully!",
       status: 200,
       data: counters,
+      filter: period || "all",
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "unknown error";
@@ -29,7 +68,6 @@ export async function GET() {
 }
 
 // POST → tambah + increment counter
-
 export async function POST(req: NextRequest) {
   try {
 

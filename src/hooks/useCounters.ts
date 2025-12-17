@@ -6,27 +6,51 @@ export interface Counter {
   refId: number;
   type: "ARTICLE" | "ACTIVITY" | "PROMO";
   count: number;
+  createdAt: string;
 }
 
-export function useCounters() {
+type PeriodFilter = "today" | "1week" | "1month" | "3month" | "6month" | "1year" | "all";
+
+export function useCounters(period: PeriodFilter = "all") {
   const [counters, setCounters] = useState<Counter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchCounters = async () => {
+  const fetchCounters = async (selectedPeriod: PeriodFilter) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/counter`);
+      const url = selectedPeriod !== "all" 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/system/counter?period=${selectedPeriod}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/system/counter`;
+      
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch counters: ${res.statusText}`);
+      }
+        
       const json = await res.json();
       setCounters(json.data || []);
-      setLoading(false);
     } catch (err) {
-      console.error("Failed to fetch counters:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch counters";
+      console.error(errorMessage, err);
+      setError(errorMessage);
+      setCounters([]);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCounters();
-  }, []);
+    fetchCounters(period);
+  }, [period]);
 
-  return { counters, loading };
+  return { 
+    counters, 
+    loading, 
+    error,
+    refetch: () => fetchCounters(period)
+  };
 }
