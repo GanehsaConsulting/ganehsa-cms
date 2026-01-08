@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 import { verifyAuth } from '@/lib/auth';
 import { calculateOriginalPrice } from '@/lib/helpers';
 
-// Konfigurasi Prisma dengan timeout yang lebih panjang
 const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -600,41 +599,148 @@ export async function PATCH(
   }
 }
 
-// ===================== DELETE =====================
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log("🗑️ DELETE request received");
+    
+    // Verify authentication
     const user = await verifyAuth(req);
-    if (!user)
+    if (!user) {
+      console.warn("❌ Unauthorized delete attempt");
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
+        { 
+          success: false, 
+          message: "Unauthorized",
+          code: "UNAUTHORIZED"
+        },
         { status: 401 }
       );
+    }
 
     const { id } = await params;
     const packageIdInt = Number(id);
 
-    if (isNaN(packageIdInt))
+    console.log(`🗑️ Attempting to delete package ID: ${packageIdInt}`);
+
+    // Validate ID
+    if (isNaN(packageIdInt) || packageIdInt <= 0) {
       return NextResponse.json(
-        { success: false, message: "Invalid package ID" },
+        { 
+          success: false, 
+          message: "ID package tidak valid",
+          code: "INVALID_ID"
+        },
         { status: 400 }
       );
+    }
 
-    await prisma.package.delete({ where: { id: packageIdInt } });
+    // 1. First, check if package exists
+    const existingPackage = await prisma.package.findUnique({
+      where: { id: packageIdInt },
+      include: {
+        features: true,
+        requirements: true,
+      },
+    });
+
+    if (!existingPackage) {
+      console.log(`❌ Package ${packageIdInt} not found for deletion`);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Package tidak ditemukan",
+          code: "NOT_FOUND"
+        },
+        { status: 404 }
+      );
+    }
+
+    console.log(`✅ Package ${packageIdInt} found. Type: ${existingPackage.type}`);
+    console.log(`📊 Related records: ${existingPackage.features.length} features, ${existingPackage.requirements.length} requirements`);
+
+    // 2. Delete in transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      console.log("🔄 Starting transaction for package deletion...");
+      
+      // Option A: Direct delete with cascade (if Prisma schema has onDelete: Cascade)
+      // This should work if your Prisma schema has proper cascade settings
+      const deletedPackage = await tx.package.delete({
+        where: { id: packageIdInt },
+      });
+
+      console.log(`✅ Package ${packageIdInt} deleted successfully in transaction`);
+      return deletedPackage;
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
+    });
+
+    console.log(`🎉 Package ${packageIdInt} ('${existingPackage.type}') deleted successfully`);
 
     return NextResponse.json({
       status: 200,
       success: true,
-      message: "Package deleted successfully",
-      data: { id },
+      message: `Package "${existingPackage.type}" berhasil dihapus`,
+      data: {
+        id: packageIdInt,
+        type: existingPackage.type,
+        deletedAt: new Date().toISOString(),
+      },
     });
   } catch (err) {
-    const error = err as Error;
-    console.error("DELETE /api/packages/[id] error:", error);
+    const error = err as Error & { code?: string };
+    console.error("❌ DELETE /api/business/packages/[id] error:", error);
+    console.error("Error details:", {
+      code: error.code,
+      message: error.message,
+      stack: error.stack,
+    });
+
+    // Handle specific Prisma errors
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Package tidak ditemukan atau sudah dihapus",
+          code: "NOT_FOUND",
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        },
+        { status: 404 }
+      );
+    }
+
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Tidak dapat menghapus package karena terdapat data terkait",
+          code: "FOREIGN_KEY_CONSTRAINT"
+        },
+        { status: 409 }
+      );
+    }
+
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Operasi penghapusan timeout. Silakan coba lagi.",
+          code: "TIMEOUT"
+        },
+        { status: 504 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, message: "Server error" },
+      { 
+        success: false, 
+        message: "Terjadi kesalahan saat menghapus package",
+        code: "SERVER_ERROR",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }

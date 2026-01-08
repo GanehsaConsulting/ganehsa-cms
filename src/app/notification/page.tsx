@@ -16,8 +16,6 @@ interface NotifCardProps {
   date: string;
 }
 
-
-
 export default function NotificationPage() {
   const [isNotif, setIsNotif] = useState(true);
 

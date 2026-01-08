@@ -239,7 +239,7 @@ export default function PriceList() {
     try {
       const apiUrl = `${
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      }/packages/${selectedPackage.id}`;
+      }/business/packages/${selectedPackage.id}`;
       console.log("🗑️ Deleting package from:", apiUrl);
 
       const res = await fetch(apiUrl, {

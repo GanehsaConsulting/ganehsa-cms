@@ -156,7 +156,7 @@ export default function NewPackagePage() {
       console.log("📦 Creating package with payload:", payload);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/packages`,
+        `${process.env.NEXT_PUBLIC_API_URL}/business/packages`,
         {
           method: "POST",
           headers: {
@@ -259,6 +259,7 @@ export default function NewPackagePage() {
             </div>
           </div>
         )}
+        {/*  */}
         {/* Form - Only show if services are available */}
         {dataServices.length > 0 && (
           <form

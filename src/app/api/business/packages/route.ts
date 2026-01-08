@@ -45,7 +45,7 @@ interface TransformedPackage {
   createdAt: Date;
   updatedAt: Date;
 }
-
+// 
 export const revalidate = 60;
 
 export async function GET(req: NextRequest) {
