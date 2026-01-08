@@ -213,8 +213,8 @@ function Home() {
             >
               <div className="grid grid-cols-2">
                 <div className="flex flex-col gap-1">
-                  <p className="text-neutral-400 text-xs">{item.title}</p>
-                  <p className="text-neutral-400 text-xs">Data</p>
+                  <p className="text-neutral-800 dark:text-neutral-200 font-semibold text-xs">{item.title}</p>
+                  <p className="text-neutral-700 dark:text-neutral-300  text-xs">Data</p>
                   {item.loading ? (
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
@@ -268,8 +268,8 @@ function Home() {
               className="w-[80px]"
             />
           </div>
-          <div className="h-80 overflow-y-auto no-scrollbar bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
-            <ul className=" text-xs text-white h-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+          <div className=" bg-black/10 flex-1 rounded-third px-3 py-1 overflow-hidden">
+            <ul className="h-80 overflow-y-auto no-scrollbar text-xs text-white scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
               {loadingArticleCounters || loadingArticles ? (
                 <li className="flex items-center justify-center h-full gap-2 text-white/60">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/60"></div>
