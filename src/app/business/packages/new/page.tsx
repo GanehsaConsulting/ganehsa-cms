@@ -7,7 +7,7 @@ import { SelectComponent } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { Plus, Trash2, RefreshCw, Loader2 } from "lucide-react";
@@ -22,6 +22,7 @@ interface Feature {
 
 export default function NewPackagePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const {
     dataServices,
@@ -40,6 +41,9 @@ export default function NewPackagePage() {
   ]);
   const [requirements, setRequirements] = useState<string[]>([""]);
   const [serviceId, setServiceId] = useState("");
+
+  // Get return URL from query params
+  const returnParams = searchParams.get("return") || "";
 
   // Add new feature
   const handleAddFeature = () => {
@@ -164,7 +168,7 @@ export default function NewPackagePage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -176,8 +180,11 @@ export default function NewPackagePage() {
 
       if (data.success) {
         toast.success("Package berhasil dibuat!");
-        router.push("/business/packages");
-        router.refresh();
+
+        // Navigate back with preserved params
+        const returnUrl = `/business/packages${returnParams ? `?${returnParams}` : ""}`;
+        router.push(returnUrl);
+        router.refresh(); // Refresh server data
       } else {
         throw new Error(data.message || "Gagal membuat package");
       }
@@ -189,6 +196,12 @@ export default function NewPackagePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    const returnUrl = `/business/packages${returnParams ? `?${returnParams}` : ""}`;
+    router.push(returnUrl);
   };
 
   if (servicesLoading) {
@@ -216,7 +229,10 @@ export default function NewPackagePage() {
 
         <HeaderActions position="right">
           <div className="flex items-center gap-3">
-            <Link href="/business/packages">
+            {/* Or if using Link */}
+            <Link
+              href={`/business/packages${returnParams ? `?${returnParams}` : ""}`}
+            >
               <Button type="button" variant="outline">
                 Batal
               </Button>

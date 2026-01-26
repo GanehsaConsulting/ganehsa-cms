@@ -7,7 +7,7 @@ import { SelectComponent } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { Plus, Trash2, Loader2, AlertCircle, Check, X } from "lucide-react";
@@ -73,14 +73,18 @@ const BATCH_SIZE = 20;
 
 export default function EditPackagePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const params = useParams();
   const packageId = params.id as string;
+
+  // Get return URL from query params
+  const returnParams = searchParams.get("return") || "";
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  
+
   // Form state
   const [type, setType] = useState("");
   const [price, setPrice] = useState("");
@@ -119,22 +123,28 @@ export default function EditPackagePage() {
   // Fungsi untuk mengoptimalkan data sebelum dikirim
   const optimizePayload = (payload: RawPayload): OptimizedPayload => {
     // Remove empty features dan requirements
-    const filteredFeatures = payload.features.filter(f => f.feature.trim() !== "");
-    const filteredRequirements = payload.requirements.filter(r => r.trim() !== "");
-    
+    const filteredFeatures = payload.features.filter(
+      (f) => f.feature.trim() !== "",
+    );
+    const filteredRequirements = payload.requirements.filter(
+      (r) => r.trim() !== "",
+    );
+
     // Trim semua string
     const trimmedFeatures = filteredFeatures.map((f: Feature) => ({
       feature: f.feature.trim(),
-      status: f.status
+      status: f.status,
     }));
-    
-    const trimmedRequirements = filteredRequirements.map((r: string) => r.trim());
-    
+
+    const trimmedRequirements = filteredRequirements.map((r: string) =>
+      r.trim(),
+    );
+
     // Konversi tipe data
     const serviceIdNum = parseInt(payload.serviceId);
     const priceNum = parseFloat(payload.price) || 0;
     const discountNum = parseFloat(payload.discount) || 0;
-    
+
     return {
       serviceId: isNaN(serviceIdNum) ? 0 : serviceIdNum,
       type: payload.type.trim(),
@@ -164,7 +174,7 @@ export default function EditPackagePage() {
             Authorization: `Bearer ${token}`,
           },
           signal: AbortSignal.timeout(10000), // 10 second timeout
-        }
+        },
       );
 
       if (!response.ok) {
@@ -181,7 +191,7 @@ export default function EditPackagePage() {
 
       if (result.success && result.data) {
         const data: PackageData = result.data;
-        
+
         // Log untuk debugging
         console.log("📦 Data package dari API:", {
           type: data.type,
@@ -196,24 +206,26 @@ export default function EditPackagePage() {
         setLink(data.link || "");
         setHighlight(data.highlight || false);
         setServiceId(data.serviceId?.toString() || "");
-        
+
         // Handle features - pastikan array tidak kosong
-        const initialFeatures = Array.isArray(data.features) && data.features.length > 0
-          ? data.features.map(f => ({
-              feature: f.feature || "",
-              status: f.status !== undefined ? f.status : true
-            }))
-          : [{ feature: "", status: true }];
-        
+        const initialFeatures =
+          Array.isArray(data.features) && data.features.length > 0
+            ? data.features.map((f) => ({
+                feature: f.feature || "",
+                status: f.status !== undefined ? f.status : true,
+              }))
+            : [{ feature: "", status: true }];
+
         setFeatures(initialFeatures);
-        
+
         // Handle requirements - pastikan array tidak kosong
-        const initialRequirements = Array.isArray(data.requirements) && data.requirements.length > 0
-          ? data.requirements.map(r => r || "")
-          : [""];
-        
+        const initialRequirements =
+          Array.isArray(data.requirements) && data.requirements.length > 0
+            ? data.requirements.map((r) => r || "")
+            : [""];
+
         setRequirements(initialRequirements);
-        
+
         // Simpan original data untuk comparison
         originalDataRef.current = {
           type: data.type || "",
@@ -225,30 +237,34 @@ export default function EditPackagePage() {
           features: initialFeatures,
           requirements: initialRequirements,
         };
-        
+
         setErrorDetails(null);
       } else {
         throw new Error(result.message || "Data package tidak valid");
       }
     } catch (error: unknown) {
       console.error("❌ Error fetching package:", error);
-      
-      const errorMessage = error instanceof Error ? error.message : "Gagal memuat data package";
-      
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal memuat data package";
+
       // Retry logic
       if (retryCount < 3 && !errorMessage.includes("404")) {
         console.log(`🔄 Retrying fetch (${retryCount + 1}/3)...`);
-        setTimeout(() => fetchPackageData(retryCount + 1), 1000 * (retryCount + 1));
+        setTimeout(
+          () => fetchPackageData(retryCount + 1),
+          1000 * (retryCount + 1),
+        );
         return;
       }
-      
-      const finalErrorMessage = errorMessage.includes("Timeout") 
+
+      const finalErrorMessage = errorMessage.includes("Timeout")
         ? "Timeout: Server terlalu lama merespon"
         : errorMessage;
-      
+
       toast.error(finalErrorMessage);
       setErrorDetails(finalErrorMessage);
-      
+
       // Don't redirect immediately, show error with retry option
       if (errorMessage.includes("404") || errorMessage.includes("401")) {
         setTimeout(() => router.push("/business/packages"), 3000);
@@ -263,7 +279,7 @@ export default function EditPackagePage() {
     if (packageId) {
       fetchPackageData();
     }
-    
+
     return () => {
       // Cleanup abort controller
       if (abortControllerRef.current) {
@@ -327,10 +343,10 @@ export default function EditPackagePage() {
   // Validasi perubahan data
   const hasChanges = (): boolean => {
     if (!originalDataRef.current) return true;
-    
-    const validFeatures = features.filter(f => f.feature.trim() !== "");
-    const validRequirements = requirements.filter(r => r.trim() !== "");
-    
+
+    const validFeatures = features.filter((f) => f.feature.trim() !== "");
+    const validRequirements = requirements.filter((r) => r.trim() !== "");
+
     const currentData = {
       type: type.trim(),
       price: price.trim(),
@@ -343,17 +359,20 @@ export default function EditPackagePage() {
     };
 
     const original = originalDataRef.current;
-    
-    return JSON.stringify(currentData) !== JSON.stringify({
-      type: original.type?.trim(),
-      price: original.price?.trim(),
-      discount: original.discount?.trim(),
-      link: original.link?.trim(),
-      highlight: original.highlight,
-      serviceId: original.serviceId?.trim(),
-      features: original.features,
-      requirements: original.requirements,
-    });
+
+    return (
+      JSON.stringify(currentData) !==
+      JSON.stringify({
+        type: original.type?.trim(),
+        price: original.price?.trim(),
+        discount: original.discount?.trim(),
+        link: original.link?.trim(),
+        highlight: original.highlight,
+        serviceId: original.serviceId?.trim(),
+        features: original.features,
+        requirements: original.requirements,
+      })
+    );
   };
 
   // Validasi form
@@ -401,7 +420,7 @@ export default function EditPackagePage() {
     }
 
     // Validasi features
-    const validFeatures = features.filter(f => f.feature.trim() !== "");
+    const validFeatures = features.filter((f) => f.feature.trim() !== "");
     if (validFeatures.length === 0) {
       toast.error("Minimal harus ada 1 feature yang diisi");
       return false;
@@ -413,7 +432,7 @@ export default function EditPackagePage() {
       return false;
     }
 
-    const validRequirements = requirements.filter(r => r.trim() !== "");
+    const validRequirements = requirements.filter((r) => r.trim() !== "");
     if (validRequirements.length > MAX_REQUIREMENTS) {
       toast.error(`Maksimal ${MAX_REQUIREMENTS} requirements diperbolehkan`);
       return false;
@@ -440,7 +459,7 @@ export default function EditPackagePage() {
 
   const updatePackageWithRetry = async (
     payload: OptimizedPayload,
-    maxRetries = 3
+    maxRetries = 3,
   ): Promise<UpdateResult> => {
     const token = getToken();
     if (!token) {
@@ -458,7 +477,7 @@ export default function EditPackagePage() {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         console.log(`🔄 Update attempt ${attempt + 1}/${maxRetries}`);
-        
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/business/packages/${packageId}`,
           {
@@ -469,7 +488,7 @@ export default function EditPackagePage() {
             },
             body: JSON.stringify(payload),
             signal: abortControllerRef.current.signal,
-          }
+          },
         );
 
         clearTimeout(timeoutId);
@@ -483,7 +502,7 @@ export default function EditPackagePage() {
 
         if (!response.ok) {
           throw new Error(
-            responseData.message || `HTTP error! status: ${response.status}`
+            responseData.message || `HTTP error! status: ${response.status}`,
           );
         }
 
@@ -503,7 +522,7 @@ export default function EditPackagePage() {
           if (attempt < maxRetries - 1) {
             const delay = Math.pow(2, attempt) * 1000;
             console.log(`⏳ Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
         } else {
@@ -514,20 +533,21 @@ export default function EditPackagePage() {
     }
 
     clearTimeout(timeoutId);
-    
+
     return {
       success: false,
-      error: lastError?.message || "Unknown error after retries"
+      error: lastError?.message || "Unknown error after retries",
     };
   };
 
   // Handle submit dengan optimasi dan retry
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validasi perubahan
+
     if (!hasChanges()) {
-      toast.info("Tidak ada perubahan data untuk disimpan");
+      // Navigate back with preserved params
+      const returnUrl = `/business/packages${returnParams ? `?${returnParams}` : ""}`;
+      router.push(returnUrl);
       return;
     }
 
@@ -548,9 +568,9 @@ export default function EditPackagePage() {
 
     try {
       // Siapkan payload
-      const validFeatures = features.filter(f => f.feature.trim() !== "");
-      const validRequirements = requirements.filter(r => r.trim() !== "");
-      
+      const validFeatures = features.filter((f) => f.feature.trim() !== "");
+      const validRequirements = requirements.filter((r) => r.trim() !== "");
+
       const rawPayload: RawPayload = {
         serviceId,
         type,
@@ -573,10 +593,13 @@ export default function EditPackagePage() {
       // Tampilkan warning untuk data besar
       const totalItems = payload.features.length + payload.requirements.length;
       if (totalItems > 30) {
-        toast.warning(`Mengupdate ${totalItems} item, proses mungkin memakan waktu beberapa detik...`, {
-          duration: 5000,
-          icon: <AlertCircle className="w-4 h-4" />,
-        });
+        toast.warning(
+          `Mengupdate ${totalItems} item, proses mungkin memakan waktu beberapa detik...`,
+          {
+            duration: 5000,
+            icon: <AlertCircle className="w-4 h-4" />,
+          },
+        );
       }
 
       setUploadProgress(30);
@@ -589,7 +612,7 @@ export default function EditPackagePage() {
         toast.success("Package berhasil diupdate!", {
           icon: <Check className="w-4 h-4" />,
         });
-        
+
         // Update original data ref
         originalDataRef.current = {
           type: payload.type,
@@ -601,26 +624,30 @@ export default function EditPackagePage() {
           features: payload.features,
           requirements: payload.requirements,
         };
-        
+
         // Delay sebelum redirect untuk user feedback
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        router.push("/business/packages");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Navigate back with preserved params
+        const returnUrl = `/business/packages${returnParams ? `?${returnParams}` : ""}`;
+        router.push(returnUrl);
         router.refresh();
       } else {
         throw new Error(result.error || "Gagal mengupdate package");
       }
     } catch (error: unknown) {
       console.error("❌ Error updating package:", error);
-      
+
       let errorMessage = "Terjadi kesalahan saat mengupdate package";
       let showRetry = true;
-      
+
       const errorMsg = error instanceof Error ? error.message : String(error);
-      
+
       if (errorMsg.includes("AbortError")) {
         errorMessage = "Request timeout. Server terlalu lama merespon.";
-        setErrorDetails("Timeout setelah 30 detik. Coba lagi atau kurangi jumlah data.");
+        setErrorDetails(
+          "Timeout setelah 30 detik. Coba lagi atau kurangi jumlah data.",
+        );
       } else if (errorMsg.includes("timeout")) {
         errorMessage = "Koneksi timeout. Periksa jaringan Anda.";
       } else if (errorMsg.includes("Failed to fetch")) {
@@ -635,26 +662,37 @@ export default function EditPackagePage() {
         errorMessage = "Server error. Silakan coba lagi nanti.";
         setErrorDetails("Error internal server. Hubungi administrator.");
       } else if (errorMsg.includes("Database")) {
-        errorMessage = "Database timeout. Coba lagi dengan data yang lebih sedikit.";
-        setErrorDetails("Database operation timeout. Kurangi jumlah features/requirements.");
+        errorMessage =
+          "Database timeout. Coba lagi dengan data yang lebih sedikit.";
+        setErrorDetails(
+          "Database operation timeout. Kurangi jumlah features/requirements.",
+        );
       } else {
         errorMessage = errorMsg || errorMessage;
       }
-      
+
       toast.error(errorMessage, {
         icon: <X className="w-4 h-4" />,
         duration: 10000,
-        action: showRetry ? {
-          label: "Coba Lagi",
-          onClick: () => handleSubmit(e),
-        } : undefined,
+        action: showRetry
+          ? {
+              label: "Coba Lagi",
+              onClick: () => handleSubmit(e),
+            }
+          : undefined,
       });
-      
+
       setErrorDetails(errorMsg);
     } finally {
       setIsLoading(false);
       setTimeout(() => setUploadProgress(0), 1000);
     }
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    const returnUrl = `/business/packages${returnParams ? `?${returnParams}` : ""}`;
+    router.push(returnUrl);
   };
 
   // Loading state
@@ -703,17 +741,23 @@ export default function EditPackagePage() {
   }
 
   // Hitung stats
-  const validFeaturesCount = features.filter(f => f.feature.trim() !== "").length;
-  const validRequirementsCount = requirements.filter(r => r.trim() !== "").length;
+  const validFeaturesCount = features.filter(
+    (f) => f.feature.trim() !== "",
+  ).length;
+  const validRequirementsCount = requirements.filter(
+    (r) => r.trim() !== "",
+  ).length;
   const totalItems = validFeaturesCount + validRequirementsCount;
-  const hasEmptyFields = features.some(f => !f.feature.trim()) || requirements.some(r => !r.trim());
+  const hasEmptyFields =
+    features.some((f) => !f.feature.trim()) ||
+    requirements.some((r) => !r.trim());
 
   return (
     <Wrapper>
       {/* Global Progress Bar */}
       {uploadProgress > 0 && uploadProgress < 100 && (
         <div className="fixed top-0 left-0 w-full h-1 bg-gray-800 z-50">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300 ease-out"
             style={{ width: `${uploadProgress}%` }}
           />
@@ -739,13 +783,16 @@ export default function EditPackagePage() {
         {/* Header Actions kanan */}
         <HeaderActions position="right">
           <div className="flex items-center gap-3">
-            
-            <Link href="/business/packages">
-              <Button type="button" variant="outline" disabled={isLoading}>
-                Batal
-              </Button>
-            </Link>
-            
+            {/* Update Cancel button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+            >
+              Batal
+            </Button>
+
             <Button
               type="submit"
               form="edit-package-form"
@@ -754,8 +801,10 @@ export default function EditPackagePage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> 
-                  {uploadProgress > 0 ? `${Math.round(uploadProgress)}%` : "Menyimpan..."}
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  {uploadProgress > 0
+                    ? `${Math.round(uploadProgress)}%`
+                    : "Menyimpan..."}
                 </>
               ) : (
                 <>
@@ -777,8 +826,11 @@ export default function EditPackagePage() {
                   Data Cukup Besar
                 </h3>
                 <p className="text-yellow-300/80 text-sm">
-                  Anda memiliki {totalItems} item data. Proses update mungkin memakan waktu {Math.ceil(totalItems / 10)}-{Math.ceil(totalItems / 5)} detik.
-                  {totalItems > 40 && " Pertimbangkan untuk mengurangi jumlah data untuk performa yang lebih baik."}
+                  Anda memiliki {totalItems} item data. Proses update mungkin
+                  memakan waktu {Math.ceil(totalItems / 10)}-
+                  {Math.ceil(totalItems / 5)} detik.
+                  {totalItems > 40 &&
+                    " Pertimbangkan untuk mengurangi jumlah data untuk performa yang lebih baik."}
                 </p>
                 <div className="flex items-center gap-4 mt-2 text-xs">
                   <span className="text-yellow-300/70">
@@ -804,7 +856,8 @@ export default function EditPackagePage() {
                 </h3>
                 <p className="text-red-300/80 text-sm">{errorDetails}</p>
                 <p className="text-red-300/60 text-xs mt-2">
-                  Tips: Coba kurangi jumlah features/requirements atau coba lagi nanti.
+                  Tips: Coba kurangi jumlah features/requirements atau coba lagi
+                  nanti.
                 </p>
               </div>
             </div>
@@ -820,7 +873,8 @@ export default function EditPackagePage() {
                   Tidak ada Services Tersedia
                 </h3>
                 <p className="text-yellow-300/80 mt-1">
-                  Anda perlu membuat service terlebih dahulu sebelum mengedit package.
+                  Anda perlu membuat service terlebih dahulu sebelum mengedit
+                  package.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -884,7 +938,10 @@ export default function EditPackagePage() {
 
               {/* Type */}
               <div className="space-y-3 ">
-                <Label htmlFor="type" className="text-white flex items-center gap-1">
+                <Label
+                  htmlFor="type"
+                  className="text-white flex items-center gap-1"
+                >
                   Type Package
                   <span className="text-red-500">*</span>
                 </Label>
@@ -902,7 +959,10 @@ export default function EditPackagePage() {
               {/* Price & Discount */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <Label htmlFor="price" className="text-white flex items-center gap-1">
+                  <Label
+                    htmlFor="price"
+                    className="text-white flex items-center gap-1"
+                  >
                     Price (Rp)
                     <span className="text-red-500">*</span>
                   </Label>
@@ -942,10 +1002,11 @@ export default function EditPackagePage() {
                   />
                   {discount && parseFloat(discount) > 0 && (
                     <p className="text-sm text-green-400">
-                      Harga setelah diskon: Rp {(
-                        parseFloat(price || "0") * 
+                      Harga setelah diskon: Rp{" "}
+                      {(
+                        parseFloat(price || "0") *
                         (1 - parseFloat(discount) / 100)
-                      ).toLocaleString('id-ID')}
+                      ).toLocaleString("id-ID")}
                     </p>
                   )}
                 </div>
@@ -953,7 +1014,10 @@ export default function EditPackagePage() {
 
               {/* Link */}
               <div className="space-y-3">
-                <Label htmlFor="link" className="text-white flex items-center gap-1">
+                <Label
+                  htmlFor="link"
+                  className="text-white flex items-center gap-1"
+                >
                   Link
                   <span className="text-red-500">*</span>
                 </Label>
@@ -1000,9 +1064,7 @@ export default function EditPackagePage() {
             <div className="bg-white/5 rounded-sm p-6 space-y-6 border border-white/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">
-                    Features
-                  </h2>
+                  <h2 className="text-xl font-semibold text-white">Features</h2>
                   <p className="text-gray-400 text-sm mt-1">
                     Fitur-fitur yang ditawarkan dalam package ini
                   </p>
@@ -1029,7 +1091,6 @@ export default function EditPackagePage() {
                 <div key={index} className="flex items-start text-white gap-4 ">
                   <div className="flex-1 ">
                     <div className="flex items-center gap-2">
-                     
                       {!feature.feature.trim() && (
                         <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded-xs ">
                           Kosong
@@ -1082,8 +1143,9 @@ export default function EditPackagePage() {
               {features.length >= MAX_FEATURES && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                   <p className="text-sm text-red-300 text-center">
-                    ⚠️ Anda telah mencapai batas maksimum {MAX_FEATURES} features.
-                    Hapus beberapa feature sebelum menambahkan yang baru.
+                    ⚠️ Anda telah mencapai batas maksimum {MAX_FEATURES}{" "}
+                    features. Hapus beberapa feature sebelum menambahkan yang
+                    baru.
                   </p>
                 </div>
               )}
@@ -1109,7 +1171,9 @@ export default function EditPackagePage() {
                     variant="outline"
                     size="sm"
                     onClick={handleAddRequirement}
-                    disabled={requirements.length >= MAX_REQUIREMENTS || isLoading}
+                    disabled={
+                      requirements.length >= MAX_REQUIREMENTS || isLoading
+                    }
                     className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -1119,7 +1183,10 @@ export default function EditPackagePage() {
               </div>
 
               {requirements.map((requirement, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 bg-black/20 rounded-lg">
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-4 bg-black/20 rounded-lg"
+                >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs px-2 py-1 bg-white/10 rounded text-gray-300">
@@ -1138,7 +1205,7 @@ export default function EditPackagePage() {
                         handleRequirementChange(index, e.target.value)
                       }
                       disabled={isLoading}
-                      className="bg-black/30 border-white/10"
+                      className="bg-white/30 text-white border-white/10"
                     />
                   </div>
                   {requirements.length > 1 && (
@@ -1159,8 +1226,9 @@ export default function EditPackagePage() {
               {requirements.length >= MAX_REQUIREMENTS && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                   <p className="text-sm text-red-300 text-center">
-                    ⚠️ Anda telah mencapai batas maksimum {MAX_REQUIREMENTS} requirements.
-                    Hapus beberapa requirement sebelum menambahkan yang baru.
+                    ⚠️ Anda telah mencapai batas maksimum {MAX_REQUIREMENTS}{" "}
+                    requirements. Hapus beberapa requirement sebelum menambahkan
+                    yang baru.
                   </p>
                 </div>
               )}

@@ -16,12 +16,12 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken } from "@/lib/helpers";
 import { usePackages } from "@/hooks/usePackages";
@@ -67,19 +67,19 @@ const packageColumns: Column<TablePackages>[] = [
     label: "Price",
     className: "min-w-[130px]",
     render: (row) => (
-      <div className="flex items-center gap-1" >
+      <div className="flex items-center gap-1">
         <span className="font-semibold">Rp</span>
-        <span className="font-medium" >{row.price.toLocaleString()}</span>
+        <span className="font-medium">{row.price.toLocaleString()}</span>
       </div>
     ),
   },
   {
     key: "priceOriginal",
     label: "Original Price",
-    className: "min-w-[170px]",   
+    className: "min-w-[170px]",
     render: (row) => (
       <div className="flex items-center gap-2">
-        <span className="italic text-red-900 " >{`Rp ${row.priceOriginal.toLocaleString()}`}</span>
+        <span className="italic text-red-900 ">{`Rp ${row.priceOriginal.toLocaleString()}`}</span>
         <div className="bg-red-600/30 text-white p-1 rounded-md text-xs">{`${row?.discount}%`}</div>
       </div>
     ),
@@ -109,7 +109,7 @@ const packageColumns: Column<TablePackages>[] = [
         <span
           className={clsx(
             "h-2 w-2 rounded-full",
-            row.highlight ? "bg-green-600" : "bg-red-700"
+            row.highlight ? "bg-green-600" : "bg-red-700",
           )}
         />
         <span className="font-medium">
@@ -131,7 +131,7 @@ const packageColumns: Column<TablePackages>[] = [
               "text-xs px-2 py-1 rounded-full border font-semibold",
               feature.status
                 ? "bg-green-100/40 text-green-800 border-green-300"
-                : "bg-red-100/40 text-red-800 border-red-300"
+                : "bg-red-100/40 text-red-800 border-red-300",
             )}
           >
             {feature.feature.slice(0, 35) + "..."}
@@ -171,9 +171,11 @@ const packageColumns: Column<TablePackages>[] = [
 
 export default function PriceList() {
   const router = useRouter();
-  const [searchInput, setSearchInput] = useState("");
+  const searchParams = useSearchParams();
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
 
-  // usePackages hook dengan semua state management
   const {
     setSearchQuery,
     setPage,
@@ -190,10 +192,69 @@ export default function PriceList() {
     packages,
   } = usePackages();
 
+  // Add URL sync effect
+  useEffect(() => {
+    // Update URL with current filters and pagination
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    } else {
+      params.delete("search");
+    }
+
+    if (serviceFilter && serviceFilter !== "All") {
+      params.set("service", serviceFilter);
+    } else {
+      params.delete("service");
+    }
+
+    if (page !== 1) {
+      params.set("page", page.toString());
+    } else {
+      params.delete("page");
+    }
+
+    if (limit !== 10) {
+      params.set("limit", limit.toString());
+    } else {
+      params.delete("limit");
+    }
+
+    // Update URL without refreshing
+    const newUrl = `/business/packages${params.toString() ? `?${params.toString()}` : ""}`;
+    router.replace(newUrl, { scroll: false });
+  }, [searchQuery, serviceFilter, page, limit, router, searchParams]);
+
+  // Initialize from URL on mount
+  useEffect(() => {
+    const search = searchParams.get("search");
+    const service = searchParams.get("service");
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+
+    if (search) {
+      setSearchQuery(search);
+      setSearchInput(search);
+    }
+
+    if (service) {
+      setServiceFilter(service);
+    }
+
+    if (pageParam) {
+      setPage(parseInt(pageParam));
+    }
+
+    if (limitParam) {
+      setLimit(parseInt(limitParam));
+    }
+  }, []);
+
   // Alert dialog state
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<TablePackages | null>(
-    null
+    null,
   );
 
   const handleSearchSubmit = () => {
@@ -208,7 +269,7 @@ export default function PriceList() {
   };
 
   const handleRefresh = () => {
-    window.location.reload()
+    window.location.reload();
   };
 
   const { dataServices, isLoading: servicesLoading } = useServices();
@@ -223,8 +284,15 @@ export default function PriceList() {
     setPage(1);
   };
 
+  // Update handleEdit to preserve current URL params
   const handleEdit = (row: TablePackages) => {
-    router.push(`/business/packages/${row.id}/edit`);
+    // Get current query params
+    const currentParams = new URLSearchParams(searchParams.toString());
+
+    // Navigate to edit with return URL
+    router.push(
+      `/business/packages/${row.id}/edit?return=${encodeURIComponent(currentParams.toString())}`,
+    );
   };
 
   const handleDeleteConfirm = async () => {
@@ -252,7 +320,7 @@ export default function PriceList() {
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(
-          `HTTP error! status: ${res.status}, message: ${errorText}`
+          `HTTP error! status: ${res.status}, message: ${errorText}`,
         );
       }
 
@@ -263,7 +331,7 @@ export default function PriceList() {
 
         // Set page ke 1 dan refresh data
         setPage(1);
-        window.location.reload()
+        router.refresh();
       } else {
         toast.error(data.message || "Gagal menghapus package");
       }
@@ -276,6 +344,9 @@ export default function PriceList() {
       setSelectedPackage(null);
     }
   };
+
+  // Update Add button link to preserve params
+  const addPackageUrl = `/business/packages/new?return=${encodeURIComponent(searchParams.toString())}`;
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -354,7 +425,7 @@ export default function PriceList() {
 
           {/* Add New Package Button */}
           <div>
-            <Link href="/business/packages/new">
+            <Link href={addPackageUrl}>
               <Button>
                 <Plus /> Package Baru
               </Button>
