@@ -16,7 +16,7 @@ import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { ChevronDownIcon, Plus } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Tambahkan useSearchParams
 import { toast } from "sonner";
 import { combineDateAndTime } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
@@ -54,13 +54,17 @@ const PROMO_STATUS = [
 
 export default function AddNewActivity() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Tambahkan useSearchParams
+
+  // Get return URL dari query params
+  const returnParams = searchParams.get("return") || "";
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
   const [activityType, setActivityType] = useState("activity");
   const [title, setTitle] = useState("");
   const [longDesc, setLongDesc] = useState("");
-  // const [isPromo, setIsPromo] = useState(false);
   const [showTitle, setshowTitle] = useState("inActive");
   const [instaUrl, setInstaUrl] = useState("");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
@@ -73,11 +77,9 @@ export default function AddNewActivity() {
   // Handle select images - now using media IDs
   const handleSelectImages = (mediaId: number) => {
     if (selectedMediaIds.includes(mediaId)) {
-      // Remove if already selected
       setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
       toast.success("Gambar dihapus dari pilihan!");
     } else {
-      // Add if not selected
       setSelectedMediaIds([...selectedMediaIds, mediaId]);
       toast.success("Gambar dipilih!");
     }
@@ -90,7 +92,7 @@ export default function AddNewActivity() {
       return;
     }
 
-    // Validasi sesuai endpoint requirements
+    // Validasi
     if (!title.trim()) {
       toast.error("Judul activity wajib diisi!");
       return;
@@ -111,16 +113,14 @@ export default function AddNewActivity() {
       return;
     }
 
-    // Combine date and time
     const combinedDateTime = combineDateAndTime(date, time);
     if (!combinedDateTime) {
       toast.error(
-        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!"
+        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!",
       );
       return;
     }
 
-    // Validasi showTitle boolean conversion
     const showTitleBoolean = showTitle === "active";
 
     if (showTitleBoolean && !instaUrl.trim()) {
@@ -138,26 +138,33 @@ export default function AddNewActivity() {
         longDesc: longDesc.trim(),
         date: combinedDateTime,
         showTitle: showTitleBoolean,
-        isPromo: isPromoBoolean, // Gunakan boolean di sini
+        isPromo: isPromoBoolean,
         instaUrl: instaUrl.trim(),
         status: "DRAFT",
         mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined,
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/activity`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/content/activity`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
         },
-        body: JSON.stringify(requestBody),
-      });
+      );
 
       const data = await res.json();
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil ditambahkan!");
-        router.push("/content/activity");
+
+        // Navigate back dengan preserved params
+        const returnUrl = `/content/activity${returnParams ? `?${returnParams}` : ""}`;
+        router.push(returnUrl);
+        router.refresh();
       } else {
         toast.error(data.message || "Gagal menambahkan activity");
       }
@@ -169,8 +176,10 @@ export default function AddNewActivity() {
     }
   };
 
+  // Update handleCancel untuk kembali dengan query params
   const handleCancel = () => {
-    router.push("/content/activity");
+    const returnUrl = `/content/activity${returnParams ? `?${returnParams}` : ""}`;
+    router.push(returnUrl);
   };
 
   // Get selected media URLs for preview
@@ -201,7 +210,7 @@ export default function AddNewActivity() {
           <AlertDialogComponent
             header="Batalkan Pembuatan Activity?"
             desc="Semua perubahan yang belum disimpan akan hilang."
-            continueAction={handleCancel}
+            continueAction={handleCancel} // Gunakan handleCancel yang sudah diupdate
           >
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" disabled={isLoading}>
@@ -245,17 +254,17 @@ export default function AddNewActivity() {
 
           {/* Description */}
           {/* <div className="space-y-3">
-            <Label htmlFor="desc" className="text-white">
-              Description *
-            </Label>
-            <Textarea
-              id="desc"
-              placeholder="Masukkan description activity..."
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              disabled={isLoading}
-            />
-          </div> */}
+                  <Label htmlFor="desc" className="text-white">
+                    Description *
+                  </Label>
+                  <Textarea
+                    id="desc"
+                    placeholder="Masukkan description activity..."
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div> */}
 
           {/* Content Editor */}
           <div className="space-y-3">
@@ -339,7 +348,7 @@ export default function AddNewActivity() {
             options={PROMO_STATUS}
             disabled={isLoading}
           />
-          
+
           <div className="space-y-3">
             <Label htmlFor="instaUrl" className="text-white">
               {activityType === "promo" ? "Link URL" : "Instagram URL"}{" "}

@@ -16,22 +16,21 @@ import {
 import { Plus } from "lucide-react";
 import { TableList, Column } from "@/components/table-list";
 import clsx from "clsx";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Tambahkan useEffect
 import Link from "next/link";
 import { TableSkeleton } from "@/components/skeletons/table-list";
 import { MdInsertPhoto, MdOutlineLoop } from "react-icons/md";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Tambahkan useSearchParams
 import { AlertDialogComponent } from "@/components/ui/alert-dialog";
 import { getToken, stripHtmlTags } from "@/lib/helpers";
 import { useActivities } from "@/hooks/useActivities";
 import { AiFillDollarCircle } from "react-icons/ai";
-import Image from "next/image"; // Import Next.js Image component
+import Image from "next/image";
 
 export interface TableActivity {
   id: number;
   title: string;
-  // desc: string;
   longDesc: string;
   date: string;
   showTitle: boolean;
@@ -50,14 +49,12 @@ export interface TableActivity {
 const activityColumns: Column<TableActivity>[] = [
   { key: "id", label: "ID", className: "font-semibold w-[30]" },
   { key: "title", label: "Title", className: "font-semibold min-w-[200px]" },
-  // { key: "desc", label: "Description", className: "min-w-[180px]" },
-   { 
+  { 
     key: "longDesc", 
     label: "Description", 
     className: "min-w-[190px]",
     render: (row) => {
       const plainText = stripHtmlTags(row.longDesc);
-      // Potong text jika terlalu panjang
       const maxLength = 100;
       const truncated = plainText.length > maxLength 
         ? plainText.substring(0, maxLength) + "..." 
@@ -136,7 +133,6 @@ const activityColumns: Column<TableActivity>[] = [
               height={32}
               className="w-full h-full object-cover"
               onError={(e) => {
-                // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
               }}
@@ -155,7 +151,14 @@ const activityColumns: Column<TableActivity>[] = [
 
 export default function ActivityPage() {
   const router = useRouter();
-  const [searchInput, setSearchInput] = useState("");
+  const searchParams = useSearchParams(); // Tambahkan useSearchParams
+  
+  // Initialize state from URL params
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || ""
+  );
+
+  // Use Activities hook
   const {
     token,
     setSearchQuery,
@@ -180,6 +183,64 @@ export default function ActivityPage() {
   const [selectedActivity, setSelectedActivity] =
     useState<TableActivity | null>(null);
 
+  // Sync URL dengan state filtering dan pagination
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    } else {
+      params.delete("search");
+    }
+    
+    if (statusFilter && statusFilter !== "All") {
+      params.set("statusFilter", statusFilter);
+    } else {
+      params.delete("statusFilter");
+    }
+    
+    if (page !== 1) {
+      params.set("page", page.toString());
+    } else {
+      params.delete("page");
+    }
+    
+    if (limit !== 10) {
+      params.set("limit", limit.toString());
+    } else {
+      params.delete("limit");
+    }
+    
+    // Update URL tanpa refresh
+    const newUrl = `/content/activity${params.toString() ? `?${params.toString()}` : ''}`;
+    router.replace(newUrl, { scroll: false });
+  }, [searchQuery, statusFilter, page, limit, router, searchParams]);
+
+  // Initialize dari URL pada mount
+  useEffect(() => {
+    const search = searchParams.get("search");
+    const status = searchParams.get("statusFilter");
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    
+    if (search) {
+      setSearchQuery(search);
+      setSearchInput(search);
+    }
+    
+    if (status) {
+      setStatusFilter(status);
+    }
+    
+    if (pageParam) {
+      setPage(parseInt(pageParam));
+    }
+    
+    if (limitParam) {
+      setLimit(parseInt(limitParam));
+    }
+  }, []); // Hanya dijalankan sekali pada mount
+
   const handleSearchSubmit = () => {
     setSearchQuery(searchInput);
     setPage(1);
@@ -193,13 +254,12 @@ export default function ActivityPage() {
 
   const handleRefresh = () => {
     if (token) {
-      fetchActivities(token, page, limit, searchQuery, statusFilter); // Ganti showTitleFilter dengan statusFilter
+      fetchActivities(token, page, limit, searchQuery, statusFilter);
     }
   };
 
-  // Ganti handleShowTitleFilter dengan handleStatusFilter
   const handleStatusFilter = (value: string) => {
-    setStatusFilter(value); // Ganti setShowTitleFilter dengan setStatusFilter
+    setStatusFilter(value);
     setPage(1);
   };
 
@@ -208,8 +268,10 @@ export default function ActivityPage() {
     setPage(1);
   };
 
+  // Update handleEdit untuk menyimpan query params saat ini
   const handleEdit = (row: TableActivity) => {
-    router.push(`/content/activity/${row.id}/edit`);
+    const currentParams = new URLSearchParams(searchParams.toString());
+    router.push(`/content/activity/${row.id}/edit?return=${encodeURIComponent(currentParams.toString())}`);
   };
 
   const handleDeleteConfirm = async () => {
@@ -243,7 +305,7 @@ export default function ActivityPage() {
           `Activity "${selectedActivity.title}" deleted successfully!`
         );
 
-        // Refresh the activities list
+        // Refresh data tanpa reload page
         const token = getToken();
         if (token) {
           await fetchActivities(
@@ -251,7 +313,7 @@ export default function ActivityPage() {
             page,
             limit,
             searchQuery,
-            statusFilter // Ganti showTitleFilter dengan statusFilter
+            statusFilter
           );
         }
       } else {
@@ -279,6 +341,9 @@ export default function ActivityPage() {
     setSearchQuery("");
     setPage(1);
   };
+
+  // Buat URL untuk Add New Activity dengan query params
+  const addActivityUrl = `/content/activity/new?return=${encodeURIComponent(searchParams.toString())}`;
 
   return (
     <>
@@ -321,9 +386,9 @@ export default function ActivityPage() {
               <SelectComponent
                 label="Filter By"
                 placeholder="Filter By"
-                value={statusFilter} // Ganti showTitleFilter dengan statusFilter
-                onChange={handleStatusFilter} // Ganti handleShowTitleFilter dengan handleStatusFilter
-                options={filterStatusArr.map((s) => ({ label: s, value: s }))} // Ganti showTitleArr dengan filterStatusArr
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                options={filterStatusArr.map((s) => ({ label: s, value: s }))}
               />
             </div>
             <Button onClick={handleRefresh} disabled={isLoading}>
@@ -332,7 +397,8 @@ export default function ActivityPage() {
             </Button>
           </div>
           <div>
-            <Link href="/content/activity/new">
+            {/* Gunakan URL dengan query params */}
+            <Link href={addActivityUrl}>
               <Button>
                 <Plus /> Activity Baru
               </Button>

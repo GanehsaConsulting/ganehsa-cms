@@ -15,12 +15,12 @@ import {
 import { Wrapper } from "@/components/wrapper";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { ChevronDownIcon, Save } from "lucide-react";
-import { useState, useEffect, useCallback } from "react"; // Added useCallback
-import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation"; // Tambahkan useSearchParams
 import { toast } from "sonner";
 import { getToken } from "@/lib/helpers";
 import { useMedias } from "@/hooks/useMedias";
-import Image from "next/image"; // Added Image import
+import Image from "next/image";
 import { AiFillDollarCircle } from "react-icons/ai";
 import { MdInsertPhoto } from "react-icons/md";
 import { FiX } from "react-icons/fi";
@@ -85,7 +85,11 @@ interface Activity {
 export default function EditActivityPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams(); // Tambahkan useSearchParams
   const activityId = params.id as string;
+
+  // Get return URL dari query params
+  const returnParams = searchParams.get("return") || "";
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -98,7 +102,6 @@ export default function EditActivityPage() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("00:00:00");
   const [showTitle, setShowTitle] = useState("inactive");
-  // const [isPromo, setIsPromo] = useState(false);
   const [instaUrl, setInstaUrl] = useState("");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
 
@@ -130,7 +133,7 @@ export default function EditActivityPage() {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  // Fetch activity by ID - wrapped in useCallback to fix dependency warning
+  // Fetch activity by ID
   const fetchActivity = useCallback(async () => {
     const token = getToken();
     if (!token) {
@@ -148,7 +151,7 @@ export default function EditActivityPage() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!res.ok) {
@@ -164,9 +167,7 @@ export default function EditActivityPage() {
         setTitle(activity.title);
         setDesc(activity.desc);
         setLongDesc(activity.longDesc);
-
-        // PERBAIKAN: Convert boolean to proper radio button value
-        setActivityType(activity.isPromo ? "promo" : "activity"); // <-- Ini yang diperbaiki
+        setActivityType(activity.isPromo ? "promo" : "activity");
 
         // Set date and time from existing activity date
         const activityDate = new Date(activity.date);
@@ -176,7 +177,7 @@ export default function EditActivityPage() {
         setShowTitle(activity.showTitle ? "active" : "inactive");
         setInstaUrl(activity.instaUrl || "");
 
-        // Set selected media IDs from existing medias - with null check
+        // Set selected media IDs from existing medias
         const mediaIds =
           activity?.medias?.map((mediaItem) => mediaItem.media.id) || [];
         setSelectedMediaIds(mediaIds);
@@ -191,23 +192,21 @@ export default function EditActivityPage() {
     } finally {
       setIsFetching(false);
     }
-  }, [activityId, router]); // Added dependencies
+  }, [activityId, router]);
 
   // Fetch activity data
   useEffect(() => {
     if (activityId) {
       fetchActivity();
     }
-  }, [activityId, fetchActivity]); // Added fetchActivity to dependencies
+  }, [activityId, fetchActivity]);
 
-  // Handle select images - using media IDs
+  // Handle select images
   const handleSelectImages = (mediaId: number) => {
     if (selectedMediaIds.includes(mediaId)) {
-      // Remove if already selected
       setSelectedMediaIds(selectedMediaIds.filter((id) => id !== mediaId));
       toast.success("Gambar dihapus dari pilihan!");
     } else {
-      // Add if not selected
       setSelectedMediaIds([...selectedMediaIds, mediaId]);
       toast.success("Gambar dipilih!");
     }
@@ -226,11 +225,6 @@ export default function EditActivityPage() {
       toast.error("Judul activity wajib diisi!");
       return;
     }
-
-    // if (!desc.trim()) {
-    //   toast.error("Description wajib diisi!");
-    //   return;
-    // }
 
     if (!longDesc.trim()) {
       toast.error("Long description wajib diisi!");
@@ -251,7 +245,7 @@ export default function EditActivityPage() {
     const combinedDateTime = combineDateAndTime(date, time);
     if (!combinedDateTime) {
       toast.error(
-        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!"
+        "Terjadi kesalahan dalam mengkombinasikan tanggal dan waktu!",
       );
       return;
     }
@@ -286,14 +280,18 @@ export default function EditActivityPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       const data = await res.json();
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil diupdate!");
-        router.push("/content/activity");
+
+        // Navigate back dengan preserved params
+        const returnUrl = `/content/activity${returnParams ? `?${returnParams}` : ""}`;
+        router.push(returnUrl);
+        router.refresh();
       } else {
         toast.error(data.message || "Gagal mengupdate activity");
       }
@@ -305,8 +303,10 @@ export default function EditActivityPage() {
     }
   };
 
+  // Update handleCancel untuk kembali dengan query params
   const handleCancel = () => {
-    router.push("/content/activity");
+    const returnUrl = `/content/activity${returnParams ? `?${returnParams}` : ""}`;
+    router.push(returnUrl);
   };
 
   // Handle delete
@@ -326,14 +326,18 @@ export default function EditActivityPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       const data = await res.json();
 
       if (res.ok && data.success) {
         toast.success("Activity berhasil dihapus!");
-        router.push("/content/activity");
+
+        // Navigate back dengan preserved params
+        const returnUrl = `/content/activity${returnParams ? `?${returnParams}` : ""}`;
+        router.push(returnUrl);
+        router.refresh();
       } else {
         toast.error(data.message || "Gagal menghapus activity");
       }
@@ -345,7 +349,7 @@ export default function EditActivityPage() {
     }
   };
 
-  // Get selected media URLs for preview - with proper null checks
+  // Get selected media URLs for preview
   const getSelectedMediaUrls = (): string[] => {
     if (!selectedMediaIds || selectedMediaIds.length === 0) {
       return [];
@@ -399,7 +403,7 @@ export default function EditActivityPage() {
           <AlertDialogComponent
             header="Batalkan Perubahan?"
             desc="Semua perubahan yang belum disimpan akan hilang."
-            continueAction={handleCancel}
+            continueAction={handleCancel} // Gunakan handleCancel yang sudah diupdate
           >
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" disabled={isLoading}>
@@ -611,13 +615,13 @@ export default function EditActivityPage() {
                 <div>
                   Dibuat:{" "}
                   {new Date(activityData?.createdAt).toLocaleDateString(
-                    "id-ID"
+                    "id-ID",
                   )}
                 </div>
                 <div>
                   Diupdate:{" "}
                   {new Date(activityData?.updatedAt).toLocaleDateString(
-                    "id-ID"
+                    "id-ID",
                   )}
                 </div>
                 <div>Author: {activityData?.author?.name}</div>
