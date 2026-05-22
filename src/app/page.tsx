@@ -280,7 +280,7 @@ function Home() {
                   const article = articles?.find((a) => a.id === item.refId);
                   return (
                     <li
-                      key={item.refId}
+                      key={item.id}
                       className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200"
                     >
                       {index + 1}. {article?.title?.slice(0, 40) + "....."} (
@@ -336,7 +336,7 @@ function Home() {
 
                     return (
                       <li
-                        key={`${item.refId}-${index}`}
+                        key={item.id}
                         className="cursor-pointer hover:ps-3 py-3 border-b-1 border-white/20 transition-all duration-200 flex justify-between items-center"
                       >
                         <span>
