@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { verifyAuth } from '@/lib/auth';
 import { calculateOriginalPrice } from '@/lib/helpers';
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-  // Increase timeouts untuk operasi besar
-  transactionOptions: {
-    maxWait: 45000, // 45 detik
-    timeout: 90000, // 90 detik
-  },
-  // Logging hanya di development
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'info', 'warn', 'error']
-    : ['error'],
-});
+import prisma from '@/lib/prisma';
 
 // Interface untuk update data
 interface UpdatePackageData {
@@ -662,7 +645,7 @@ export async function DELETE(
     console.log(`📊 Related records: ${existingPackage.features.length} features, ${existingPackage.requirements.length} requirements`);
 
     // 2. Delete in transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       console.log("🔄 Starting transaction for package deletion...");
       
       // Option A: Direct delete with cascade (if Prisma schema has onDelete: Cascade)
